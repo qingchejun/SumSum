@@ -209,6 +209,73 @@ body {
   cursor: pointer;
 }
 
+/* ---------- 奥数知识点目录（L1/L2 页签 + 胶囊按钮） ---------- */
+
+.stage-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.stage-tab {
+  flex: 1;
+  padding: 6px 8px;
+  font: 600 12px/1.4 inherit;
+  font-family: inherit;
+  color: var(--blue);
+  background: #fff;
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.stage-tab.active {
+  background: var(--blue);
+  color: #fff;
+}
+
+.topic-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.topic-chip {
+  padding: 4px 10px;
+  font: 12px/1.5 inherit;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--card-edge);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.topic-chip:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.topic-chip.active {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+  font-weight: 600;
+}
+
+.topic-chip:disabled {
+  color: #b8b09c;
+  background: transparent;
+  border-style: dashed;
+  cursor: default;
+}
+
+.topic-chip:disabled:hover {
+  border-color: var(--card-edge);
+}
+
 /* ---------- 预设按钮 ---------- */
 
 .preset-row {

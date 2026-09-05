@@ -13,7 +13,6 @@
   }
 
   var els = {
-    topic: $('f-topic'),
     difficulty: $('f-difficulty'),
     count: $('f-count'),
     lessonpage: $('f-lessonpage'),
@@ -23,24 +22,53 @@
 
   var settings = S.aoshu.settings.load()
 
-  /* 知识点下拉：按大纲阶段分组、显示大纲序号；只有一个知识点时整组隐藏 */
-  var STAGE_LABEL = { L1: 'L1 阶段 · 立足算理，简单应用', L2: 'L2 阶段 · 计算进阶，思维启蒙' }
-  ;['L1', 'L2'].forEach(function (stage) {
-    var ts = S.aoshu.topicList.filter(function (t) {
-      return t.stage === stage
+  /*
+   * 知识点目录：L1/L2 页签 + 按大纲渲染的胶囊按钮。
+   * viewStage 是纯浏览状态（看哪个页签），与当前选中的知识点无关；
+   * 未实现的知识点（OUTLINE 里有、topics 里没有）渲染为灰色不可点。
+   */
+  var viewStage = (S.aoshu.topics[settings.topic] || { stage: 'L1' }).stage
+
+  function selectTopic(id) {
+    if (id === settings.topic) return
+    settings = S.aoshu.settings.sanitize(
+      Object.assign({}, settings, { topic: id, title: '' })
+    )
+    refresh()
+  }
+
+  function renderCatalog() {
+    var wrap = $('topic-chips')
+    wrap.innerHTML = ''
+    S.aoshu.OUTLINE.filter(function (o) {
+      return o.stage === viewStage
+    }).forEach(function (o) {
+      var btn = doc.createElement('button')
+      btn.type = 'button'
+      btn.className = 'topic-chip'
+      btn.textContent = o.no + ' ' + o.name
+      if (S.aoshu.topics[o.id]) {
+        if (o.id === settings.topic) btn.classList.add('active')
+        btn.addEventListener('click', function () {
+          selectTopic(o.id)
+        })
+      } else {
+        btn.disabled = true
+        btn.title = '还没做好，敬请期待'
+      }
+      wrap.appendChild(btn)
     })
-    if (ts.length === 0) return
-    var og = doc.createElement('optgroup')
-    og.label = STAGE_LABEL[stage]
-    ts.forEach(function (t) {
-      var opt = doc.createElement('option')
-      opt.value = t.id
-      opt.textContent = t.no + ' ' + t.name
-      og.appendChild(opt)
+    Array.prototype.forEach.call(doc.querySelectorAll('.stage-tab'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-stage') === viewStage)
     })
-    els.topic.appendChild(og)
+  }
+
+  Array.prototype.forEach.call(doc.querySelectorAll('.stage-tab'), function (b) {
+    b.addEventListener('click', function () {
+      viewStage = b.getAttribute('data-stage')
+      renderCatalog()
+    })
   })
-  $('topic-group').hidden = S.aoshu.topicList.length === 1
 
   /* 变式勾选区：由当前知识点的 variants 动态渲染，checkbox 对应设置字段 */
   var variantEls = {}
@@ -66,7 +94,6 @@
   }
 
   function fillForm(s) {
-    els.topic.value = s.topic
     els.difficulty.value = s.difficulty
     els.count.value = s.count
     els.lessonpage.checked = s.lessonPage
@@ -80,7 +107,6 @@
   /* 在当前 settings 上覆盖表单值——只覆盖当前知识点的勾选框，别的知识点的变式选择保持不动 */
   function readForm() {
     var raw = Object.assign({}, settings, {
-      topic: els.topic.value,
       difficulty: els.difficulty.value,
       count: els.count.value,
       lessonPage: els.lessonpage.checked,
@@ -107,7 +133,11 @@
   function refresh() {
     S.aoshu.settings.save(settings)
     var topic = S.aoshu.topics[settings.topic]
-    if (builtTopicId !== topic.id) buildVariantList(topic) // 切换知识点时重建变式勾选区
+    if (builtTopicId !== topic.id) {
+      buildVariantList(topic) // 切换知识点时重建变式勾选区
+      viewStage = topic.stage // 并把目录页签切到该知识点所在阶段
+    }
+    renderCatalog()
     fillForm(settings)
     var result = topic.generate(settings)
     S.aoshu.render.render($('preview'), settings, result.questions)
@@ -131,19 +161,10 @@
   }
 
   Object.keys(els).forEach(function (k) {
-    if (k === 'topic') return // 知识点切换走下面的专用处理
     els[k].addEventListener('change', onFormChange)
   })
 
   buildVariantList(S.aoshu.topics[settings.topic])
-
-  /* 切换知识点：清空自定义标题（换成新知识点的自动标题），变式勾选区由 refresh 重建 */
-  els.topic.addEventListener('change', function () {
-    settings = S.aoshu.settings.sanitize(
-      Object.assign({}, settings, { topic: els.topic.value, title: '' })
-    )
-    refresh()
-  })
 
   /* 重新生成：参数不变，换一批随机题 */
   $('btn-regen').addEventListener('click', refresh)

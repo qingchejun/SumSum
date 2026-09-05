@@ -291,8 +291,57 @@
     }
   }
 
+  /*
+   * 完整课程大纲（序号、名称与博主目录逐字一致）。
+   * id 是每个知识点的固定标识：实现某个知识点时必须用这里的 id 注册，
+   * 目录胶囊按钮按此渲染，未实现的显示为灰色「即将上线」。
+   */
+  var OUTLINE = [
+    { no: '01', stage: 'L1', id: 'daxiao', name: '数的大小比较' },
+    { no: '02', stage: 'L1', id: 'coushi', name: '凑十、平十和破十' },
+    { no: '03', stage: 'L1', id: 'yiduobushao', name: '移多补少（基础篇）' },
+    { no: '04', stage: 'L1', id: 'yiduobushao2', name: '移多补少（提高篇）' },
+    { no: '05', stage: 'L1', id: 'tianfu', name: '巧填算符' },
+    { no: '06', stage: 'L1', id: 'shuzimi', name: '数字谜问题（基础篇）' },
+    { no: '07', stage: 'L1', id: 'shuzimi2', name: '数字谜问题（提高篇）' },
+    { no: '08', stage: 'L1', id: 'xulie', name: '数列找规律' },
+    { no: '09', stage: 'L1', id: 'tuxing', name: '图形找规律' },
+    { no: '10', stage: 'L1', id: 'dengliang', name: '等量代换' },
+    { no: '11', stage: 'L1', id: 'chongdie', name: '重叠问题' },
+    { no: '12', stage: 'L1', id: 'meiju', name: '枚举法初步' },
+    { no: '13', stage: 'L1', id: 'fendui', name: '分堆与枚举' },
+    { no: '14', stage: 'L1', id: 'kongping', name: '空瓶换水' },
+    { no: '15', stage: 'L1', id: 'huochai', name: '火柴棒游戏' },
+    { no: '16', stage: 'L1', id: 'jiange', name: '间隔问题' },
+    { no: '17', stage: 'L1', id: 'paidui', name: '排队问题' },
+    { no: '18', stage: 'L1', id: 'xianjing', name: '趣味陷阱题' },
+    { no: '19', stage: 'L1', id: 'fenzu', name: '合理分组问题' },
+    { no: '20', stage: 'L1', id: 'hebubian', name: '和不变与差不变' },
+    { no: '21', stage: 'L2', id: 'wenzimi', name: '加减法文字谜' },
+    { no: '22', stage: 'L2', id: 'kuohao1', name: '加减法添去括号（一）' },
+    { no: '23', stage: 'L2', id: 'kuohao2', name: '加减法添去括号（二）' },
+    { no: '24', stage: 'L2', id: 'chengfa', name: '乘法的意义与性质' },
+    { no: '25', stage: 'L2', id: 'chufa', name: '除法的三层含义' },
+    { no: '26', stage: 'L2', id: 'size', name: '四则混合运算' },
+    { no: '27', stage: 'L2', id: 'yushu1', name: '余数的应用（一）' },
+    { no: '28', stage: 'L2', id: 'yushu2', name: '余数的应用（二）' },
+    { no: '29', stage: 'L2', id: 'huajia', name: '化加为乘' },
+    { no: '30', stage: 'L2', id: 'jiou', name: '奇数与偶数' },
+    { no: '31', stage: 'L2', id: 'yibihua', name: '一笔作画问题' },
+    { no: '32', stage: 'L2', id: 'jishu', name: '图形计数初步' },
+    { no: '33', stage: 'L2', id: 'huanyuan', name: '还原问题初步' },
+    { no: '34', stage: 'L2', id: 'tongchou', name: '统筹优化初步' },
+    { no: '35', stage: 'L2', id: 'shuzhen', name: '数阵图初步' },
+    { no: '36', stage: 'L2', id: 'cuozhong', name: '错中求解问题' },
+    { no: '37', stage: 'L2', id: 'xianduan1', name: '线段图应用（一）' },
+    { no: '38', stage: 'L2', id: 'xianduan2', name: '线段图应用（二）' },
+    { no: '39', stage: 'L2', id: 'paixu', name: '排序推理' },
+    { no: '40', stage: 'L2', id: 'liebiao', name: '列表推理' }
+  ]
+
   root.SumSum = root.SumSum || {}
   root.SumSum.aoshu = root.SumSum.aoshu || {}
+  root.SumSum.aoshu.OUTLINE = OUTLINE
   root.SumSum.aoshu.DIFFICULTY = DIFFICULTY
   /* 公共工具，供各知识点文件（js/aoshu-topic-*.js）复用 */
   root.SumSum.aoshu.util = {

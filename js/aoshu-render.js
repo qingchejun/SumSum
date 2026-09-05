@@ -19,13 +19,18 @@
     return root.SumSum.render.parts
   }
 
+  /* 题干 HTML：默认转义纯文本；图形类知识点可提供 stemHTML（生成器自产的可信 HTML） */
+  function stemHTML(q) {
+    return q.stemHTML || P().esc(q.stem)
+  }
+
   /* 题目块：题号 + 题干 + 演算留白 + 底部答句挖空行 */
   function questionBlockHTML(q, idx) {
     var p = P()
     return (
       '<div class="aq">' +
       '<div class="aq-stem"><span class="aq-num">' + p.numLabel(idx) + '</span>' +
-      p.esc(q.stem) + '</div>' +
+      stemHTML(q) + '</div>' +
       '<div class="aq-work"></div>' +
       '<div class="aq-ans">' + (q.workLabel || '列式') + '：<span class="blank blank-expr"></span>　' +
       p.esc(q.ansLabel) + ' <span class="blank"></span> ' + p.esc(q.ansSuffix) +
@@ -101,7 +106,7 @@
         if (sec.example) {
           body +=
             '<div class="lesson-example">' +
-            '<div class="lesson-stem">' + p.esc(sec.example.stem) + '</div>' +
+            '<div class="lesson-stem">' + (sec.example.stemHTML || p.esc(sec.example.stem)) + '</div>' +
             stepsHTML(sec.example.solution) +
             '</div>'
         }
@@ -122,7 +127,7 @@
     return (
       '<div class="sol">' +
       '<div class="sol-stem"><span class="aq-num">' + p.numLabel(idx) + '</span>' +
-      p.esc(q.stem) + '</div>' +
+      stemHTML(q) + '</div>' +
       (q.diagram ? diagramHTML(q.diagram) : '') +
       stepsHTML(q.solution) +
       '</div>'
