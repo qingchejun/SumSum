@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>口算练习纸生成器</title>
+  <meta name="description" content="纯前端小学口算练习题生成与打印工具：加减乘除、四则运算，自定义范围，一键打印 A4 练习纸。" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✏️</text></svg>" />
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="css/sheet.css" />
+  <style id="page-style">@page { size: A4 portrait; margin: 15mm; }</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ======== 设置面板 ======== -->
+  <aside class="panel" id="panel">
+    <div class="brand">
+      <span class="brand-mark">＋−×÷</span>
+      <h1 class="brand-name">口算练习纸</h1>
+      <p class="brand-sub">设置 → 生成 → 打印，给孩子一张今天的练习</p>
+    </div>
+
+    <section class="group">
+      <h2 class="group-title">快速预设</h2>
+      <div class="preset-row" id="preset-row"></div>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">运算模式</h2>
+      <select id="f-mode" class="input">
+        <option value="add">加法</option>
+        <option value="sub">减法</option>
+        <option value="addsub">加减法混合</option>
+        <option value="mul">乘法</option>
+        <option value="div">除法</option>
+        <option value="muldiv">乘除法混合</option>
+        <option value="mixed">四则运算（2～3 步）</option>
+      </select>
+    </section>
+
+    <section class="group" data-show="add sub addsub mixed">
+      <h2 class="group-title">数值范围（加减法按结果控制）</h2>
+      <div class="pair">
+        <label class="field"><span>最小值</span>
+          <input type="number" id="f-min" class="input" min="0" max="9999" step="1" />
+        </label>
+        <label class="field"><span>最大值</span>
+          <input type="number" id="f-max" class="input" min="1" max="10000" step="1" />
+        </label>
+      </div>
+    </section>
+
+    <section class="group" data-show="mul div muldiv mixed">
+      <h2 class="group-title">乘除数范围（默认九九表 1～9）</h2>
+      <div class="pair">
+        <label class="field"><span>最小</span>
+          <input type="number" id="f-mulmin" class="input" min="1" max="999" step="1" />
+        </label>
+        <label class="field"><span>最大</span>
+          <input type="number" id="f-mulmax" class="input" min="1" max="999" step="1" />
+        </label>
+      </div>
+    </section>
+
+    <section class="group" data-show="add sub addsub">
+      <h2 class="group-title">进位 / 退位</h2>
+      <select id="f-carry" class="input">
+        <option value="random">随机（不限制）</option>
+        <option value="nocarry">不出进位 / 退位题</option>
+        <option value="carryonly">只出进位 / 退位题</option>
+      </select>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">题量与排版</h2>
+      <div class="pair">
+        <label class="field"><span>题目数量</span>
+          <input type="number" id="f-count" class="input" min="10" max="100" step="1" />
+        </label>
+        <label class="field"><span>列数</span>
+          <select id="f-columns" class="input">
+            <option value="2">2 列</option>
+            <option value="3">3 列</option>
+            <option value="4">4 列</option>
+          </select>
+        </label>
+      </div>
+      <div class="pair">
+        <!-- 四则模式不显示：多步算式只挖结果，随机挖空不适用 -->
+        <label class="field" data-show-inline="add sub addsub mul div muldiv"><span>填空位置</span>
+          <select id="f-blank" class="input">
+            <option value="end">答案在末尾</option>
+            <option value="random">随机挖空</option>
+          </select>
+        </label>
+        <label class="field"><span>纸张方向</span>
+          <select id="f-paper" class="input">
+            <option value="portrait">A4 纵向</option>
+            <option value="landscape">A4 横向</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">选项</h2>
+      <label class="check" data-show-inline="sub addsub mixed">
+        <input type="checkbox" id="f-nonneg" /><span>减法不出负数</span>
+      </label>
+      <!-- 四则模式不显示：多步算式内的除法必然整除，无法表示余数 -->
+      <label class="check" data-show-inline="div muldiv">
+        <input type="checkbox" id="f-exactdiv" /><span>除法必须整除（关闭则出「…余…」）</span>
+      </label>
+      <label class="check" data-show-inline="mixed">
+        <input type="checkbox" id="f-parens" /><span>四则运算允许括号</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="f-nodup" /><span>题目不重复</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="f-anspage" /><span>打印时附答案页</span>
+      </label>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">练习纸标题（选填）</h2>
+      <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：20以内加减法练习" />
+    </section>
+
+    <div class="actions">
+      <button type="button" id="btn-regen" class="btn btn-ghost">↻ 重新生成一批</button>
+      <button type="button" id="btn-print" class="btn btn-primary">🖨 打印练习纸</button>
+    </div>
+
+    <p class="hint">设置会自动保存，也已写入网址 —— 收藏本页链接即可固定「每日题型」。</p>
+  </aside>
+
+  <!-- ======== 练习纸预览（所见即所得） ======== -->
+  <main class="preview" id="preview-wrap">
+    <div class="notice" id="notice" hidden></div>
+    <div id="preview"></div>
+  </main>
+
+</div>
+
+<script src="js/generator.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/render.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

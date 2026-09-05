@@ -1,0 +1,190 @@
+/* ============ 练习纸排版（预览即打印效果） ============ */
+
+.sheet {
+  width: 210mm;
+  min-height: 297mm;
+  flex: none;
+  padding: 15mm;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: #000;
+  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 3px 18px rgba(70, 55, 25, 0.2);
+}
+
+body.landscape .sheet {
+  width: 297mm;
+  min-height: 210mm;
+}
+
+/* ---------- 页眉 ---------- */
+
+.sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8mm;
+  padding-bottom: 3mm;
+  margin-bottom: 6mm;
+  border-bottom: 2px solid #000;
+}
+
+.sheet-title {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+.sheet-meta {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.sheet-meta .line {
+  display: inline-block;
+  height: 1em;
+  margin: 0 1px;
+  border-bottom: 1px solid #000;
+  vertical-align: -2px;
+}
+
+.sheet-meta .w-s { width: 9mm; }
+.sheet-meta .w-m { width: 14mm; }
+.sheet-meta .w-l { width: 20mm; }
+.sheet-meta .gap { display: inline-block; width: 5mm; }
+
+/* ---------- 题目网格：先横后竖，行高 15mm 留足手写空间 ---------- */
+
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  grid-auto-rows: 15mm;
+  align-content: start;
+  column-gap: 5mm;
+}
+
+.q {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+  overflow: hidden; /* 兜底：极端参数下缩到最小字号仍放不下时，不侵入邻格 */
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.q-num {
+  flex: none;
+  min-width: 6mm; /* 51.~100. 比圆圈数字宽，用 min-width 防止挤压换行 */
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.q-expr {
+  font-size: 24px; /* ≈ 18pt，适合低年级 */
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.sheet[data-cols="4"] .q-expr {
+  font-size: 19px;
+}
+
+.q-expr .op {
+  padding: 0 0.06em;
+}
+
+/* 挖空下划线 */
+.q-expr .blank {
+  display: inline-block;
+  width: 1.8em;
+  height: 1em;
+  border-bottom: 2px solid #000;
+  vertical-align: -3px;
+}
+
+.q-expr .blank-ans {
+  width: 2.6em;
+}
+
+/* 答案页里被挖的值 */
+.q-expr .filled {
+  font-weight: 700;
+}
+
+/* ---------- 页脚页码 ---------- */
+
+.sheet-foot {
+  margin-top: auto;
+  padding-top: 3mm;
+  text-align: center;
+  font-size: 11px;
+}
+
+/* ============ 打印样式 ============ */
+
+@media print {
+  body {
+    margin: 0;
+    background: #fff !important;
+    background-image: none !important;
+  }
+
+  .panel,
+  .notice {
+    display: none !important;
+  }
+
+  .layout {
+    display: block;
+  }
+
+  .preview {
+    padding: 0;
+    overflow: visible;
+  }
+
+  #preview {
+    display: block;
+    zoom: 1 !important; /* 还原窄屏预览缩放，打印始终 1:1 */
+  }
+
+  /* 页面尺寸由 @page 控制（见 index.html 中 #page-style，随纸张方向切换）。
+     不给 .sheet 定高（定高差 1mm 就会把页脚挤到下一页），改为固定题目网格的
+     最小高度 = 每页行数 × 15mm 行高，页脚紧随其后 —— 总高度确定且小于内容区。 */
+  .sheet {
+    width: auto;
+    min-height: 0;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  /* 注意：必须连 min-height 一起覆盖 —— 屏幕规则 body.landscape .sheet
+     的优先级高于此处的 .sheet，否则打印时纸张仍被撑到 210mm 高。 */
+  body.landscape .sheet {
+    width: auto;
+    min-height: 0;
+    height: auto;
+  }
+
+  .sheet-grid {
+    min-height: 225mm; /* 纵向 15 行 × 15mm（与 render.js 的 ROWS 对应） */
+  }
+
+  body.landscape .sheet-grid {
+    min-height: 135mm; /* 横向 9 行 × 15mm */
+  }
+
+  .sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}

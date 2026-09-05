@@ -1,0 +1,289 @@
+/* ============ 屏幕 UI：作业本 / 文具风 ============ */
+
+:root {
+  --paper: #f3ecdc;        /* 米色桌面 */
+  --card: #fffdf6;         /* 面板卡片 */
+  --card-edge: #e5dbc4;
+  --ink: #33302a;          /* 正文墨色 */
+  --ink-soft: #857f6f;
+  --blue: #2d5185;         /* 墨蓝 */
+  --blue-deep: #1f3c66;
+  --red: #c8461d;          /* 朱红 */
+  --red-deep: #a83812;
+  --grid-line: rgba(45, 81, 133, 0.07);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font: 14px/1.6 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background-color: var(--paper);
+  /* 方格稿纸底纹 */
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.layout {
+  display: flex;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+/* ---------- 设置面板 ---------- */
+
+.panel {
+  position: sticky;
+  top: 0;
+  flex: none;
+  width: 336px;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 20px 22px 28px;
+  background: var(--card);
+  border-right: 1px solid var(--card-edge);
+  box-shadow: 2px 0 14px rgba(90, 70, 30, 0.08);
+}
+
+.brand {
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 2px dashed var(--card-edge);
+}
+
+.brand-mark {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--red);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  transform: rotate(-2deg);
+}
+
+.brand-name {
+  margin: 8px 0 2px;
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--blue-deep);
+}
+
+.brand-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.group {
+  margin-bottom: 16px;
+}
+
+.group-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--blue);
+}
+
+.group-title::before {
+  content: "▪ ";
+  color: var(--red);
+}
+
+.input {
+  width: 100%;
+  padding: 7px 10px;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--card-edge);
+  border-radius: 8px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(45, 81, 133, 0.12);
+}
+
+.pair {
+  display: flex;
+  gap: 10px;
+}
+
+.pair + .pair {
+  margin-top: 8px;
+}
+
+.field {
+  flex: 1;
+  display: block;
+}
+
+.field > span {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+/* ---------- 预设按钮 ---------- */
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.preset {
+  padding: 5px 11px;
+  font: 13px/1.4 inherit;
+  font-family: inherit;
+  color: var(--blue);
+  background: #fff;
+  border: 1px solid var(--blue);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+
+.preset:hover {
+  background: var(--blue);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* ---------- 操作按钮 ---------- */
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 11px 14px;
+  font: 600 15px/1.4 inherit;
+  font-family: inherit;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  color: #fff;
+  background: var(--red);
+  box-shadow: 0 3px 10px rgba(200, 70, 29, 0.35);
+}
+
+.btn-primary:hover {
+  background: var(--red-deep);
+}
+
+.btn-ghost {
+  color: var(--blue);
+  background: transparent;
+  border: 1.5px solid var(--blue);
+}
+
+.btn-ghost:hover {
+  background: rgba(45, 81, 133, 0.08);
+}
+
+.hint {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* ---------- 预览区 ---------- */
+
+.preview {
+  flex: 1;
+  min-width: 0;
+  padding: 32px 24px 60px;
+  overflow-x: auto;
+}
+
+#preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.notice {
+  max-width: 210mm;
+  margin: 0 auto 18px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #7a4a08;
+  background: #fdf3dd;
+  border: 1px solid #ecd9ae;
+  border-radius: 10px;
+}
+
+/* ---------- 移动端：面板置顶，预览横向滚动 ---------- */
+
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .panel {
+    position: static;
+    width: 100%;
+    max-height: none;
+    border-right: none;
+    border-bottom: 1px solid var(--card-edge);
+  }
+
+  .preview {
+    width: 100%;
+    padding: 20px 12px 40px;
+  }
+
+  #preview {
+    align-items: flex-start;
+  }
+}
