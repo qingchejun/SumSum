@@ -65,6 +65,18 @@
     return now.getMonth() + 1 + ' 月 ' + now.getDate() + ' 日'
   }
 
+  /* 页眉「日期 姓名 用时 得分」一栏，口算页与奥数页共用 */
+  function metaHTML() {
+    return (
+      '<div class="sheet-meta">' +
+      '<span class="meta-date">' + todayLabel() + '</span>' +
+      '<span class="gap"></span>姓名<span class="line w-l"></span>' +
+      '<span class="gap"></span>用时<span class="line w-s"></span>分' +
+      '<span class="gap"></span>得分<span class="line w-m"></span>' +
+      '</div>'
+    )
+  }
+
   function cellHTML(q, idx, showAnswer) {
     return (
       '<div class="q"><span class="q-num">' +
@@ -85,12 +97,7 @@
       '<section class="sheet" data-cols="' + opts.cols + '">' +
       '<header class="sheet-head">' +
       '<h2 class="sheet-title">' + esc(opts.title) + '</h2>' +
-      '<div class="sheet-meta">' +
-      '<span class="meta-date">' + todayLabel() + '</span>' +
-      '<span class="gap"></span>姓名<span class="line w-l"></span>' +
-      '<span class="gap"></span>用时<span class="line w-s"></span>分' +
-      '<span class="gap"></span>得分<span class="line w-m"></span>' +
-      '</div>' +
+      metaHTML() +
       '</header>' +
       '<div class="sheet-grid" style="--cols:' + opts.cols + '">' + cells + '</div>' +
       '<footer class="sheet-foot">' +
@@ -183,5 +190,10 @@
   }
 
   root.SumSum = root.SumSum || {}
-  root.SumSum.render = { render: render, refreshDates: refreshDates }
+  root.SumSum.render = {
+    render: render,
+    refreshDates: refreshDates,
+    /* 供奥数页等其他纸张类型复用的零件（纯函数，无状态） */
+    parts: { esc: esc, todayLabel: todayLabel, numLabel: numLabel, metaHTML: metaHTML }
+  }
 })(typeof window !== 'undefined' ? window : globalThis)

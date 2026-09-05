@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>奥数练习纸生成器</title>
+  <meta name="description" content="纯前端小学奥数练习题生成与打印工具：移多补少等思维题，每题附分步解析，一键打印 A4 练习纸。" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="css/sheet.css" />
+  <link rel="stylesheet" href="css/aoshu.css" />
+  <!-- 奥数页固定 A4 纵向（文字题横向排版无意义），不像口算页那样动态切换 -->
+  <style>@page { size: A4 portrait; margin: 15mm; }</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="topbar-brand">✏️ SumSum 练习纸</span>
+  <nav class="topbar-tabs">
+    <a href="index.html">口算</a>
+    <a href="aoshu.html" class="active">奥数</a>
+  </nav>
+</header>
+
+<div class="layout">
+
+  <!-- ======== 设置面板 ======== -->
+  <aside class="panel" id="panel">
+    <div class="brand">
+      <span class="brand-mark">🧠</span>
+      <h1 class="brand-name">奥数练习纸</h1>
+      <p class="brand-sub">一天两页，把一个知识点讲透</p>
+    </div>
+
+    <!-- 只有一个知识点时整组隐藏，由 aoshu-main.js 控制 -->
+    <section class="group" id="topic-group" hidden>
+      <h2 class="group-title">知识点</h2>
+      <select id="f-topic" class="input"></select>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">题型（至少选一种）</h2>
+      <div id="variant-list"></div>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">难度</h2>
+      <select id="f-difficulty" class="input">
+        <option value="L1">入门 · 20 以内</option>
+        <option value="L2">提高 · 50 以内</option>
+        <option value="L3">挑战 · 100 以内</option>
+      </select>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">题量（每页 5 题）</h2>
+      <input type="number" id="f-count" class="input" min="4" max="30" step="1" />
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">选项</h2>
+      <label class="check">
+        <input type="checkbox" id="f-lessonpage" /><span>打印时附讲解页（方法 + 例题示范）</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="f-anspage" /><span>打印时附解析页（推荐，供家长讲解）</span>
+      </label>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">练习纸标题（选填）</h2>
+      <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：移多补少练习 · 20以内" />
+    </section>
+
+    <div class="actions">
+      <button type="button" id="btn-regen" class="btn btn-ghost">↻ 重新生成一批</button>
+      <button type="button" id="btn-print" class="btn btn-primary">🖨 打印练习纸</button>
+    </div>
+
+    <p class="hint">设置会自动保存，也已写入网址 —— 收藏本页链接即可固定「每日题型」。</p>
+  </aside>
+
+  <!-- ======== 练习纸预览（所见即所得） ======== -->
+  <main class="preview" id="preview-wrap">
+    <div class="notice" id="notice" hidden></div>
+    <div id="preview"></div>
+  </main>
+
+</div>
+
+<!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
+<script src="js/render.js"></script>
+<script src="js/aoshu-topics.js"></script>
+<script src="js/aoshu-settings.js"></script>
+<script src="js/aoshu-render.js"></script>
+<script src="js/aoshu-main.js"></script>
+</body>
+</html>

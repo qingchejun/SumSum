@@ -134,6 +134,7 @@ body.landscape .sheet {
     background-image: none !important;
   }
 
+  .topbar,
   .panel,
   .notice {
     display: none !important;

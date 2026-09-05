@@ -1,0 +1,189 @@
+/* ============ 奥数练习纸排版（叠加在 sheet.css 之上） ============
+   纸张骨架（.sheet / .sheet-head / .sheet-meta / .sheet-foot）与打印规则
+   全部复用 sheet.css；本文件只定义奥数自己的两种网格：
+   题目页 .aoshu-grid（每块 45mm × 5 题/页）与解析页 .sol-grid（74.5mm × 3 块/页）。
+   块高 mm 值与 js/aoshu-render.js 的 PAGE 常量硬对应，改动需两处同步。 */
+
+/* ---------- 题目页：单列网格，每题一块 45mm ---------- */
+
+.aoshu-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: 45mm;
+  align-content: start;
+}
+
+.aq {
+  display: flex;
+  flex-direction: column;
+  padding: 3mm 0 2mm;
+  overflow: hidden; /* 兜底同 .q：极端情况不侵入邻块 */
+  break-inside: avoid;
+  page-break-inside: avoid;
+  border-bottom: 1px dashed #bbb; /* 分题虚线，孩子看题不串行 */
+}
+
+.aq:last-child {
+  border-bottom: none;
+}
+
+.aq-num {
+  font-size: 13px;
+  margin-right: 2mm;
+}
+
+.aq-stem {
+  font-size: 16px; /* 一年级可读字号 */
+  line-height: 1.8;
+}
+
+.aq-work {
+  flex: 1; /* 演算留白，自动吃掉剩余高度 */
+}
+
+.aq-ans {
+  font-size: 15px;
+}
+
+.aq-ans .blank {
+  display: inline-block;
+  width: 3em;
+  height: 1em;
+  border-bottom: 2px solid #000;
+  vertical-align: -3px;
+}
+
+.aq-ans .blank-expr {
+  width: 12em; /* 「列式：」后的长横线 */
+}
+
+/* ---------- 解析页：每题解析一块 74.5mm ---------- */
+
+.sol-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: 74.5mm;
+  align-content: start;
+}
+
+.sol {
+  padding: 3mm 0 2mm;
+  overflow: hidden;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  border-bottom: 1px dashed #bbb;
+}
+
+.sol:last-child {
+  border-bottom: none;
+}
+
+.sol-stem {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.6;
+}
+
+.sol-steps {
+  margin: 1.5mm 0 0;
+  padding-left: 1.2em;
+  font-size: 13.5px;
+  line-height: 1.75;
+}
+
+.sol-steps li {
+  list-style: none;
+}
+
+.sol-steps .step-tag {
+  font-weight: 700;
+  color: #000;
+}
+
+/* 圆点对比图 */
+.sol-diagram {
+  margin: 1.5mm 0 0.5mm;
+  font-size: 13px;
+}
+
+.sol-diagram .dot-row {
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.sol-diagram .dot-label {
+  display: inline-block;
+  min-width: 3em;
+  color: #444;
+}
+
+.sol-diagram .dots {
+  letter-spacing: 2px;
+}
+
+.sol-diagram .dot-note {
+  font-size: 12px;
+  color: #666;
+}
+
+.sol-answer {
+  margin-top: 1mm;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ---------- 知识点讲解页：自由排版（非网格），内容手工编写保证一页放得下 ---------- */
+
+.lesson-sec {
+  margin-bottom: 6mm;
+}
+
+.lesson-h {
+  margin: 0 0 2mm;
+  padding-left: 2.5mm;
+  font-size: 16px;
+  border-left: 3.5px solid #000;
+}
+
+.lesson-p {
+  margin: 0 0 1.5mm;
+  font-size: 14.5px;
+  line-height: 1.85;
+}
+
+.lesson-example {
+  padding: 2.5mm 3.5mm;
+  border: 1px solid #999;
+  border-radius: 2mm;
+}
+
+.lesson-stem {
+  margin-bottom: 1mm;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.lesson-chant {
+  padding: 2mm 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+/* ---------- 打印：与 sheet.css 同套路，用最小高度锁定网格区 ---------- */
+
+@media print {
+  .aoshu-grid {
+    min-height: 225mm; /* 5 题 × 45mm（与 aoshu-render.js 的 PAGE.question 对应） */
+  }
+
+  .sol-grid {
+    min-height: 223.5mm; /* 3 块 × 74.5mm（与 PAGE.solution 对应） */
+  }
+
+  .lesson-flow {
+    min-height: 225mm; /* 撑满内容区，把页脚推到纸张底部 */
+  }
+}
