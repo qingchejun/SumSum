@@ -86,8 +86,8 @@
       '<header class="sheet-head">' +
       '<h2 class="sheet-title">' + esc(opts.title) + '</h2>' +
       '<div class="sheet-meta">' +
-      '姓名<span class="line w-l"></span>' +
-      '<span class="gap"></span>日期 <span class="meta-date">' + todayLabel() + '</span>' +
+      '<span class="meta-date">' + todayLabel() + '</span>' +
+      '<span class="gap"></span>姓名<span class="line w-l"></span>' +
       '<span class="gap"></span>用时<span class="line w-s"></span>分' +
       '<span class="gap"></span>得分<span class="line w-m"></span>' +
       '</div>' +
