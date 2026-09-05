@@ -7,17 +7,28 @@
 
   var KEY = 'sumsum:aoshu:v1'
 
-  var DEFAULTS = Object.freeze({
+  /* 基础字段；各知识点的变式勾选项（v.setting）由注册表动态并入 */
+  var BASE_DEFAULTS = Object.freeze({
     topic: 'yiduobushao',
     difficulty: 'L1', // L1/L2/L3 → 20/50/100 以内
-    vMove: true,
-    vOrigDiff: true,
-    vAfterDiff: false, // 稍难，默认关
     count: 5, // 每页 5 题，默认正好 1 页
     lessonPage: true, // 讲解页：新知识点先看讲解再做题，默认开
     answerPage: true, // 解析是本板块核心，默认开
     title: ''
   })
+
+  /* 汇总所有知识点的变式开关默认值（变式声明 def: false 则默认关） */
+  function buildDefaults() {
+    var d = Object.assign({}, BASE_DEFAULTS)
+    root.SumSum.aoshu.topicList.forEach(function (t) {
+      t.variants.forEach(function (v) {
+        d[v.setting] = v.def !== false
+      })
+    })
+    return Object.freeze(d)
+  }
+
+  var DEFAULTS = buildDefaults()
 
   var DIFFICULTIES = ['L1', 'L2', 'L3']
 
@@ -45,16 +56,20 @@
     var out = {
       topic: topics[s.topic] ? s.topic : DEFAULTS.topic,
       difficulty: oneOf(s.difficulty, DIFFICULTIES, DEFAULTS.difficulty),
-      vMove: toBool(s.vMove, DEFAULTS.vMove),
-      vOrigDiff: toBool(s.vOrigDiff, DEFAULTS.vOrigDiff),
-      vAfterDiff: toBool(s.vAfterDiff, DEFAULTS.vAfterDiff),
       count: clampInt(s.count, 4, 30, DEFAULTS.count),
       lessonPage: toBool(s.lessonPage, DEFAULTS.lessonPage),
       answerPage: toBool(s.answerPage, DEFAULTS.answerPage),
       title: String(s.title == null ? '' : s.title).slice(0, 30)
     }
-    /* 变式全取消时无题可出，强制回落到第一个变式 */
-    if (!out.vMove && !out.vOrigDiff && !out.vAfterDiff) out.vMove = true
+    /* 变式勾选逐知识点清洗；某知识点全取消时无题可出，强制回落到它的第一个变式 */
+    root.SumSum.aoshu.topicList.forEach(function (t) {
+      var anyOn = false
+      t.variants.forEach(function (v) {
+        out[v.setting] = toBool(s[v.setting], DEFAULTS[v.setting])
+        if (out[v.setting]) anyOn = true
+      })
+      if (!anyOn) out[t.variants[0].setting] = true
+    })
     return out
   }
 

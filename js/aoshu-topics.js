@@ -1,9 +1,11 @@
 /**
- * 奥数知识点注册表 + 各知识点的出题生成器与解析模板（无 DOM 依赖，可在 node 中直接测试）。
+ * 奥数知识点注册表 + 公共工具 + 首个知识点「03 移多补少（基础篇）」
+ * （无 DOM 依赖，可在 node 中直接测试）。
  *
- * 本文件目前只有「移多补少（基础篇）」。后续新增知识点时：
- * 新建 js/aoshu-topic-<id>.js，自行往 SumSum.aoshu.topics / topicList 注册，
- * 并在 aoshu.html 里加一个 script 标签即可，无需改动本文件之外的框架代码。
+ * 新增知识点时：新建 js/aoshu-topic-<id>.js（在本文件之后、aoshu-settings.js 之前加载），
+ * 用 SumSum.aoshu.util 里的工具写生成器，往 SumSum.aoshu.topics / topicList 注册即可。
+ * 知识点对象：{ id, no(大纲序号,如'03'), stage('L1'|'L2'), name(与大纲一致),
+ *              lesson(讲解页内容), variants: [{id, setting, label, def?, gen}], generate, titleFor }
  *
  * 奥数题对象（文字应用题，与口算的 tokens 模型不同）：
  *  - topic:     知识点 id
@@ -14,6 +16,7 @@
  *  - ansLabel:  答句前缀（如「答：小明给小红」），后接挖空
  *  - ansSuffix: 答句后缀（如「颗糖，两人就一样多。」）
  *  - solution:  分步解析 [{ tag: '想一想', text: '…' }, ...]
+ *  - diagram:   可选圆点图 { rows: [{label, groups: [{type:'solid'|'hollow', n}]}], note }
  *  - key:       去重键 = 变式 + 参与数字（人名物品不参与：数字相同即视为同一道题）
  */
 (function (root) {
@@ -37,6 +40,16 @@
 
   var NAMES = ['小明', '小红', '小华', '小丽', '乐乐', '天天', '果果', '朵朵', '哥哥', '妹妹']
 
+  /* 人名 → 代词（题干里「他/她」要跟人名性别一致） */
+  var PRONOUN = {
+    小明: '他', 小红: '她', 小华: '他', 小丽: '她', 乐乐: '他',
+    天天: '他', 果果: '她', 朵朵: '她', 哥哥: '他', 妹妹: '她'
+  }
+
+  function pron(name) {
+    return PRONOUN[name] || '他'
+  }
+
   var ITEMS = [
     { n: '糖', u: '颗' },
     { n: '苹果', u: '个' },
@@ -57,6 +70,47 @@
 
   function diff(s) {
     return DIFFICULTY[s.difficulty] || DIFFICULTY.L1
+  }
+
+  /* 难度档的文字标签，供不适合用「N 以内」描述的知识点拼标题 */
+  var DIFF_LABEL = { L1: '入门', L2: '提高', L3: '挑战' }
+
+  /*
+   * 通用生成循环：按设置过滤勾选的变式 → 拒绝采样 + key 去重。
+   * 所有知识点的 generate 都是它的薄封装。
+   */
+  function generateFrom(variants, s) {
+    var gens = variants
+      .filter(function (v) {
+        return s[v.setting]
+      })
+      .map(function (v) {
+        return v.gen
+      })
+    if (gens.length === 0) gens = [variants[0].gen] // sanitize 已兜底，这里再防御一层
+    var seen = new Set()
+    var questions = []
+    var maxAttempts = s.count * 300
+
+    for (var i = 0; i < maxAttempts && questions.length < s.count; i++) {
+      var q = pick(gens)(s)
+      if (!q) continue
+      if (seen.has(q.key)) continue
+      seen.add(q.key)
+      questions.push(q)
+    }
+    return { questions: questions, shortfall: s.count - questions.length }
+  }
+
+  /* 移多补少的圆点对比图：●是共同的部分，○是多出来的部分 */
+  function moveDiagram(A, B, b, gap, m, u) {
+    return {
+      rows: [
+        { label: A, groups: [{ type: 'solid', n: b }, { type: 'hollow', n: gap }] },
+        { label: B, groups: [{ type: 'solid', n: b }] }
+      ],
+      note: '○ 是多出来的 ' + gap + ' ' + u + '，移走一半（' + m + ' ' + u + '）给' + B + '，两人就一样多'
+    }
   }
 
   /*
@@ -91,7 +145,7 @@
       ansLabel: '答：' + A + '给' + B,
       ansSuffix: u + it.n + '，两人就一样多。',
       /* 解析页的圆点对比图（一年级看图最直观）；数字大了画不下，只在 ≤20 时给 */
-      diagram: a <= 20 ? { A: A, B: B, b: b, gap: gap, m: m, u: u } : null,
+      diagram: a <= 20 ? moveDiagram(A, B, b, gap, m, u) : null,
       solution: [
         { tag: '想一想', text: '要让两人一样多，就要把' + A + '「多出来的部分」分一半给' + B + '。' },
         { tag: '第 1 步', text: '先算多多少：' + a + ' − ' + b + ' = ' + gap + '（' + u + '），' + A + '比' + B + '多 ' + gap + ' ' + u + it.n + '。' },
@@ -196,7 +250,7 @@
         paras: [
           '关键在「差的一半」：每移过去 1 个，多的人少 1 个、少的人同时多 1 个，差距一下子缩小 2 个。所以只要先算出两人相差多少，再把差分成两半，移走一半，正好补平。'
         ],
-        diagram: { A: '小明', B: '小红', b: 6, gap: 4, m: 2, u: '颗' }
+        diagram: moveDiagram('小明', '小红', 6, 4, 2, '颗')
       },
       {
         heading: '例题示范',
@@ -220,48 +274,38 @@
 
   var YIDUOBUSHAO = {
     id: 'yiduobushao',
-    name: '移多补少（基础）',
+    no: '03',
+    stage: 'L1',
+    name: '移多补少（基础篇）',
     lesson: YIDUOBUSHAO_LESSON,
     variants: [
       { id: 'move', setting: 'vMove', label: '移几个才一样多', gen: genMove },
       { id: 'origDiff', setting: 'vOrigDiff', label: '移 n 个后一样多，求原差', gen: genOrigDiff },
-      { id: 'afterDiff', setting: 'vAfterDiff', label: '移了几个后，还多几个', gen: genAfterDiff }
+      { id: 'afterDiff', setting: 'vAfterDiff', label: '移了几个后，还多几个', def: false, gen: genAfterDiff }
     ],
-    generate: generate,
-    titleFor: titleFor
-  }
-
-  /* 主入口：按设置生成一批题（拒绝采样 + key 去重，与口算 generator 同一套路） */
-  function generate(s) {
-    var gens = YIDUOBUSHAO.variants
-      .filter(function (v) {
-        return s[v.setting]
-      })
-      .map(function (v) {
-        return v.gen
-      })
-    if (gens.length === 0) gens = [genMove] // sanitize 已兜底，这里再防御一层
-    var seen = new Set()
-    var questions = []
-    var maxAttempts = s.count * 300
-
-    for (var i = 0; i < maxAttempts && questions.length < s.count; i++) {
-      var q = pick(gens)(s)
-      if (!q) continue
-      if (seen.has(q.key)) continue
-      seen.add(q.key)
-      questions.push(q)
+    generate: function (s) {
+      return generateFrom(YIDUOBUSHAO.variants, s)
+    },
+    titleFor: function (s) {
+      return '移多补少练习 · ' + diff(s).numMax + '以内'
     }
-    return { questions: questions, shortfall: s.count - questions.length }
-  }
-
-  function titleFor(s) {
-    return '移多补少练习 · ' + diff(s).numMax + '以内'
   }
 
   root.SumSum = root.SumSum || {}
   root.SumSum.aoshu = root.SumSum.aoshu || {}
   root.SumSum.aoshu.DIFFICULTY = DIFFICULTY
+  /* 公共工具，供各知识点文件（js/aoshu-topic-*.js）复用 */
+  root.SumSum.aoshu.util = {
+    randInt: randInt,
+    pick: pick,
+    pickTwoNames: pickTwoNames,
+    pron: pron,
+    NAMES: NAMES,
+    ITEMS: ITEMS,
+    diff: diff,
+    DIFF_LABEL: DIFF_LABEL,
+    generateFrom: generateFrom
+  }
   root.SumSum.aoshu.topics = { yiduobushao: YIDUOBUSHAO }
   root.SumSum.aoshu.topicList = [YIDUOBUSHAO]
 })(typeof window !== 'undefined' ? window : globalThis)

@@ -23,18 +23,30 @@
 
   var settings = S.aoshu.settings.load()
 
-  /* 知识点下拉：只有一个知识点时整组隐藏（后续注册第二个知识点会自动出现） */
-  S.aoshu.topicList.forEach(function (t) {
-    var opt = doc.createElement('option')
-    opt.value = t.id
-    opt.textContent = t.name
-    els.topic.appendChild(opt)
+  /* 知识点下拉：按大纲阶段分组、显示大纲序号；只有一个知识点时整组隐藏 */
+  var STAGE_LABEL = { L1: 'L1 阶段 · 立足算理，简单应用', L2: 'L2 阶段 · 计算进阶，思维启蒙' }
+  ;['L1', 'L2'].forEach(function (stage) {
+    var ts = S.aoshu.topicList.filter(function (t) {
+      return t.stage === stage
+    })
+    if (ts.length === 0) return
+    var og = doc.createElement('optgroup')
+    og.label = STAGE_LABEL[stage]
+    ts.forEach(function (t) {
+      var opt = doc.createElement('option')
+      opt.value = t.id
+      opt.textContent = t.no + ' ' + t.name
+      og.appendChild(opt)
+    })
+    els.topic.appendChild(og)
   })
   $('topic-group').hidden = S.aoshu.topicList.length === 1
 
   /* 变式勾选区：由当前知识点的 variants 动态渲染，checkbox 对应设置字段 */
   var variantEls = {}
+  var builtTopicId = null
   function buildVariantList(topic) {
+    builtTopicId = topic.id
     var wrap = $('variant-list')
     wrap.innerHTML = ''
     variantEls = {}
@@ -65,15 +77,16 @@
     })
   }
 
+  /* 在当前 settings 上覆盖表单值——只覆盖当前知识点的勾选框，别的知识点的变式选择保持不动 */
   function readForm() {
-    var raw = {
+    var raw = Object.assign({}, settings, {
       topic: els.topic.value,
       difficulty: els.difficulty.value,
       count: els.count.value,
       lessonPage: els.lessonpage.checked,
       answerPage: els.anspage.checked,
       title: els.title.value.trim()
-    }
+    })
     Object.keys(variantEls).forEach(function (k) {
       raw[k] = variantEls[k].checked
     })
@@ -93,9 +106,9 @@
   /* 主流程：保存设置 → 同步表单 → 生成题目 → 渲染练习纸 */
   function refresh() {
     S.aoshu.settings.save(settings)
-    fillForm(settings)
-
     var topic = S.aoshu.topics[settings.topic]
+    if (builtTopicId !== topic.id) buildVariantList(topic) // 切换知识点时重建变式勾选区
+    fillForm(settings)
     var result = topic.generate(settings)
     S.aoshu.render.render($('preview'), settings, result.questions)
     fitPreview()
@@ -118,10 +131,19 @@
   }
 
   Object.keys(els).forEach(function (k) {
+    if (k === 'topic') return // 知识点切换走下面的专用处理
     els[k].addEventListener('change', onFormChange)
   })
 
   buildVariantList(S.aoshu.topics[settings.topic])
+
+  /* 切换知识点：清空自定义标题（换成新知识点的自动标题），变式勾选区由 refresh 重建 */
+  els.topic.addEventListener('change', function () {
+    settings = S.aoshu.settings.sanitize(
+      Object.assign({}, settings, { topic: els.topic.value, title: '' })
+    )
+    refresh()
+  })
 
   /* 重新生成：参数不变，换一批随机题 */
   $('btn-regen').addEventListener('click', refresh)

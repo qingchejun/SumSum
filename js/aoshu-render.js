@@ -27,26 +27,36 @@
       '<div class="aq-stem"><span class="aq-num">' + p.numLabel(idx) + '</span>' +
       p.esc(q.stem) + '</div>' +
       '<div class="aq-work"></div>' +
-      '<div class="aq-ans">列式：<span class="blank blank-expr"></span>　' +
+      '<div class="aq-ans">' + (q.workLabel || '列式') + '：<span class="blank blank-expr"></span>　' +
       p.esc(q.ansLabel) + ' <span class="blank"></span> ' + p.esc(q.ansSuffix) +
       '</div>' +
       '</div>'
     )
   }
 
-  /* 圆点对比图：两行圆点，实心是共同的部分，空心是多出来的部分 */
+  /*
+   * 通用圆点图：{ rows: [{label, groups: [{type:'solid'|'hollow', n}]}], note }
+   * 实心 ●、空心 ○，各知识点自行决定圆点的含义并写进 note。
+   */
   function diagramHTML(d) {
     var p = P()
-    var base = '●'.repeat(d.b)
+    var rows = d.rows
+      .map(function (row) {
+        var dots = row.groups
+          .map(function (g) {
+            if (!g.n) return ''
+            return '<span class="dots">' + (g.type === 'solid' ? '●' : '○').repeat(g.n) + '</span>'
+          })
+          .join('')
+        return (
+          '<div class="dot-row"><span class="dot-label">' + p.esc(row.label) + '</span>' +
+          dots + '</div>'
+        )
+      })
+      .join('')
     return (
-      '<div class="sol-diagram">' +
-      '<div class="dot-row"><span class="dot-label">' + p.esc(d.A) + '</span>' +
-      '<span class="dots">' + base + '</span>' +
-      '<span class="dots dots-extra">' + '○'.repeat(d.gap) + '</span></div>' +
-      '<div class="dot-row"><span class="dot-label">' + p.esc(d.B) + '</span>' +
-      '<span class="dots">' + base + '</span></div>' +
-      '<div class="dot-note">○ 是多出来的 ' + d.gap + ' ' + d.u +
-      '，移走一半（' + d.m + ' ' + d.u + '）给' + p.esc(d.B) + '，两人就一样多</div>' +
+      '<div class="sol-diagram">' + rows +
+      '<div class="dot-note">' + p.esc(d.note) + '</div>' +
       '</div>'
     )
   }
