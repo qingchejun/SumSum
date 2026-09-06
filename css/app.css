@@ -265,6 +265,28 @@ body {
   font-weight: 600;
 }
 
+/* 已学的知识点：绿框 + ✓ */
+.topic-chip.done {
+  color: #2e7d43;
+  border-color: #7cbb8f;
+  background: #f2faf4;
+}
+
+.topic-chip.done::after {
+  content: ' ✓';
+  font-weight: 700;
+}
+
+.topic-chip.done.active {
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.learned-toggle {
+  margin-top: 8px;
+}
+
 .topic-chip:disabled {
   color: #b8b09c;
   background: transparent;

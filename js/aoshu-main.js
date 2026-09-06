@@ -23,6 +23,31 @@
   var settings = S.aoshu.settings.load()
 
   /*
+   * 「已学」标记：与设置分开存（不进 URL），value 是知识点 id 数组。
+   * 用户可能跳着学，目录胶囊上打 ✓、页签上显示进度，方便看全局。
+   */
+  var LEARNED_KEY = 'sumsum:aoshu:learned:v1'
+
+  function loadLearned() {
+    try {
+      var arr = JSON.parse(root.localStorage.getItem(LEARNED_KEY))
+      return new Set(Array.isArray(arr) ? arr : [])
+    } catch (e) {
+      return new Set()
+    }
+  }
+
+  function saveLearned(set) {
+    try {
+      root.localStorage.setItem(LEARNED_KEY, JSON.stringify(Array.from(set)))
+    } catch (e) {
+      /* 隐私模式下写入失败可忽略 */
+    }
+  }
+
+  var learned = loadLearned()
+
+  /*
    * 知识点目录：L1/L2 页签 + 按大纲渲染的胶囊按钮。
    * viewStage 是纯浏览状态（看哪个页签），与当前选中的知识点无关；
    * 未实现的知识点（OUTLINE 里有、topics 里没有）渲染为灰色不可点。
@@ -47,6 +72,7 @@
       btn.type = 'button'
       btn.className = 'topic-chip'
       btn.textContent = o.no + ' ' + o.name
+      if (learned.has(o.id)) btn.classList.add('done') // CSS 会补上 ✓
       if (S.aoshu.topics[o.id]) {
         if (o.id === settings.topic) btn.classList.add('active')
         btn.addEventListener('click', function () {
@@ -58,10 +84,29 @@
       }
       wrap.appendChild(btn)
     })
+    /* 页签高亮 + 已学进度（如「L1 · 立足算理 5/20」） */
+    var TAB_LABEL = { L1: 'L1 · 立足算理', L2: 'L2 · 思维启蒙' }
     Array.prototype.forEach.call(doc.querySelectorAll('.stage-tab'), function (b) {
-      b.classList.toggle('active', b.getAttribute('data-stage') === viewStage)
+      var stage = b.getAttribute('data-stage')
+      var all = S.aoshu.OUTLINE.filter(function (o) {
+        return o.stage === stage
+      })
+      var done = all.filter(function (o) {
+        return learned.has(o.id)
+      }).length
+      b.textContent = TAB_LABEL[stage] + (done > 0 ? ' ' + done + '/' + all.length : '')
+      b.classList.toggle('active', stage === viewStage)
     })
+    $('f-learned').checked = learned.has(settings.topic)
   }
+
+  /* 勾选「已学」：只改标记，不重新生成题目 */
+  $('f-learned').addEventListener('change', function () {
+    if ($('f-learned').checked) learned.add(settings.topic)
+    else learned.delete(settings.topic)
+    saveLearned(learned)
+    renderCatalog()
+  })
 
   Array.prototype.forEach.call(doc.querySelectorAll('.stage-tab'), function (b) {
     b.addEventListener('click', function () {
