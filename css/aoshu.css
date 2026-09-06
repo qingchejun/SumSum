@@ -126,6 +126,41 @@
   color: #666;
 }
 
+/* 线段图（条形示意图）：知识点生成器用 diagramHTML 输出，宽度用内联 style 按比例给 mm */
+.seg-diagram {
+  margin: 1.5mm 0 0.5mm;
+  font-size: 12px;
+}
+
+.seg-diagram .seg-row {
+  display: flex;
+  align-items: center;
+  line-height: 1.9;
+}
+
+.seg-diagram .seg-label {
+  flex: none;
+  width: 3.5em;
+  color: #444;
+}
+
+.seg-diagram .seg {
+  display: inline-block;
+  height: 4.5mm;
+  border: 1px solid #000;
+  box-sizing: border-box;
+  margin-right: -1px; /* 相邻段边框重合成一条线 */
+  text-align: center;
+  font-size: 11px;
+  line-height: 4mm;
+  background: #fff;
+}
+
+.seg-diagram .seg-note {
+  font-size: 12px;
+  color: #666;
+}
+
 .sol-answer {
   margin-top: 1mm;
   font-size: 14px;

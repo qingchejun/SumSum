@@ -102,6 +102,7 @@
             })
             .join('')
         }
+        if (sec.diagramHTML) body += sec.diagramHTML
         if (sec.diagram) body += diagramHTML(sec.diagram)
         if (sec.example) {
           body +=
@@ -128,7 +129,7 @@
       '<div class="sol">' +
       '<div class="sol-stem"><span class="aq-num">' + p.numLabel(idx) + '</span>' +
       stemHTML(q) + '</div>' +
-      (q.diagram ? diagramHTML(q.diagram) : '') +
+      (q.diagramHTML ? q.diagramHTML : q.diagram ? diagramHTML(q.diagram) : '') +
       stepsHTML(q.solution) +
       '</div>'
     )
