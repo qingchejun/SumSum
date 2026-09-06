@@ -37,6 +37,20 @@
   line-height: 1.8;
 }
 
+/* 题干里的图形（SVG）限高，防止把底部答句行挤出 45mm 题块 */
+.aq-stem svg {
+  display: block;
+  max-height: 18mm;
+  width: auto;
+  margin: 0.5mm 0 0;
+}
+
+.sol-stem svg {
+  display: block;
+  max-height: 13mm;
+  width: auto;
+}
+
 .aq-work {
   flex: 1; /* 演算留白，自动吃掉剩余高度 */
 }
