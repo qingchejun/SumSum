@@ -56,7 +56,7 @@
     var out = {
       topic: topics[s.topic] ? s.topic : DEFAULTS.topic,
       difficulty: oneOf(s.difficulty, DIFFICULTIES, DEFAULTS.difficulty),
-      count: clampInt(s.count, 4, 30, DEFAULTS.count),
+      count: clampInt(s.count, 2, 30, DEFAULTS.count),
       lessonPage: toBool(s.lessonPage, DEFAULTS.lessonPage),
       answerPage: toBool(s.answerPage, DEFAULTS.answerPage),
       title: String(s.title == null ? '' : s.title).slice(0, 30)
