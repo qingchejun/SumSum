@@ -47,9 +47,10 @@ body {
   z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start; /* 切换标签靠左，方便点击 */
+  gap: 14px;
   height: var(--topbar-h);
-  padding: 0 20px;
+  padding: 0 14px;
   background: var(--topbar-bg);
   color: var(--paper);
 }
@@ -242,7 +243,10 @@ body {
 }
 
 .topic-chip {
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 4px;
   font: 12px/1.5 inherit;
   font-family: inherit;
   color: var(--ink);
@@ -265,29 +269,58 @@ body {
   font-weight: 600;
 }
 
-/* 已学的知识点：绿框 + ✓ */
+/* 清单式「已学」圆点：空心 ○ 未学，点一下变绿 ✓；点名称才是选中知识点 */
+.chip-dot {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid #c2baa6;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 12px;
+  text-align: center;
+  color: transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.topic-chip:hover .chip-dot {
+  border-color: #2e7d43;
+}
+
+/* 已学：胶囊转绿、圆点实心绿底白 ✓ */
 .topic-chip.done {
   color: #2e7d43;
   border-color: #7cbb8f;
   background: #f2faf4;
 }
 
-.topic-chip.done::after {
-  content: ' ✓';
-  font-weight: 700;
+.topic-chip.done .chip-dot {
+  border-color: #2e7d43;
+  background: #2e7d43;
+  color: #fff;
 }
 
+/* 选中且已学：红底 active 下圆点仍是绿底 ✓，状态不被盖掉 */
 .topic-chip.done.active {
   color: #fff;
   background: var(--red);
   border-color: var(--red);
 }
 
-.learned-toggle {
-  margin-top: 8px;
+.topic-chip.done.active .chip-dot {
+  border-color: #fff;
+}
+
+.catalog-hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--ink-soft);
 }
 
 .topic-chip:disabled {
+  padding-left: 10px; /* 无圆点，左内边距补回来 */
   color: #b8b09c;
   background: transparent;
   border-style: dashed;

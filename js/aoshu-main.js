@@ -24,7 +24,8 @@
 
   /*
    * 「已学」标记：与设置分开存（不进 URL），value 是知识点 id 数组。
-   * 用户可能跳着学，目录胶囊上打 ✓、页签上显示进度，方便看全局。
+   * 用户可能跳着学，交互是清单式：每个胶囊自带圆点，点圆点直接切换
+   * 已学状态（不用先切换过去），点名称才是选中知识点；页签上显示进度。
    */
   var LEARNED_KEY = 'sumsum:aoshu:learned:v1'
 
@@ -62,6 +63,13 @@
     refresh()
   }
 
+  function toggleLearned(id) {
+    if (learned.has(id)) learned.delete(id)
+    else learned.add(id)
+    saveLearned(learned)
+    renderCatalog() // 只刷目录，不重新生成题目
+  }
+
   function renderCatalog() {
     var wrap = $('topic-chips')
     wrap.innerHTML = ''
@@ -71,14 +79,23 @@
       var btn = doc.createElement('button')
       btn.type = 'button'
       btn.className = 'topic-chip'
-      btn.textContent = o.no + ' ' + o.name
-      if (learned.has(o.id)) btn.classList.add('done') // CSS 会补上 ✓
+      if (learned.has(o.id)) btn.classList.add('done')
       if (S.aoshu.topics[o.id]) {
+        var dot = doc.createElement('span')
+        dot.className = 'chip-dot'
+        dot.textContent = learned.has(o.id) ? '✓' : ''
+        dot.title = learned.has(o.id) ? '取消「已学」标记' : '标为已学'
+        btn.appendChild(dot)
+        var name = doc.createElement('span')
+        name.textContent = o.no + ' ' + o.name
+        btn.appendChild(name)
         if (o.id === settings.topic) btn.classList.add('active')
-        btn.addEventListener('click', function () {
-          selectTopic(o.id)
+        btn.addEventListener('click', function (ev) {
+          if (ev.target === dot) toggleLearned(o.id) // 点圆点：只标已学
+          else selectTopic(o.id) // 点名称：切换知识点
         })
       } else {
+        btn.textContent = o.no + ' ' + o.name
         btn.disabled = true
         btn.title = '还没做好，敬请期待'
       }
@@ -97,16 +114,7 @@
       b.textContent = TAB_LABEL[stage] + (done > 0 ? ' ' + done + '/' + all.length : '')
       b.classList.toggle('active', stage === viewStage)
     })
-    $('f-learned').checked = learned.has(settings.topic)
   }
-
-  /* 勾选「已学」：只改标记，不重新生成题目 */
-  $('f-learned').addEventListener('change', function () {
-    if ($('f-learned').checked) learned.add(settings.topic)
-    else learned.delete(settings.topic)
-    saveLearned(learned)
-    renderCatalog()
-  })
 
   Array.prototype.forEach.call(doc.querySelectorAll('.stage-tab'), function (b) {
     b.addEventListener('click', function () {
