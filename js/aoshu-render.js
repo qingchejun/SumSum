@@ -4,15 +4,19 @@
  * 与口算 render.js 同一思路：JS 显式分页，每页自带页眉页脚，题目绝不跨页截断。
  * 纸张骨架（.sheet / .sheet-head / .sheet-foot）与口算共用类名和 CSS，
  * 页眉「日期 姓名 用时 得分」等零件取自 SumSum.render.parts。
- * 奥数页固定 A4 纵向，单列布局：题目页每页 6 题，解析页每页 4 块。
+ * 奥数页固定 A4 纵向，单列布局；每页块数不固定：先用隐藏探针实测每块
+ * 内容高度，加演算留白后贪心装页——短题多排、带图的长题少排，互不挤压。
  */
 (function (root) {
   'use strict'
 
-  /* 每页块数与块高（mm）——与 css/aoshu.css 打印段的 grid-auto-rows / min-height 硬对应 */
-  var PAGE = {
-    question: { perPage: 5 }, // 5 × 45mm = 225mm
-    solution: { perPage: 3 } // 3 × 74.5mm = 223.5mm（留出圆点图示的空间）
+  /* 动态分页参数（mm）。capacity 与 css/aoshu.css 打印段的 min-height 硬对应 */
+  var MM = {
+    capacity: 225, // 每页内容区高度
+    workPad: 10, // 每题在内容之外追加的演算留白
+    minQ: 25, // 题块最小高度：再短的题也留得下一行竖式
+    maxQ: 62, // 摊分页面剩余空间时单题的高度上限，防止两题撑满整页
+    solPad: 3 // 解析块下方的呼吸空间
   }
 
   function P() {
@@ -24,11 +28,16 @@
     return q.stemHTML || P().esc(q.stem)
   }
 
+  /* 内联高度：装页后块高由 JS 定死（mm），演算留白 flex 吃掉题干外的剩余空间 */
+  function heightStyle(mm) {
+    return mm ? ' style="height:' + mm.toFixed(1) + 'mm"' : ''
+  }
+
   /* 题目块：题号 + 题干 + 演算留白 + 底部答句挖空行 */
-  function questionBlockHTML(q, idx) {
+  function questionBlockHTML(q, idx, mm) {
     var p = P()
     return (
-      '<div class="aq">' +
+      '<div class="aq"' + heightStyle(mm) + '>' +
       '<div class="aq-stem"><span class="aq-num">' + p.numLabel(idx) + '</span>' +
       stemHTML(q) + '</div>' +
       '<div class="aq-work"></div>' +
@@ -123,10 +132,10 @@
   }
 
   /* 解析块：题干重印（小号灰字）+ 圆点图示（若有）+ 分步骤讲解 + 加粗答句 */
-  function solutionBlockHTML(q, idx) {
+  function solutionBlockHTML(q, idx, mm) {
     var p = P()
     return (
-      '<div class="sol">' +
+      '<div class="sol"' + heightStyle(mm) + '>' +
       '<div class="sol-stem"><span class="aq-num">' + p.numLabel(idx) + '</span>' +
       stemHTML(q) + '</div>' +
       (q.diagramHTML ? q.diagramHTML : q.diagram ? diagramHTML(q.diagram) : '') +
@@ -151,10 +160,57 @@
     )
   }
 
-  function paginate(list, perPage) {
+  /*
+   * 探针测高：把所有块放进一张隐藏的 .sheet 里，按纸张真实宽度排版后
+   * 量出每块自然高度。同一探针里放一个 100mm 标尺换算 px → mm，
+   * 这样屏幕缩放（zoom）等因素会在换算里自行抵消。
+   */
+  function measureMM(container, gridClass, blocksHTML) {
+    var probe = root.document.createElement('section')
+    probe.className = 'sheet'
+    probe.style.position = 'absolute'
+    probe.style.visibility = 'hidden'
+    probe.style.left = '-9999px'
+    probe.innerHTML =
+      '<div class="' + gridClass + '">' + blocksHTML + '</div>' +
+      '<div style="height:100mm"></div>'
+    container.appendChild(probe)
+    var pxPerMm = probe.lastElementChild.offsetHeight / 100
+    var heights = Array.prototype.map.call(
+      probe.querySelectorAll('.aq, .sol'),
+      function (b) {
+        return b.offsetHeight / pxPerMm
+      }
+    )
+    container.removeChild(probe)
+    return heights
+  }
+
+  /*
+   * 装页：每块高度 = 自然高度 + 留白（不低于 minH），贪心装满 capacity 换页；
+   * stretch 时把页内剩余高度平摊给各块（单块不超过 maxH），让整页舒展。
+   * 返回 [{ idx: [题目下标], slots: [块高 mm] }]。
+   */
+  function packPages(heights, opts) {
     var pages = []
-    for (var i = 0; i < list.length; i += perPage) {
-      pages.push(list.slice(i, i + perPage))
+    var cur = null
+    heights.forEach(function (h, i) {
+      var slot = Math.min(MM.capacity, Math.max(opts.minH || 0, h + opts.pad))
+      if (!cur || cur.total + slot > MM.capacity + 0.1) {
+        cur = { idx: [], slots: [], total: 0 }
+        pages.push(cur)
+      }
+      cur.idx.push(i)
+      cur.slots.push(slot)
+      cur.total += slot
+    })
+    if (opts.stretch) {
+      pages.forEach(function (pg) {
+        var share = (MM.capacity - pg.total) / pg.slots.length
+        pg.slots = pg.slots.map(function (s) {
+          return Math.min(opts.maxH, s + share)
+        })
+      })
     }
     return pages
   }
@@ -174,13 +230,19 @@
     })
   }
 
-  /* 一批页面（题目页或解析页）的 HTML 数组 */
-  function sheetsHTML(questions, opts) {
-    var pages = paginate(questions, opts.perPage)
-    return pages.map(function (page, p) {
-      var blocks = page
-        .map(function (q, i) {
-          return opts.blockHTML(q, p * opts.perPage + i + 1)
+  /* 一批页面（题目页或解析页）的 HTML 数组：先测高装页，再带内联高度重排 */
+  function sheetsHTML(container, questions, opts) {
+    var probeHTML = questions
+      .map(function (q, i) {
+        return opts.blockHTML(q, i + 1)
+      })
+      .join('')
+    var heights = measureMM(container, opts.gridClass, probeHTML)
+    var pages = packPages(heights, opts)
+    return pages.map(function (pg, p) {
+      var blocks = pg.idx
+        .map(function (qi, j) {
+          return opts.blockHTML(questions[qi], qi + 1, pg.slots[j])
         })
         .join('')
       return pageHTML({
@@ -214,22 +276,25 @@
     }
 
     html = html.concat(
-      sheetsHTML(questions, {
+      sheetsHTML(container, questions, {
         title: title,
-        perPage: PAGE.question.perPage,
         gridClass: 'aoshu-grid',
         blockHTML: questionBlockHTML,
+        pad: MM.workPad,
+        minH: MM.minQ,
+        maxH: MM.maxQ,
+        stretch: true,
         footPrefix: ''
       })
     )
 
     if (s.answerPage) {
       html = html.concat(
-        sheetsHTML(questions, {
+        sheetsHTML(container, questions, {
           title: title + '（解析）',
-          perPage: PAGE.solution.perPage,
           gridClass: 'sol-grid',
           blockHTML: solutionBlockHTML,
+          pad: MM.solPad,
           footPrefix: '解析 · '
         })
       )
