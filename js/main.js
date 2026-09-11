@@ -104,6 +104,7 @@
       skipTrivial: els.skiptrivial.checked,
       noDuplicates: els.nodup.checked,
       answerPage: els.anspage.checked,
+      seed: settings.seed, // 种子不是表单项，改参数时沿用，只有「重新生成」才换
       title: els.title.value.trim()
     })
     rangeNote = ''
@@ -227,8 +228,11 @@
     $('preset-row').appendChild(btn)
   })
 
-  /* 重新生成：参数不变，换一批随机题 */
-  $('btn-regen').addEventListener('click', refresh)
+  /* 重新生成：参数不变，换一批随机题——换种子即可（种子已写进网址，可复现） */
+  $('btn-regen').addEventListener('click', function () {
+    settings = Object.assign({}, settings, { seed: S.settings.newSeed() })
+    refresh()
+  })
 
   $('btn-print').addEventListener('click', function () {
     root.print()

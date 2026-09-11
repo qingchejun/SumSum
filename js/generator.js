@@ -15,8 +15,25 @@
 
   var OPS = ['+', '−', '×', '÷']
 
+  /*
+   * 可复现的随机源（mulberry32）。同一个种子必定生成同一批题，
+   * 这样「重新打印刚才那张卷子」「把链接发给别人」才拿得到一模一样的题目。
+   * generate() 每次按 s.seed 重置；没给种子时退回 Math.random。
+   */
+  function makeRandom(seed) {
+    var t = seed >>> 0
+    return function () {
+      t = (t + 0x6d2b79f5) >>> 0
+      var r = Math.imul(t ^ (t >>> 15), t | 1)
+      r ^= r + Math.imul(r ^ (r >>> 7), r | 61)
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296
+    }
+  }
+
+  var rnd = Math.random
+
   function randInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min
+    return Math.floor(rnd() * (max - min + 1)) + min
   }
 
   function pick(arr) {
@@ -55,7 +72,7 @@
   function carryOk(mode, flag) {
     if (mode === 'nocarry') return !flag
     if (mode === 'carryonly') return flag
-    if (mode === 'carrymore') return flag || Math.random() < 0.3
+    if (mode === 'carrymore') return flag || rnd() < 0.3
     return true
   }
 
@@ -250,7 +267,7 @@
       if (k > 0) tokens.push(ops[k - 1])
       tokens.push(n)
     })
-    if (s.parens && Math.random() < 0.5) {
+    if (s.parens && rnd() < 0.5) {
       tokens = insertParens(tokens, randInt(0, steps - 1))
     }
 
@@ -281,6 +298,7 @@
 
   /* 主入口：按设置生成一批题目 */
   function generate(s) {
+    rnd = s.seed ? makeRandom(s.seed) : Math.random
     var gens = GENERATORS[s.mode] || GENERATORS.addsub
     var seen = new Set()
     var questions = []

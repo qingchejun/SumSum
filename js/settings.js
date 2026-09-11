@@ -24,6 +24,7 @@
     answerPage: false,
     paper: 'portrait',
     parens: false,
+    seed: 0, // 0 = 未指定；load() 会补一个随机种子，见 newSeed()
     title: ''
   })
 
@@ -77,6 +78,7 @@
       answerPage: toBool(s.answerPage, DEFAULTS.answerPage),
       paper: oneOf(s.paper, PAPER, DEFAULTS.paper),
       parens: toBool(s.parens, DEFAULTS.parens),
+      seed: clampInt(s.seed, 0, 999999999, DEFAULTS.seed),
       title: String(s.title == null ? '' : s.title).slice(0, 30)
     }
     if (out.max <= out.min) out.max = out.min + 10
@@ -89,23 +91,43 @@
     return out
   }
 
-  /* 读取：默认值 ← localStorage ← URL 参数 */
+  /* 随机种子：同一个种子必定生成同一批题，用来复现/分享具体的某一张卷子 */
+  function newSeed() {
+    return Math.floor(Math.random() * 999999998) + 1
+  }
+
+  /*
+   * 读取设置。
+   * 网址里带参数时**完全忽略** localStorage：save() 会把所有非默认项写进
+   * 网址，所以「默认值 + 网址参数」正好复原分享者当时的设置。若仍旧叠加
+   * 本地存储，收到链接的人会被自己存的列数/纸张方向覆盖掉，拿到的卷子
+   * 和分享者的对不上。没有参数时（首次访问、从书签进来）才用本地存储。
+   */
   function load() {
-    var stored = {}
-    try {
-      stored = JSON.parse(root.localStorage.getItem(KEY)) || {}
-    } catch (e) {
-      stored = {} // 隐私模式或数据损坏时回退默认值
-    }
     var fromUrl = {}
+    var hasUrl = false
     try {
       new URLSearchParams(root.location.search).forEach(function (v, k) {
-        if (Object.prototype.hasOwnProperty.call(DEFAULTS, k)) fromUrl[k] = v
+        if (Object.prototype.hasOwnProperty.call(DEFAULTS, k)) {
+          fromUrl[k] = v
+          hasUrl = true
+        }
       })
     } catch (e) {
       fromUrl = {}
     }
-    return sanitize(Object.assign({}, stored, fromUrl))
+    var base = {}
+    if (!hasUrl) {
+      try {
+        base = JSON.parse(root.localStorage.getItem(KEY)) || {}
+      } catch (e) {
+        base = {} // 隐私模式或数据损坏时回退默认值
+      }
+      delete base.seed // 从书签进来应当是新的一批题，不沿用上次的种子
+    }
+    var out = sanitize(Object.assign({}, base, fromUrl))
+    if (!out.seed) out.seed = newSeed()
+    return out
   }
 
   /* 保存：写 localStorage，并把「非默认值」的项同步进 URL（保持链接干净可收藏） */
@@ -132,6 +154,7 @@
     DEFAULTS: DEFAULTS,
     PRESETS: PRESETS,
     sanitize: sanitize,
+    newSeed: newSeed,
     load: load,
     save: save
   }

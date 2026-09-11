@@ -359,11 +359,22 @@ body {
 
 /* ---------- 操作按钮 ---------- */
 
+/*
+ * 生成/打印是每天都要点的主操作，但面板比一屏高（1440×900 下要滚动才够得着，
+ * 手机上面板有 1.3~1.5 屏），所以把这两个按钮吸在面板底部常驻。
+ * 桌面端 .panel 自己是滚动容器，手机端面板是静态的、由页面滚动，
+ * sticky bottom 在两种情形下都贴在可视区底部。
+ */
 .actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 9px;
   margin-top: 20px;
+  padding: 10px 0 2px;
+  background: linear-gradient(to bottom, rgba(255, 253, 246, 0) 0, var(--card) 12px);
 }
 
 .btn {
@@ -444,6 +455,9 @@ body {
     position: static;
     width: 100%;
     max-height: none;
+    /* 必须去掉 overflow-y:auto：面板不再是滚动容器，
+       .actions 的 sticky 才会贴在视口底部而不是原地不动 */
+    overflow: visible;
     border-right: none;
     border-bottom: 1px solid var(--card-edge);
   }
