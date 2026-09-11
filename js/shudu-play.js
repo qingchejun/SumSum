@@ -31,6 +31,13 @@
   var SD = null // 延迟取 root.SumSum.shudu，保证加载顺序无关
   var sessions = [] // 第一页上每个盘一份作答状态
   var current = null // sessions 里当前在操作的那一个
+  /*
+   * 用户是否已经动过手。一页多题时「当前这一盘」要框出来（数字条只对它生效），
+   * 但【进来还没点任何东西就先把第 1 盘框住】会让人以为第 1 题有什么特殊 ——
+   * 实际用户第一反应就是问「为什么第一道外面多一个框」。所以开局四个盘一视同仁，
+   * 等真的动了手（点盘、点底栏、敲键盘）再标，那时候这个框的含义是自明的。
+   */
+  var picked = false
   var ticker = 0
 
   function $(id) {
@@ -176,9 +183,11 @@
       el.classList.toggle('bad', !!st.wrong[i])
     }
     st.board.classList.toggle('done', st.verdict === 'done')
-    /* 只有一个盘时不用标「当前」——没得选，框出来只是噪音 */
-    st.board.classList.toggle('active', live && sessions.length > 1)
-    if (st.item) st.item.classList.toggle('idle', !live && sessions.length > 1)
+    /* 只有一个盘时不用标「当前」——没得选，框出来只是噪音；
+       还没动手时也不标，见 picked 的说明 */
+    var mark = picked && sessions.length > 1
+    st.board.classList.toggle('active', live && mark)
+    if (st.item) st.item.classList.toggle('idle', !live && mark)
   }
 
   /* 全量重刷所有盘 + 底栏。最多 4 个盘 × 81 格，重刷一遍毫无压力 */
@@ -667,6 +676,7 @@
     doc.body.classList.add('playing')
     sheet.classList.add('playable')
 
+    var carried = false // 有没有从上一局搬过进度来（= 还是刚才那批题）
     boards.forEach(function (boardEl, k) {
       if (k >= puzzles.length) return
       var st = makeSession(puzzles[k], boardEl, k + 1)
@@ -678,12 +688,17 @@
        */
       if (prev[k] && prev[k].q && prev[k].q.key === st.q.key) {
         KEEP.forEach(function (f) { st[f] = prev[k][f] })
+        carried = true
       }
       sessions.push(st)
     })
     if (!sessions.length) return
     /* 沿用上一局正在做的那一盘，位置还在就不要把人甩回第 1 题 */
     current = sessions[prevAt >= 0 && prevAt < sessions.length ? prevAt : 0]
+    /* 换了一批新题（点「重新生成」、改难度…）就当没动过手：盘全是空的，
+       这时候框住其中一个又会变成「为什么是它」。改无关设置导致的重渲染
+       会搬进度过来，那时框该留在哪儿就留在哪儿。 */
+    if (!carried) picked = false
 
     renderBar(current.n)
     paint()
@@ -713,6 +728,7 @@
         if (sessions[k].board.contains(cell)) { st = sessions[k]; break }
       }
       if (!st) return
+      picked = true
       if (st !== current) {
         /* 离开的那一盘把选中和荧光笔收掉，免得两个盘同时看着像「在做」 */
         current.sel = null
@@ -738,6 +754,7 @@
     bar.addEventListener('click', function (e) {
       var btn = e.target.closest ? e.target.closest('button') : null
       if (!btn || btn.disabled) return
+      picked = true
       var act = btn.getAttribute('data-act')
       if (act === 'erase') return put(0)
       if (act === 'undo') return undo()
@@ -763,6 +780,7 @@
       if (!current) return
       var t = e.target
       if (t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) return
+      picked = true
 
       var mod = e.ctrlKey || e.metaKey
       if (mod && (e.key === 'z' || e.key === 'Z')) {
