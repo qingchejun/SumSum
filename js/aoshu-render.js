@@ -28,9 +28,13 @@
     return q.stemHTML || P().esc(q.stem)
   }
 
-  /* 内联高度：装页后块高由 JS 定死（mm），演算留白 flex 吃掉题干外的剩余空间 */
+  /*
+   * 内联高度：装页后块高由 JS 定死（mm），演算留白 flex 吃掉题干外的剩余空间。
+   * 向下取到 0.1mm——四舍五入时每块最多多出 0.05mm，一页七八块累计起来
+   * 会超出内容区，把页脚顶下去甚至多挤出一张空白页。
+   */
   function heightStyle(mm) {
-    return mm ? ' style="height:' + mm.toFixed(1) + 'mm"' : ''
+    return mm ? ' style="height:' + (Math.floor(mm * 10) / 10).toFixed(1) + 'mm"' : ''
   }
 
   /* 题目块：题号 + 题干 + 演算留白 + 底部答句挖空行 */
@@ -191,11 +195,41 @@
    * stretch 时把页内剩余高度平摊给各块（单块不超过 maxH），让整页舒展。
    * 返回 [{ idx: [题目下标], slots: [块高 mm] }]。
    */
+  function slotFor(h, opts) {
+    return Math.min(MM.capacity, Math.max(opts.minH || 0, h + opts.pad))
+  }
+
+  /*
+   * 把 n 道题尽量平均地摊到 k 页：前 n%k 页各多一道
+   * （10 题 3 页 → 4+3+3，而不是 4+4+2）。任一页装不下就返回 null。
+   */
+  function tryEven(heights, k, opts) {
+    var n = heights.length
+    var base = Math.floor(n / k)
+    var extra = n % k
+    var pages = []
+    var at = 0
+    for (var p = 0; p < k; p++) {
+      var take = base + (p < extra ? 1 : 0)
+      var pg = { idx: [], slots: [], total: 0 }
+      for (var j = 0; j < take; j++) {
+        var slot = slotFor(heights[at], opts)
+        pg.idx.push(at)
+        pg.slots.push(slot)
+        pg.total += slot
+        at++
+      }
+      if (pg.total > MM.capacity + 0.1) return null
+      pages.push(pg)
+    }
+    return pages
+  }
+
   function packPages(heights, opts) {
     var pages = []
     var cur = null
     heights.forEach(function (h, i) {
-      var slot = Math.min(MM.capacity, Math.max(opts.minH || 0, h + opts.pad))
+      var slot = slotFor(h, opts)
       if (!cur || cur.total + slot > MM.capacity + 0.1) {
         cur = { idx: [], slots: [], total: 0 }
         pages.push(cur)
@@ -204,6 +238,14 @@
       cur.slots.push(slot)
       cur.total += slot
     })
+    /*
+     * 贪心只保证页数最少，末页常常只剩一两道题（6 题会排成 5 + 1，
+     * 第二页七成空白）。页数不变的前提下按题数均分一次，均不匀就作罢。
+     */
+    if (pages.length > 1) {
+      var even = tryEven(heights, pages.length, opts)
+      if (even) pages = even
+    }
     if (opts.stretch) {
       pages.forEach(function (pg) {
         var share = (MM.capacity - pg.total) / pg.slots.length

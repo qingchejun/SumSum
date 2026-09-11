@@ -60,6 +60,7 @@ body.landscape .sheet {
 
 /* ---------- 题目网格：先横后竖，行高 15mm 留足手写空间 ---------- */
 
+/* 行高由 render.js 按当页题数内联给定（15~24mm），这里的 15mm 只是兜底 */
 .sheet-grid {
   display: grid;
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
