@@ -19,6 +19,7 @@
     clues: $('f-clues'),
     count: $('f-count'),
     copies: $('f-copies'),
+    perPage: $('f-perpage'),
     play: $('f-play'),
     nodup: $('f-nodup'),
     anspage: $('f-anspage'),
@@ -48,6 +49,7 @@
     fillClueSlider(s)
     els.count.value = s.count
     els.copies.value = String(s.copies)
+    els.perPage.value = String(s.perPage)
     els.play.checked = s.playMode
     els.nodup.checked = s.noDuplicates
     els.anspage.checked = s.answerPage
@@ -60,6 +62,7 @@
       clues: els.clues.value,
       count: els.count.value,
       copies: els.copies.value,
+      perPage: els.perPage.value,
       playMode: els.play.checked,
       noDuplicates: els.nodup.checked,
       answerPage: els.anspage.checked,
@@ -79,15 +82,23 @@
       '而且大盘反而更好找突破口：每格有 20 个邻居，凑齐 8 个不同数字它就只剩一个答案了。'
   }
 
-  /* 提前把会印几张纸告诉用户——一页一大题 + 对战双份很容易不知不觉印一叠 */
+  /*
+   * 提前把「会印几张纸、格子有多大」告诉用户：对战双份很容易不知不觉印一叠，
+   * 而每页塞几道题直接决定格子大小 —— 这两件事光看预览的缩略图是看不准的，
+   * 所以把毫米数直接写出来（一年级的田字格是 12~15mm，家长有参照）。
+   */
   function pagesHint(s, count) {
-    var pages = count * s.copies
+    var per = S.shuduRender.perPageOf(s, count)
+    var lay = S.shuduRender.layout(s.shape, per)
+    var sheets = Math.ceil(count / per)
+    var pages = sheets * s.copies
     var ansPages = s.answerPage ? Math.ceil(count / 6) : 0
     var text = '一共 ' + (pages + ansPages) + ' 张纸：' + count + ' 道题'
+    if (per > 1) text += ' · 每页 ' + per + ' 道'
+    text += ' = ' + sheets + ' 页'
     if (s.copies > 1) text += ' × 2 份 = ' + pages + ' 张'
-    else text += ' = ' + pages + ' 张'
     if (ansPages) text += '，另加 ' + ansPages + ' 张答案页'
-    return text + '。'
+    return text + '。每格 ' + (Math.floor(lay.cell * 10) / 10) + 'mm。'
   }
 
   /* 主流程：保存设置 → 同步表单 → 生成题目 → 渲染 → 接管在线作答 */

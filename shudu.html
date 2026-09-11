@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="css/app.css" />
   <link rel="stylesheet" href="css/sheet.css" />
   <link rel="stylesheet" href="css/shudu.css" />
-  <!-- 数独页固定 A4 纵向（一页一大题，横向排不下更大的盘），不像口算页那样动态切换 -->
+  <!-- 数独页固定 A4 纵向（竖着放盘最大，横向反而排不下），不像口算页那样动态切换 -->
   <style>@page { size: A4 portrait; margin: 15mm; }</style>
 </head>
 <body>
@@ -52,7 +52,7 @@
     </section>
 
     <section class="group">
-      <h2 class="group-title">题量与份数（一页一大题）</h2>
+      <h2 class="group-title">题量与排版</h2>
       <div class="pair">
         <label class="field"><span>题目数量</span>
           <input type="number" id="f-count" class="input" min="1" max="20" step="1" />
@@ -61,6 +61,17 @@
           <select id="f-copies" class="input">
             <option value="1">1 份</option>
             <option value="2">2 份（同题对战）</option>
+          </select>
+        </label>
+      </div>
+      <div class="pair">
+        <label class="field"><span>每页题数</span>
+          <select id="f-perpage" class="input">
+            <option value="0">自动（格子尽量大）</option>
+            <option value="1">1 题 / 页</option>
+            <option value="2">2 题 / 页</option>
+            <option value="3">3 题 / 页</option>
+            <option value="4">4 题 / 页</option>
           </select>
         </label>
       </div>

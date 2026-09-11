@@ -16,6 +16,7 @@
 
 require('../js/shudu-core.js')
 require('../js/shudu-settings.js') // 只为验 sanitize 的钳位；它的 load/save 碰 DOM，这里不调
+require('../js/shudu-render.js') // 只为验排版算的 mm 放不放得下；render() 碰 DOM，这里不调
 var SD = globalThis.SumSum.shudu
 
 /* 盘型参数在这里【重新写一遍】，不从 shudu-core 取——那边写错了这里才能发现 */
@@ -295,6 +296,67 @@ function checkSettings(report) {
   if (ST.sanitize({ shape: 's3' }).shape !== 's4') report('已下架的 s3 没有回退到 s4')
 }
 
+/*
+ * 排版：一页放 1~4 道题时，算出来的盘到底放不放得下。
+ *
+ * 这是纯算术，但必须验 —— 本项目在口算和奥数上都栽过「内联 mm 超出内容区、
+ * 悄悄多挤一张空白页」，而这种事在屏幕预览上完全看不出来，只有打印才现形。
+ * 所以这里【不复用 shudu-render 的 MM 常量】，而是照 A4 的实际尺寸
+ * （210×297、页边距 15mm → 内容区 180 宽；扣掉页眉页脚剩 225 高）重算一遍，
+ * 两套数字互为对证：改动 MM 里的余量若真的把版面撑破了，这里会立刻报出来。
+ */
+function checkLayout(report) {
+  var R = globalThis.SumSum.shuduRender
+  if (!R) { report('shudu-render.js 没加载上'); return }
+  var W = 180 // A4 纵向内容区宽
+  var H = 225 // 扣掉页眉页脚后的可用高
+  var GAP = 8
+
+  Object.keys(SHAPES).forEach(function (sk) {
+    var n = SHAPES[sk].n
+    for (var per = 1; per <= 4; per++) {
+      var lay = R.layout(sk, per)
+      var rows = Math.ceil(per / lay.cols)
+      /* 盘的外框是 border + content-box，实际占地比 grid 尺寸大一圈 */
+      var frame = 2 * Math.min(1.2, Math.max(0.6, lay.cell * 0.045))
+      var outer = lay.cell * n + frame
+      var w = lay.cols * outer + (lay.cols - 1) * GAP
+      /* 一页一题时盘上方是「题号 + 规则」一行（14px + 6mm ≈ 11mm）；
+         多题时是页顶规则 9mm + 每个盘的题号 7mm */
+      var h = per > 1
+        ? 9 + rows * (7 + outer) + (rows - 1) * GAP
+        : 11 + outer
+
+      if (lay.cell <= 0) report(sk + ' 每页 ' + per + ' 题：算出来的格子是 ' + lay.cell + 'mm')
+      if (lay.cols < 1 || lay.cols > per) report(sk + ' 每页 ' + per + ' 题：列数 ' + lay.cols + ' 不合理')
+      if (rows * lay.cols < per) report(sk + ' 每页 ' + per + ' 题：' + lay.cols + '列×' + rows + '行 放不下 ' + per + ' 个盘')
+      if (w > W) report(sk + ' 每页 ' + per + ' 题：宽 ' + w.toFixed(1) + 'mm 超出 ' + W + 'mm')
+      if (h > H) report(sk + ' 每页 ' + per + ' 题：高 ' + h.toFixed(1) + 'mm 超出 ' + H + 'mm')
+    }
+
+    /* 「自动」挡的承诺：格子不小于 15mm，而且确实是能达到这个底线的最多题数 */
+    var auto = R.autoPerPage(sk)
+    if (R.layout(sk, auto).cell < 15) {
+      report(sk + ' 自动挡选了每页 ' + auto + ' 题，但格子只有 ' + R.layout(sk, auto).cell.toFixed(1) + 'mm')
+    }
+    if (auto < 4 && R.layout(sk, auto + 1).cell >= 15) {
+      report(sk + ' 自动挡选了每页 ' + auto + ' 题，但 ' + (auto + 1) + ' 题的格子同样够大，白白多印了纸')
+    }
+  })
+
+  /* 题目比一页的容量少时要按实际题数排，不能留着一页四题的小盘 */
+  if (R.perPageOf({ shape: 's4', perPage: 0 }, 1) !== 1) report('只出 1 道题时没有按 1 道排')
+  if (R.perPageOf({ shape: 's4', perPage: 0 }, 3) !== 3) report('出 3 道题时没有按 3 道排')
+  if (R.perPageOf({ shape: 's4', perPage: 0 }, 9) !== 4) report('四宫格出 9 道题时每页没有排满 4 道')
+  if (R.perPageOf({ shape: 's9', perPage: 0 }, 9) !== 1) report('九宫格自动挡不该一页排多道')
+  /* 手动挡说了算，哪怕格子会被压得很小 */
+  if (R.perPageOf({ shape: 's9', perPage: 4 }, 9) !== 4) report('手动指定每页 4 题没有生效')
+  /* 设置层也得放行 0（自动）并钳住越界值 */
+  var ST = globalThis.SumSum.shuduSettings
+  if (ST.sanitize({ perPage: 9 }).perPage !== 4) report('perPage 超出上限没被钳到 4')
+  if (ST.sanitize({ perPage: -1 }).perPage !== 0) report('perPage 负数没被钳到 0（自动）')
+}
+
 function main() {
   var problems = []
   function report(msg) { problems.push(msg) }
@@ -330,6 +392,10 @@ function main() {
       (bad ? '  —— 出问题的档位：' + bads.join(',') : '')
     )
   })
+
+  var layBefore = problems.length
+  checkLayout(report)
+  console.log((problems.length > layBefore ? '✗' : '✓') + ' 每页多题的排版放得下')
 
   var setBefore = problems.length
   checkSettings(report)

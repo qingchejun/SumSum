@@ -12,18 +12,51 @@
      所以这里 flex:1 + 居中就能让盘自动落在页面正中，不用硬算 mm */
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-.sudoku-wrap {
+/*
+ * 一页多题时盘的排布。列数是 js/shudu-render.js 的 layout() 算好的，但这里
+ * 不写 grid-template-columns —— 盘的宽度是内联的实际 mm，用 flex-wrap 让它
+ * 自己折行，折出来的列数必然与算的一致（版心留了 2mm 余量），而且最后一行
+ * 不满时会自动居中（3 题排成上 2 下 1，下面那个正好在中间）。
+ */
+.sudoku-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 8mm; /* = js/shudu-render.js MM.gap，改一个要改两个 */
+  width: 100%;
+}
+
+.sudoku-item {
+  flex: none; /* 绝不许压缩：宁可溢出被一眼看见，也不要悄悄把盘缩小 */
   text-align: center;
 }
 
-/* 题号 + 规则说明，印在盘上方 */
+/* 一页一题时：题号 + 规则说明写在同一行，就在盘的正上方 */
 .sudoku-rule {
   margin: 0 0 6mm;
   font-size: 14px;
+  color: #000;
+}
+
+/* 一页多题时：规则整页只说一遍，提到页顶（= MM.ruleH 9mm） */
+.sudoku-rule-top {
+  margin: 0 0 4mm;
+  font-size: 13px;
+  color: #000;
+}
+
+/* 一页多题时每个盘上方只留题号（= MM.noteH 7mm） */
+.sudoku-no {
+  height: 6mm;
+  margin: 0 0 1mm;
+  font-size: 13px;
+  line-height: 6mm;
   color: #000;
 }
 
@@ -46,11 +79,17 @@
 
 /* ---------- 盘 ---------- */
 
+/*
+ * 线宽与字号都由 js/shudu-render.js 按格子大小内联进来（--bd 粗线、--bdi 细线、
+ * font-size），不写死在这里 —— 同一个盘型可能是一页一题的 42mm 大格，
+ * 也可能是一页四题的 20mm 小格，差一倍，固定值必然有一头不对。
+ * 这里的 var() 缺省值只是兜底（万一哪天有人手写一个盘）。
+ */
 .sudoku {
   display: grid;
   margin: 0 auto;
   /* 外框：粗线。内部细线由每个格子的 border-right/bottom 画 */
-  border: 1.2mm solid #000;
+  border: var(--bd, 1.2mm) solid #000;
   box-sizing: content-box;
   background: #fff;
 }
@@ -60,9 +99,8 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  border-right: 0.3mm solid #000;
-  border-bottom: 0.3mm solid #000;
-  font-size: 30px;
+  border-right: var(--bdi, 0.3mm) solid #000;
+  border-bottom: var(--bdi, 0.3mm) solid #000;
   line-height: 1;
   color: #000;
 }
@@ -83,38 +121,16 @@
 
 /* 宫的内部边界加粗（三宫格没有宫，渲染时就不会打这两个 class） */
 .sudoku .cell.br {
-  border-right: 1.2mm solid #000;
+  border-right: var(--bd, 1.2mm) solid #000;
 }
 
 .sudoku .cell.bb {
-  border-bottom: 1.2mm solid #000;
+  border-bottom: var(--bd, 1.2mm) solid #000;
 }
 
 /* 题面自带的提示数字：加粗，与孩子后填的区分开 */
 .sudoku .cell.given {
   font-weight: 700;
-}
-
-/* 格子越小字号越收，留出孩子下笔的余地（格子边长：4→42mm，6→28mm，9→18.6mm） */
-.sudoku[data-n="6"] .cell {
-  font-size: 24px;
-}
-
-.sudoku[data-n="9"] .cell {
-  font-size: 17px;
-}
-
-/* 九宫格 18.6mm 的格子里，1.2mm 的宫线显得过重、挤掉了写字的地方，收细一档 */
-.sudoku[data-n="9"] {
-  border-width: 0.9mm;
-}
-
-.sudoku[data-n="9"] .cell.br {
-  border-right-width: 0.9mm;
-}
-
-.sudoku[data-n="9"] .cell.bb {
-  border-bottom-width: 0.9mm;
 }
 
 /* ---------- 答案页：一页 6 个小图 ---------- */
@@ -137,24 +153,6 @@
   height: 6mm;
   font-size: 13px;
   line-height: 6mm;
-}
-
-.ans-grid .sudoku {
-  border-width: 0.8mm;
-}
-
-.ans-grid .sudoku .cell {
-  border-right-width: 0.2mm;
-  border-bottom-width: 0.2mm;
-  font-size: 15px;
-}
-
-.ans-grid .sudoku .cell.br {
-  border-right-width: 0.8mm;
-}
-
-.ans-grid .sudoku .cell.bb {
-  border-bottom-width: 0.8mm;
 }
 
 /* 答案页上被挖空的那些格（= 孩子要填的）加粗，家长扫一眼就知道该对哪些 */
@@ -265,6 +263,25 @@
 
 .sudoku.done {
   box-shadow: 0 0 0 1.5mm var(--blue, #2d5185);
+}
+
+/*
+ * 一页多题时，数字条、计时、撤销栈永远只对【当前这一盘】生效，所以必须让人
+ * 一眼看出在做哪一盘。只在多盘时打这个 class（见 shudu-play.js 的 paint）。
+ * 用 outline 而不是 box-shadow：.done 已经占了 box-shadow，两者会互相覆盖。
+ */
+.sudoku.active {
+  outline: 0.8mm solid var(--blue, #2d5185);
+  outline-offset: 1.5mm;
+}
+
+/* 非当前盘压暗一点，进一步拉开层次；它照样能点，点了就切过去 */
+.sheet.playable .sudoku-item {
+  transition: opacity 0.12s;
+}
+
+.sheet.playable .sudoku-item.idle {
+  opacity: 0.72;
 }
 
 /* ---------- 数字条 ---------- */
@@ -484,6 +501,15 @@ body.playing .preview {
 
   .sudoku.done {
     box-shadow: none !important;
+  }
+
+  /* 「当前这一盘」是屏幕上的概念，纸上四道题一律平等 */
+  .sudoku.active {
+    outline: none !important;
+  }
+
+  .sheet.playable .sudoku-item.idle {
+    opacity: 1 !important;
   }
 
   /* 内容区高度：与 css/sheet.css 打印段的 .sheet-grid { min-height: 225mm } 同一个数 */

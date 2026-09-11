@@ -16,6 +16,11 @@
  *   .bad（红）= 答案检查：只在点「提交批改」之后才出现，说「不对」。
  * 填的过程中绝不判对错 —— 填数独本来就边填边改，整盘填完还想回头调两格很正常。
  *
+ * 【一页多题时】第一页上的每个盘都能玩，各有各的一份状态（sessions），
+ * current 指着当前操作的那一个。数字条、计时、撤销栈永远只对 current 生效 ——
+ * 一条底栏管四个盘会让人不知道按钮作用在谁身上，所以当前盘要用 .active 框出来。
+ * 点另一个盘上的任意格子就切过去。只接管第一页：其余几页照常显示、照常打印。
+ *
  * 作答状态只活在内存里，不进 URL、不进 localStorage —— 链接的语义应当是
  * 「这张卷子」而不是「这张卷子做到一半的样子」，与口算/奥数的分享语义一致。
  */
@@ -24,7 +29,8 @@
 
   var doc = root.document
   var SD = null // 延迟取 root.SumSum.shudu，保证加载顺序无关
-  var current = null
+  var sessions = [] // 第一页上每个盘一份作答状态
+  var current = null // sessions 里当前在操作的那一个
   var ticker = 0
 
   function $(id) {
@@ -40,10 +46,11 @@
     return Array.prototype.slice.call(boardEl.querySelectorAll('.cell'))
   }
 
-  /* 盘面当前的完整数值：题面的提示 + 孩子填的 */
-  function gridOf() {
-    var q = current.q
-    return current.fill.map(function (v, i) {
+  /* 盘面当前的完整数值：题面的提示 + 孩子填的。不传就是当前这一盘 */
+  function gridOf(st) {
+    st = st || current
+    var q = st.q
+    return st.fill.map(function (v, i) {
       return q.puzzle[i] || v
     })
   }
@@ -94,8 +101,8 @@
    * 用 shudu-core 预计算的 peers 表，「同宫」的定义和出题时是同一套，
    * 不会出现界面和生成器对规则的理解不一致。
    */
-  function dupSet(grid) {
-    var B = current.B
+  function dupSet(st, grid) {
+    var B = st.B
     var bad = {}
     for (var i = 0; i < grid.length; i++) {
       if (!grid[i]) continue
@@ -111,10 +118,10 @@
   }
 
   /* 每个数字还差几个没填（数字条上的角标） */
-  function remaining(grid) {
+  function remaining(st, grid) {
     var left = {}
     var v
-    for (v = 1; v <= current.n; v++) left[v] = current.n
+    for (v = 1; v <= st.n; v++) left[v] = st.n
     for (var i = 0; i < grid.length; i++) {
       if (grid[i]) left[grid[i]]--
     }
@@ -126,15 +133,19 @@
   /*
    * 唯一写 DOM 的地方。class 的叠加顺序在 css/shudu.css 里有一张优先级表，
    * 那边靠源码顺序决定谁盖谁，这里只管把该打的都打上。
+   *
+   * 选中格、同行同列（.sel/.peer）和荧光笔（.same/.scan）只画在当前这一盘上：
+   * 四个盘是四道互不相干的题，在别的盘上高亮「所有的 3」毫无意义，反而吵。
+   * 已填的数字、重复（黄）、错（红）则每个盘都各自照常显示。
    */
-  function paint() {
-    if (!current) return
-    var q = current.q
-    var n = current.n
-    var grid = gridOf()
-    var cells = cellsOf(current.board)
-    var dups = current.showDup ? dupSet(grid) : {}
-    var hi = current.hi
+  function paintBoard(st) {
+    var q = st.q
+    var n = st.n
+    var live = st === current
+    var grid = gridOf(st)
+    var cells = cellsOf(st.board)
+    var dups = st.showDup ? dupSet(st, grid) : {}
+    var hi = live ? st.hi : null
 
     /* 高亮数字所在的行、列 —— 没被染色的空格就是「这个数字还能放的地方」 */
     var scanRow = {}
@@ -150,23 +161,31 @@
 
     for (var i = 0; i < cells.length; i++) {
       var el = cells[i]
-      var mine = q.puzzle[i] === 0 && current.fill[i] !== 0
+      var mine = q.puzzle[i] === 0 && st.fill[i] !== 0
       var val = grid[i]
 
       el.textContent = val ? String(val) : ''
-      el.classList.toggle('mine', mine && !current.revealed[i])
-      el.classList.toggle('revealed', mine && !!current.revealed[i])
+      el.classList.toggle('mine', mine && !st.revealed[i])
+      el.classList.toggle('revealed', mine && !!st.revealed[i])
 
       el.classList.toggle('scan', !!hi && (scanRow[Math.floor(i / n)] === 1 || scanCol[i % n] === 1))
-      el.classList.toggle('peer', current.sel != null && current.B.peers[current.sel].indexOf(i) >= 0)
+      el.classList.toggle('peer', live && st.sel != null && st.B.peers[st.sel].indexOf(i) >= 0)
       el.classList.toggle('same', !!hi && val === hi)
-      el.classList.toggle('sel', current.sel === i)
+      el.classList.toggle('sel', live && st.sel === i)
       el.classList.toggle('dup', !!dups[i])
-      el.classList.toggle('bad', !!current.wrong[i])
+      el.classList.toggle('bad', !!st.wrong[i])
     }
-    current.board.classList.toggle('done', current.verdict === 'done')
+    st.board.classList.toggle('done', st.verdict === 'done')
+    /* 只有一个盘时不用标「当前」——没得选，框出来只是噪音 */
+    st.board.classList.toggle('active', live && sessions.length > 1)
+    if (st.item) st.item.classList.toggle('idle', !live && sessions.length > 1)
+  }
 
-    paintBar(grid)
+  /* 全量重刷所有盘 + 底栏。最多 4 个盘 × 81 格，重刷一遍毫无压力 */
+  function paint() {
+    if (!current) return
+    sessions.forEach(paintBoard)
+    paintBar(gridOf())
     paintClock()
   }
 
@@ -216,7 +235,7 @@
   function paintBar(grid) {
     var bar = $('num-bar')
     if (!bar || bar.hidden) return
-    var left = remaining(grid)
+    var left = remaining(current, grid)
 
     Array.prototype.forEach.call(bar.querySelectorAll('button[data-v]'), function (btn) {
       var v = parseInt(btn.getAttribute('data-v'), 10)
@@ -257,10 +276,20 @@
     el.classList.toggle('win', !!win)
   }
 
+  /* 一页多题时，底栏说的每一句话都要挂上题号，否则不知道在说哪一盘 */
+  function whoPlain() {
+    return sessions.length > 1 && current ? '第 ' + current.idx + ' 题' : ''
+  }
+
+  function who() {
+    var w = whoPlain()
+    return w ? w + ' · ' : ''
+  }
+
   /* 没在批改态时，提示条显示还剩多少格 */
   function idleTip() {
     var blanks = gridOf().filter(function (x) { return !x }).length
-    tip(blanks ? '还有 ' + blanks + ' 格' : '填满了，点「提交批改」')
+    tip(who() + (blanks ? '还有 ' + blanks + ' 格' : '填满了，点「提交批改」'))
   }
 
   /*
@@ -302,7 +331,7 @@
       if (hit) where.push('这一宫')
     }
     if (!where.length) return false
-    tip(where.join('、') + '已经有 ' + v + ' 了')
+    tip(who() + where.join('、') + '已经有 ' + v + ' 了')
     return true
   }
 
@@ -403,7 +432,7 @@
     current.sel = null
     current.lastEdit = null
     paint()
-    tip('已清空，重新开始')
+    tip(who() + '已清空，重新开始')
   }
 
   function reveal() {
@@ -418,7 +447,7 @@
     applyMoves(moves)
     current.sel = null
     paint()
-    tip('这是答案。想自己做的话点「重来」')
+    tip(who() + '这是答案。想自己做的话点「重来」')
   }
 
   /* ---------- 高亮 ---------- */
@@ -514,7 +543,7 @@
     if (!current) return
     var h = findHint()
     if (!h) {
-      tip('这一盘已经填满了')
+      tip(who() + '这一盘已经填满了')
       return
     }
     startClock()
@@ -528,7 +557,7 @@
     current.hi = h.v
     current.hinted++
     paint()
-    tip('第 ' + h.r + ' 行第 ' + h.c + ' 格：' + parts.join('，') + ' → 只能填 ' + h.v)
+    tip(who() + '第 ' + h.r + ' 行第 ' + h.c + ' 格：' + parts.join('，') + ' → 只能填 ' + h.v)
   }
 
   /* ---------- 交卷 ---------- */
@@ -548,7 +577,7 @@
     var blanks = grid.filter(function (x) { return !x }).length
     if (blanks) {
       paint()
-      tip('还有 ' + blanks + ' 格没填，填完再交')
+      tip(who() + '还有 ' + blanks + ' 格没填，填完再交')
       return
     }
 
@@ -562,51 +591,38 @@
     if (wrong) {
       current.verdict = 'wrong'
       paint()
-      tip('有 ' + wrong + ' 格不对（已标红），改好再交一次')
+      tip(who() + '有 ' + wrong + ' 格不对（已标红），改好再交一次')
       return
     }
     current.verdict = 'done'
     current.stoppedAt = Date.now()
     paint()
-    tip('🎉 全部做对了！用时 ' + spellTime() +
-      (current.hinted ? '（用了 ' + current.hinted + ' 次提示）' : ''), true)
+    /* 一页多题时顺手指一下还剩哪几道，省得孩子对着做完的那盘发呆 */
+    var rest = sessions.filter(function (st) { return st.verdict !== 'done' }).length
+    tip('🎉 ' + whoPlain() + '全部做对了！用时 ' + spellTime() +
+      (current.hinted ? '（用了 ' + current.hinted + ' 次提示）' : '') +
+      (rest ? '　还有 ' + rest + ' 道，点它就能接着做' : ''), true)
   }
 
   /* ---------- 挂载 ---------- */
 
   /*
    * 接管预览区里的第一张题目纸。
-   * 只接管第一张：一屏只玩一道题，孩子不会在十几张纸之间跳来跳去；
-   * 其余几张仍然照常显示，打印出来是完整的一叠。
+   * 只接管第一张：一页上的几道题都能玩已经够一次做的了，孩子不会在十几张纸
+   * 之间跳来跳去；其余几张仍然照常显示，打印出来是完整的一叠。
+   * 对战双份时第二张是同一道题的副本，更不该也能玩（两边分别记进度就乱了）。
    */
-  function attach(container, s, puzzles) {
-    var bar = $('num-bar')
-    var prev = current
-    current = null
-    /* .playing 让 .preview 垫出底部留白，给固定定位的数字条腾地方 */
-    doc.body.classList.remove('playing')
-    if (bar) {
-      bar.hidden = true
-      bar.innerHTML = ''
-    }
-    if (!s.playMode || !puzzles.length) {
-      padForBar()
-      return
-    }
-
-    var sheet = container.querySelector('.sheet-sudoku')
-    var boardEl = sheet && sheet.querySelector('.sudoku')
-    if (!boardEl) return
-    doc.body.classList.add('playing')
-    sheet.classList.add('playable')
-
-    var q = puzzles[0]
-    var n = core().shapeOf(q.shape).n
-    current = {
-      sheet: sheet,
+  function makeSession(q, boardEl, idx) {
+    return {
       board: boardEl,
+      /* .sudoku-item 用来打 .idle（压暗非当前盘）。认准 class 而不是直接拿
+         parentNode —— 万一将来渲染层多包一层，误把整个 .sudoku-grid 压暗
+         会把四个盘一起弄灰，而这种错在屏幕上要盯一会儿才看得出来。 */
+      item: boardEl.parentNode && boardEl.parentNode.classList.contains('sudoku-item')
+        ? boardEl.parentNode : null,
       q: q,
-      n: n,
+      idx: idx,
+      n: core().shapeOf(q.shape).n,
       B: core().board(q.shape),
       fill: zeros(q.puzzle.length),
       revealed: {},
@@ -622,32 +638,62 @@
       startedAt: 0,
       stoppedAt: 0
     }
+  }
 
-    /*
-     * 同一道题只是因为改了无关设置（勾答案页、改份数…）而重渲染时，
-     * 把进度原样搬过来。否则玩到一半勾一下「附答案页」整盘就白填了。
-     */
-    if (prev && prev.q && prev.q.key === q.key) {
-      current.fill = prev.fill
-      current.revealed = prev.revealed
-      current.past = prev.past
-      current.future = prev.future
-      current.sel = prev.sel
-      current.lastEdit = prev.lastEdit
-      current.hi = prev.hi
-      current.hinted = prev.hinted
-      current.startedAt = prev.startedAt
-      current.stoppedAt = prev.stoppedAt
-      current.wrong = prev.wrong
-      current.verdict = prev.verdict
+  /* 把上一局同一道题的进度原样搬过来（见下方 attach 的说明） */
+  var KEEP = ['fill', 'revealed', 'past', 'future', 'sel', 'lastEdit', 'hi',
+    'hinted', 'startedAt', 'stoppedAt', 'wrong', 'verdict']
+
+  function attach(container, s, puzzles) {
+    var bar = $('num-bar')
+    var prev = sessions
+    var prevAt = prev.indexOf(current) // 重渲染后仍停在刚才那一盘
+    sessions = []
+    current = null
+    /* .playing 让 .preview 垫出底部留白，给固定定位的数字条腾地方 */
+    doc.body.classList.remove('playing')
+    if (bar) {
+      bar.hidden = true
+      bar.innerHTML = ''
+    }
+    if (!s.playMode || !puzzles.length) {
+      padForBar()
+      return
     }
 
-    renderBar(n)
+    var sheet = container.querySelector('.sheet-sudoku')
+    var boards = sheet ? Array.prototype.slice.call(sheet.querySelectorAll('.sudoku')) : []
+    if (!boards.length) return
+    doc.body.classList.add('playing')
+    sheet.classList.add('playable')
+
+    boards.forEach(function (boardEl, k) {
+      if (k >= puzzles.length) return
+      var st = makeSession(puzzles[k], boardEl, k + 1)
+      /*
+       * 同一道题只是因为改了无关设置（勾答案页、改份数…）而重渲染时，
+       * 把进度原样搬过来。否则玩到一半勾一下「附答案页」整盘就白填了。
+       * 按位置 + key 双重认人：一页多题时位置本身不够（换批题位置还在），
+       * key 本身也不够（关掉「题目不重复」时两个位置可能是同一道题）。
+       */
+      if (prev[k] && prev[k].q && prev[k].q.key === st.q.key) {
+        KEEP.forEach(function (f) { st[f] = prev[k][f] })
+      }
+      sessions.push(st)
+    })
+    if (!sessions.length) return
+    /* 沿用上一局正在做的那一盘，位置还在就不要把人甩回第 1 题 */
+    current = sessions[prevAt >= 0 && prevAt < sessions.length ? prevAt : 0]
+
+    renderBar(current.n)
     paint()
     if (current.verdict !== 'done') {
-      tip(puzzles.length > 1
-        ? '点格子填数，点数字可高亮（在线只玩第 1 题，打印是全部 ' + puzzles.length + ' 题）'
-        : '点空格填数；点已填的数字可以高亮同样的数')
+      var more = puzzles.length - sessions.length
+      tip(sessions.length > 1
+        ? '这一页 ' + sessions.length + ' 道都能做，点哪一盘就做哪一盘' +
+          (more ? '（后面 ' + more + ' 道只印不玩）' : '')
+        : (more ? '点空格填数（在线只玩第 1 题，打印是全部 ' + puzzles.length + ' 题）'
+          : '点空格填数；点已填的数字可以高亮同样的数'))
     }
     padForBar()
   }
@@ -660,7 +706,22 @@
     wrap.addEventListener('click', function (e) {
       if (!current) return
       var cell = e.target.closest ? e.target.closest('.cell') : null
-      if (!cell || !current.board.contains(cell)) return
+      if (!cell) return
+      /* 点的是哪一盘？点到别的盘就先切过去（答案页的小图不在 sessions 里，直接落空） */
+      var st = null
+      for (var k = 0; k < sessions.length; k++) {
+        if (sessions[k].board.contains(cell)) { st = sessions[k]; break }
+      }
+      if (!st) return
+      if (st !== current) {
+        /* 离开的那一盘把选中和荧光笔收掉，免得两个盘同时看着像「在做」 */
+        current.sel = null
+        current.hi = null
+        current = st
+        /* 数字条不用重建：一页上几个盘同属一个盘型，n 一样，按钮就一样，
+           重建只会让底栏闪一下。paint() 会把角标刷成新盘的。 */
+        idleTip()
+      }
       var i = cellsOf(current.board).indexOf(cell)
       if (i < 0) return
       var val = gridOf()[i]
@@ -758,6 +819,7 @@
     bind: bind,
     attach: attach,
     /* 供浏览器端验收脚本调用，页面本身不用 */
-    _debug: function () { return current }
+    _debug: function () { return current },
+    _sessions: function () { return sessions }
   }
 })(typeof window !== 'undefined' ? window : globalThis)

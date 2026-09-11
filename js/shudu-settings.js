@@ -14,6 +14,10 @@
     /* 一页一大题，所以默认就出 1 道 = 1 张纸。九宫格一道就能做很久，
        想要几张再自己加，免得一进来就是一叠。 */
     count: 1,
+    /* 一页放几道题。0 = 自动：由 shudu-render 的 autoPerPage 按盘型算，
+       在「格子不小于 15mm」的前提下尽量多放（四宫格 4 道、六宫格 2 道、九宫格 1 道）。
+       题目数量少于一页的容量时按实际题数排，所以默认的「1 道题」仍然是整页一个大盘。 */
+    perPage: 0,
     /* 默认就印两份：这个板块的主场景本来就是父子各拿一张同题开跑，
        一份反而是少数情况（自己一个人做）。 */
     copies: 2,
@@ -76,6 +80,10 @@
       /* 一页一大题，20 题就是 20 页（对战双份则是 40 页），再多没意义 */
       count: clampInt(s.count, 1, 20, DEFAULTS.count),
       copies: clampInt(s.copies, 1, 2, DEFAULTS.copies),
+      /* 上限 4 与 shudu-render 的 MM.maxPerPage 对应。手动挡允许挑到
+         比「自动」更挤的排法（九宫格一页 4 道 = 一格 9mm），家长要省纸就随他，
+         面板上会实时把格子多大告诉他。 */
+      perPage: clampInt(s.perPage, 0, 4, DEFAULTS.perPage),
       noDuplicates: toBool(s.noDuplicates, DEFAULTS.noDuplicates),
       answerPage: toBool(s.answerPage, DEFAULTS.answerPage),
       playMode: toBool(s.playMode, DEFAULTS.playMode),
