@@ -17,6 +17,7 @@
     count: $('f-count'),
     lessonpage: $('f-lessonpage'),
     anspage: $('f-anspage'),
+    review: $('f-review'),
     title: $('f-title')
   }
 
@@ -114,6 +115,34 @@
       b.textContent = TAB_LABEL[stage] + (done > 0 ? ' ' + done + '/' + all.length : '')
       b.classList.toggle('active', stage === viewStage)
     })
+    renderNextHint()
+    renderReviewHint()
+  }
+
+  /* 「接着学」：按大纲顺序指向第一个还没标已学的知识点，省得自己翻目录 */
+  function renderNextHint() {
+    var btn = $('btn-next')
+    var next = S.aoshu.OUTLINE.filter(function (o) {
+      return S.aoshu.topics[o.id] && !learned.has(o.id)
+    })[0]
+    if (!next || next.id === settings.topic || settings.review) {
+      btn.hidden = true
+      return
+    }
+    btn.hidden = false
+    btn.textContent = '接着学 → ' + next.no + ' ' + next.name
+    btn.onclick = function () {
+      selectTopic(next.id)
+    }
+  }
+
+  function renderReviewHint() {
+    var hint = $('review-hint')
+    var n = learnedIds().length
+    hint.hidden = false
+    hint.textContent = n
+      ? '已学 ' + n + ' 个知识点，可以混着出题了。'
+      : '还没标记已学的知识点——先在上面的目录里点圆点标几个。'
   }
 
   Array.prototype.forEach.call(doc.querySelectorAll('.stage-tab'), function (b) {
@@ -151,10 +180,14 @@
     els.count.value = s.count
     els.lessonpage.checked = s.lessonPage
     els.anspage.checked = s.answerPage
+    els.review.checked = s.review
     els.title.value = s.title
     Object.keys(variantEls).forEach(function (k) {
       variantEls[k].checked = s[k]
     })
+    /* 综合复习卷跨多个知识点，单个知识点的题型勾选与讲解页都不适用 */
+    $('group-variants').hidden = s.review
+    $('f-lessonpage').closest('.check').hidden = s.review
   }
 
   /* 在当前 settings 上覆盖表单值——只覆盖当前知识点的勾选框，别的知识点的变式选择保持不动 */
@@ -164,6 +197,7 @@
       count: els.count.value,
       lessonPage: els.lessonpage.checked,
       answerPage: els.anspage.checked,
+      review: els.review.checked,
       title: els.title.value.trim()
     })
     Object.keys(variantEls).forEach(function (k) {
@@ -182,6 +216,44 @@
     preview.style.zoom = factor < 1 ? String(factor) : ''
   }
 
+  /* 已学且已实现的知识点，按大纲顺序 */
+  function learnedIds() {
+    return S.aoshu.OUTLINE.filter(function (o) {
+      return learned.has(o.id) && S.aoshu.topics[o.id]
+    }).map(function (o) {
+      return o.id
+    })
+  }
+
+  /*
+   * 综合复习卷：从已学的知识点里轮着抽题。每道题都走对应知识点自己的
+   * 生成器（题型勾选、难度档都沿用），所以解析、图示一切照旧；
+   * 额外记下知识点名字，解析页上标出来，方便家长知道这题在考什么。
+   */
+  function generateReview(s) {
+    var ids = learnedIds()
+    if (!ids.length) return { questions: [], shortfall: s.count, noTopics: true }
+    var out = []
+    var seen = {}
+    var attempts = s.count * 80
+    for (var i = 0; i < attempts && out.length < s.count; i++) {
+      var id = ids[Math.floor(Math.random() * ids.length)]
+      var sub = S.aoshu.settings.sanitize(
+        Object.assign({}, s, { topic: id, count: 1, review: false })
+      )
+      var q = S.aoshu.topics[id].generate(sub).questions[0]
+      if (!q) continue
+      var k = id + '#' + q.key
+      if (seen[k]) continue
+      seen[k] = 1
+      var entry = S.aoshu.OUTLINE.filter(function (o) {
+        return o.id === id
+      })[0]
+      out.push(Object.assign({}, q, { topicLabel: entry.no + ' ' + entry.name }))
+    }
+    return { questions: out, shortfall: s.count - out.length, topicCount: ids.length }
+  }
+
   /* 主流程：保存设置 → 同步表单 → 生成题目 → 渲染练习纸 */
   function refresh() {
     S.aoshu.settings.save(settings)
@@ -192,16 +264,27 @@
     }
     renderCatalog()
     fillForm(settings)
-    var result = topic.generate(settings)
-    S.aoshu.render.render($('preview'), settings, result.questions)
+
+    var result = settings.review ? generateReview(settings) : topic.generate(settings)
+    S.aoshu.render.render($('preview'), settings, result.questions, {
+      review: settings.review,
+      topicCount: result.topicCount
+    })
     fitPreview()
 
     var notice = $('notice')
-    if (result.shortfall > 0) {
+    if (result.noTopics) {
       notice.textContent =
-        '当前参数下不重复的题目只有 ' + result.questions.length +
-        ' 道（少于设定的 ' + settings.count +
-        ' 道）。可以减少题量、提高难度档，或多勾选几种题型。'
+        '还没有标记过「已学」的知识点，综合复习卷没题可出。' +
+        '在上面的目录里点知识点左边的圆点，把学过的标上 ✓ 就可以了。'
+      notice.hidden = false
+    } else if (result.shortfall > 0) {
+      notice.textContent = settings.review
+        ? '已学的知识点里凑不出这么多不重复的题（只有 ' + result.questions.length +
+          ' 道）。可以减少题量，或再标几个知识点为已学。'
+        : '当前参数下不重复的题目只有 ' + result.questions.length +
+          ' 道（少于设定的 ' + settings.count +
+          ' 道）。可以减少题量、提高难度档，或多勾选几种题型。'
       notice.hidden = false
     } else {
       notice.hidden = true

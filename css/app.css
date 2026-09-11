@@ -319,6 +319,26 @@ body {
   color: var(--ink-soft);
 }
 
+/* 「接着学下一个」：按大纲顺序指向第一个还没标已学的知识点 */
+.next-topic {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 10px;
+  font: 12px/1.5 inherit;
+  font-family: inherit;
+  text-align: left;
+  color: #2e7d43;
+  background: #f2faf4;
+  border: 1px dashed #7cbb8f;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.next-topic:hover {
+  background: #e6f5ea;
+}
+
 .topic-chip:disabled {
   padding-left: 10px; /* 无圆点，左内边距补回来 */
   color: #b8b09c;

@@ -65,7 +65,7 @@
       mode: oneOf(s.mode, MODES, DEFAULTS.mode),
       min: clampInt(s.min, 0, 9999, DEFAULTS.min),
       max: clampInt(s.max, 1, 10000, DEFAULTS.max),
-      count: clampInt(s.count, 10, 100, DEFAULTS.count),
+      count: clampInt(s.count, 2, 100, DEFAULTS.count),
       columns: clampInt(s.columns, 2, 4, DEFAULTS.columns),
       allowNegative: toBool(s.allowNegative, DEFAULTS.allowNegative),
       exactDivision: toBool(s.exactDivision, DEFAULTS.exactDivision),

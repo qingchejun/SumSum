@@ -97,6 +97,17 @@
   line-height: 1.6;
 }
 
+/* 综合复习卷：解析里标出这道题出自哪个知识点 */
+.sol-topic {
+  display: inline-block;
+  margin-right: 1.5mm;
+  padding: 0 1.2mm;
+  font-size: 11px;
+  color: #333;
+  border: 1px solid #999;
+  border-radius: 1mm;
+}
+
 .sol-steps {
   margin: 1.5mm 0 0;
   padding-left: 1.2em;

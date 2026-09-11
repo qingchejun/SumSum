@@ -14,6 +14,7 @@
     count: 5, // 每页 5 题，默认正好 1 页
     lessonPage: true, // 讲解页：新知识点先看讲解再做题，默认开
     answerPage: true, // 解析是本板块核心，默认开
+    review: false, // 综合复习卷：从已学的知识点里混合出题
     title: ''
   })
 
@@ -59,6 +60,7 @@
       count: clampInt(s.count, 2, 30, DEFAULTS.count),
       lessonPage: toBool(s.lessonPage, DEFAULTS.lessonPage),
       answerPage: toBool(s.answerPage, DEFAULTS.answerPage),
+      review: toBool(s.review, DEFAULTS.review),
       title: String(s.title == null ? '' : s.title).slice(0, 30)
     }
     /* 变式勾选逐知识点清洗；某知识点全取消时无题可出，强制回落到它的第一个变式 */

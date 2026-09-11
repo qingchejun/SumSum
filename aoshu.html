@@ -41,9 +41,18 @@
       </div>
       <div class="topic-chips" id="topic-chips"></div>
       <p class="catalog-hint">点圆点标「已学 ✓」，点名称切换知识点</p>
+      <button type="button" class="next-topic" id="btn-next" hidden></button>
     </section>
 
     <section class="group">
+      <h2 class="group-title">综合复习</h2>
+      <label class="check">
+        <input type="checkbox" id="f-review" /><span>出一张综合复习卷（从已学的知识点里混合出题）</span>
+      </label>
+      <p class="catalog-hint" id="review-hint" hidden></p>
+    </section>
+
+    <section class="group" id="group-variants">
       <h2 class="group-title">题型（至少选一种）</h2>
       <div id="variant-list"></div>
     </section>

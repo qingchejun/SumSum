@@ -135,12 +135,14 @@
       .join('')
   }
 
-  /* 解析块：题干重印（小号灰字）+ 圆点图示（若有）+ 分步骤讲解 + 加粗答句 */
+  /* 解析块：题干重印（小号灰字）+ 圆点图示（若有）+ 分步骤讲解 + 加粗答句。
+     综合复习卷里各题来自不同知识点，题号后标出是哪个，家长一眼知道在考什么。 */
   function solutionBlockHTML(q, idx, mm) {
     var p = P()
     return (
       '<div class="sol"' + heightStyle(mm) + '>' +
       '<div class="sol-stem"><span class="aq-num">' + p.numLabel(idx) + '</span>' +
+      (q.topicLabel ? '<span class="sol-topic">' + p.esc(q.topicLabel) + '</span>' : '') +
       stemHTML(q) + '</div>' +
       (q.diagramHTML ? q.diagramHTML : q.diagram ? diagramHTML(q.diagram) : '') +
       stepsHTML(q.solution) +
@@ -298,13 +300,19 @@
     })
   }
 
-  /* 主入口：（可选）讲解页 + 题目页 + （可选）解析页 */
-  function render(container, s, questions) {
+  /*
+   * 主入口：（可选）讲解页 + 题目页 + （可选）解析页。
+   * opts.review = 综合复习卷：题目来自多个知识点，讲解页无从谈起，标题另取。
+   */
+  function render(container, s, questions, opts) {
+    opts = opts || {}
     var topic = root.SumSum.aoshu.topics[s.topic]
-    var title = s.title || topic.titleFor(s)
+    var title = s.title || (opts.review
+      ? '综合复习 · 已学 ' + (opts.topicCount || 0) + ' 个知识点'
+      : topic.titleFor(s))
     var html = []
 
-    if (s.lessonPage && topic.lesson) {
+    if (!opts.review && s.lessonPage && topic.lesson) {
       html.push(
         pageHTML({
           title: topic.lesson.title,
