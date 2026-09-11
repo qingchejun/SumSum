@@ -202,19 +202,15 @@
 }
 
 /*
- * 冲突：两边都上淡红底，让孩子看清是哪一对撞了；但只有【他自己填错的那个】
- * 变红字。题面印好的提示按定义就是对的，把它也标成红字会让孩子以为要去改它。
+ * 交卷批改后，填错的格子标红（红字 + 淡红底）。只有点了「提交批改」才会出现，
+ * 填的过程中不判对错 —— 见 js/shudu-play.js 的 submit()。
  *
  * ⚠️ 选择器必须写满 .sheet.playable .sudoku 三级（0,4,2），跟上面的 .sel / .peer
  * 打平再靠「写在后面」取胜。写成 .sudoku .cell.bad（0,3,1）会被 .sel 压住 ——
- * 而刚填错的那一格恰恰永远是选中态，等于冲突底色在最该出现的时候不出现。实测踩过。
+ * 而刚改过的那一格往往正是选中态，等于红底在最该出现的时候不出现。实测踩过。
  */
-.sheet.playable .sudoku .cell.bad,
-.sheet.playable .sudoku .cell.bad-peer {
-  background: #fdeae3;
-}
-
 .sheet.playable .sudoku .cell.bad {
+  background: #fdeae3;
   color: var(--red, #c8461d);
 }
 
@@ -285,6 +281,13 @@ body.playing .preview {
 
 .num-bar button.wide {
   font-size: 15px;
+}
+
+/* 提交是这一排里的主操作，做成实心，免得淹没在一堆同样的描边按钮里 */
+.num-bar button.primary {
+  color: #fff;
+  background: var(--red, #c8461d);
+  border-color: var(--red, #c8461d);
 }
 
 .num-bar .num-tip {

@@ -7,8 +7,10 @@
  * 全部还原成干净题面，玩到一半也能随时打印。
  *
  * 交互：先点空格选中（同行/同列/同宫淡色高亮），再点底部数字条填入；
- * 再点同一个数字就擦除。冲突的格子和撞上的那些格一起标红。
- * 填满且无冲突即完成。
+ * 再点同一个数字就擦除。填的过程中【不做任何对错判断】，点「提交批改」才判 ——
+ * 填数独本来就是边填边改的，填完整盘还想回头调两格很正常，
+ * 每填一格就弹「全部做对了」等于替人决定「你做完了」。改动任何一格，
+ * 上一次的批改痕迹立刻作废（clearVerdict）。
  *
  * 作答状态只活在 DOM 里，不进 URL、不进 localStorage —— 链接的语义应当是
  * 「这张卷子」而不是「这张卷子做到一半的样子」，与口算/奥数的分享语义一致。
@@ -44,32 +46,57 @@
   }
 
   /*
-   * 重算冲突并标红。用 shudu-core 预计算的 peers 表，
-   * 这样「同宫」的判定和出题时用的是同一套定义，不会出现两边规则不一致。
+   * 清掉上一次交卷的批改痕迹。
+   * 只要动了任何一格就要调一次 —— 上次的红叉和「全对」都已经不作数了，
+   * 留在屏幕上会让人以为改完还是错的（或者已经对了）。
    */
-  function refreshConflicts(boardEl, q) {
-    var B = root.SumSum.shudu.board(q.shape)
+  function clearVerdict(boardEl) {
+    clearMarks(boardEl, ['bad'])
+    boardEl.classList.remove('done')
+  }
+
+  /*
+   * 交卷批改。
+   *
+   * 【为什么不在填的过程中实时判】：填数独本来就是边填边改的，填完整盘还想
+   * 回头调两格很正常。每填一格就弹「全部做对了」，等于替人决定「你做完了」——
+   * 人还没打算交卷。所以判分只发生在点「提交」的那一刻。
+   *
+   * 判的是「跟正确答案比对」而不是「有没有重复」：题目是唯一解，所以填错必然
+   * 最终会撞车，但可能撞的那格还空着、当下看不出来。直接比答案，
+   * 「哪几格错了」一次说清楚，不用等孩子把错误传染到别处。
+   */
+  function submit() {
+    if (!current) return
+    var boardEl = current.board
+    var q = current.q
     var grid = readGrid(boardEl)
     var cells = cellsOf(boardEl)
-    clearMarks(boardEl, ['bad', 'bad-peer'])
+    clearVerdict(boardEl)
 
-    var bad = false
-    for (var i = 0; i < grid.length; i++) {
-      if (!grid[i]) continue
-      var ps = B.peers[i]
-      for (var k = 0; k < ps.length; k++) {
-        if (grid[ps[k]] === grid[i]) {
-          /* 题面自带的提示不标红——错的是孩子填的那个，不是印上去的那个 */
-          if (q.puzzle[i] === 0) cells[i].classList.add('bad')
-          else cells[i].classList.add('bad-peer')
-          bad = true
-        }
-      }
+    var blanks = 0
+    var i
+    for (i = 0; i < grid.length; i++) {
+      if (!grid[i]) blanks++
+    }
+    if (blanks) {
+      tip('还有 ' + blanks + ' 格没填，填完再交')
+      return
     }
 
-    var filled = grid.every(function (v) { return v !== 0 })
-    boardEl.classList.toggle('done', filled && !bad)
-    return { filled: filled, bad: bad }
+    var wrong = 0
+    for (i = 0; i < grid.length; i++) {
+      if (grid[i] !== q.solution[i]) {
+        cells[i].classList.add('bad')
+        wrong++
+      }
+    }
+    if (wrong) {
+      tip('有 ' + wrong + ' 格不对（已标红），改好再交一次')
+      return
+    }
+    boardEl.classList.add('done')
+    tip('🎉 全部做对了！', true)
   }
 
   function select(boardEl, idx) {
@@ -87,7 +114,7 @@
     })
   }
 
-  /* 底部数字条：1~n + 擦除 + 重来 + 看答案 */
+  /* 底部数字条：1~n + 擦除 / 重来 / 提交 / 看答案 */
   function renderBar(n) {
     var bar = $('num-bar')
     var html = []
@@ -96,8 +123,10 @@
     }
     html.push('<button type="button" class="wide" data-act="erase">擦除</button>')
     html.push('<button type="button" class="wide" data-act="reset">重来</button>')
+    /* 提交是主操作，给它实心样式，一眼能从一排按钮里认出来 */
+    html.push('<button type="button" class="wide primary" data-act="submit">提交批改</button>')
     html.push('<button type="button" class="wide" data-act="reveal">看答案</button>')
-    html.push('<span class="num-tip" id="num-tip">先点一个空格，再点数字</span>')
+    html.push('<span class="num-tip" id="num-tip">先点一个空格，再点数字；填完点「提交批改」</span>')
     bar.innerHTML = html.join('')
     bar.hidden = false
   }
@@ -141,10 +170,10 @@
     cell.classList.toggle('mine', v !== 0)
     cell.classList.remove('revealed')
 
-    var st = refreshConflicts(current.board, current.q)
-    if (st.filled && !st.bad) tip('🎉 全部做对了！', true)
-    else if (st.bad) tip('标红的地方重复了，改一改')
-    else tip('继续，还有空格')
+    /* 改了格子，上一次的批改结果就作废；这里不判对错，等点「提交」 */
+    clearVerdict(current.board)
+    var blanks = readGrid(current.board).filter(function (x) { return !x }).length
+    tip(blanks ? '还有 ' + blanks + ' 格　·　填完点「提交」批改' : '填满了，点「提交」看对不对')
   }
 
   function reset() {
@@ -155,7 +184,7 @@
       el.classList.remove('mine', 'revealed')
     })
     select(current.board, null)
-    refreshConflicts(current.board, current.q)
+    clearVerdict(current.board)
     tip('已清空，重新开始')
   }
 
@@ -168,7 +197,7 @@
       el.classList.add('revealed')
     })
     select(current.board, null)
-    refreshConflicts(current.board, current.q)
+    clearVerdict(current.board)
     tip('这是答案。想自己做的话点「重来」')
   }
 
@@ -223,11 +252,12 @@
       if (!current || current.sel == null) return
       if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
         e.preventDefault()
-        var cell = cellsOf(current.board)[current.sel]
-        cell.textContent = ''
-        cell.classList.remove('mine', 'revealed')
-        refreshConflicts(current.board, current.q)
-        return
+        return put(0)
+      }
+      /* 回车 = 交卷，省得每次都去够底下那颗按钮 */
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        return submit()
       }
       var v = parseInt(e.key, 10)
       if (Number.isFinite(v) && v >= 1 && v <= current.n) {
@@ -242,6 +272,7 @@
       var act = btn.getAttribute('data-act')
       if (act === 'erase') return put(0)
       if (act === 'reset') return reset()
+      if (act === 'submit') return submit()
       if (act === 'reveal') return reveal()
       var v = parseInt(btn.getAttribute('data-v'), 10)
       if (Number.isFinite(v)) put(v)
