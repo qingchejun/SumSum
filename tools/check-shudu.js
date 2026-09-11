@@ -15,22 +15,26 @@
 'use strict'
 
 require('../js/shudu-core.js')
+require('../js/shudu-settings.js') // 只为验 sanitize 的钳位；它的 load/save 碰 DOM，这里不调
 var SD = globalThis.SumSum.shudu
 
 /* 盘型参数在这里【重新写一遍】，不从 shudu-core 取——那边写错了这里才能发现 */
 var SHAPES = {
-  s3: { n: 3, bh: 0, bw: 0 },
   s4: { n: 4, bh: 2, bw: 2 },
   s6: { n: 6, bh: 2, bw: 3 }
 }
 
-var TARGET = {
-  s3: { easy: 5, normal: 4, hard: 3 },
-  s4: { easy: 9, normal: 7, hard: 5 },
-  s6: { easy: 20, normal: 16, hard: 12 }
+/*
+ * 难度是「给几个提示」的连续区间，所以要把【整个区间每一档】都扫一遍，
+ * 不能只挑三个点验 —— 用户能拖到任意一档，任意一档都得守住红线。
+ * 区间下限同样在这里重写一遍，与 shudu-core 的 CLUE_RANGE 对照。
+ */
+var RANGE = {
+  s4: { min: 5, max: 12 },
+  s6: { min: 13, max: 26 }
 }
 
-var ROUNDS = 200
+var ROUNDS = 60
 
 /* ---------- 独立实现的基础工具 ---------- */
 
@@ -160,13 +164,6 @@ function selfTest() {
   var back = nakedOnly(sp4, one)
   if (!back || !same(back, good)) fails.push('nakedOnly 补不回被挖掉的单格')
 
-  /* 三宫格无宫：这个布局同列有重复，必须判非法 */
-  var sp3 = SHAPES.s3
-  var lat = [1, 2, 3, 2, 3, 1, 3, 1, 2]
-  if (!isValidFull(sp3, lat)) fails.push('isValidFull 把一个合法的三宫格拉丁方判成了非法')
-  var lat2 = [1, 2, 3, 1, 3, 2, 3, 1, 2]
-  if (isValidFull(sp3, lat2)) fails.push('isValidFull 没抓出三宫格的同列重复')
-
   /* 六宫格的宫是 2 行 × 3 列：格 0 和格 2 同宫，格 0 和格 3 不同宫 */
   var sp6 = SHAPES.s6
   if (boxOf(sp6, 0) !== boxOf(sp6, 2)) fails.push('boxOf 认为六宫格的 (0,0) 与 (0,2) 不同宫')
@@ -179,15 +176,14 @@ function selfTest() {
 
 /* ---------- 主校验 ---------- */
 
-function checkCombo(shapeKey, level, report) {
+function checkCombo(shapeKey, target, report) {
   var sp = SHAPES[shapeKey]
-  var target = TARGET[shapeKey][level]
 
   for (var r = 1; r <= ROUNDS; r++) {
-    var seed = r * 7919 + shapeKey.charCodeAt(1) * 131 + level.length
-    var res = SD.generate({ shape: shapeKey, level: level, count: 1, seed: seed, noDuplicates: false })
+    var seed = r * 7919 + shapeKey.charCodeAt(1) * 131 + target
+    var res = SD.generate({ shape: shapeKey, clues: target, count: 1, seed: seed, noDuplicates: false })
     var q = res.puzzles[0]
-    var where = shapeKey + '/' + level + ' seed=' + seed
+    var where = shapeKey + '/' + target + '提示 seed=' + seed
 
     if (!q) { report(where + '：generate 没产出题目'); continue }
 
@@ -201,12 +197,14 @@ function checkCombo(shapeKey, level, report) {
     }
     if (!subsetOk) report(where + '：题面里的提示数字与 solution 对不上')
 
-    /* ③ 提示数 —— 允许比目标多 1（六宫格挑战档约 1/300 挖不到底，多一个只会更简单） */
+    /*
+     * ③ 提示数必须【精确等于】滑块上的数字。
+     * 这一条是严格相等而不是给区间：区间下限本来就是按「实测 100% 挖得到」挑的，
+     * 就是为了让面板写几个、卷子上就是几个。哪一档开始挖不到，这里就会立刻报出来。
+     */
     var clues = q.puzzle.filter(function (x) { return x !== 0 }).length
     if (clues !== q.clues) report(where + '：clues 字段(' + q.clues + ') 与题面实际(' + clues + ') 不符')
-    if (clues < target || clues > target + 1) {
-      report(where + '：提示数 ' + clues + ' 不在 [' + target + ', ' + (target + 1) + '] 内')
-    }
+    if (clues !== target) report(where + '：要 ' + target + ' 个提示，实际挖出 ' + clues + ' 个')
 
     /* ④ 红线 —— 只用唯一候选数必须能解完，且结果等于 solution */
     var logic = nakedOnly(sp, q.puzzle)
@@ -223,32 +221,64 @@ function checkCombo(shapeKey, level, report) {
 }
 
 function checkReproducible(report) {
-  var combos = [['s3', 'hard'], ['s4', 'normal'], ['s6', 'hard']]
+  var combos = [['s4', 5], ['s4', 12], ['s6', 13], ['s6', 26]]
   combos.forEach(function (c) {
-    var s = { shape: c[0], level: c[1], count: 6, seed: 20260911, noDuplicates: true }
+    var label = c[0] + '/' + c[1] + '提示'
+    var s = { shape: c[0], clues: c[1], count: 6, seed: 20260911, noDuplicates: true }
     var a = JSON.stringify(SD.generate(s).puzzles)
     var b = JSON.stringify(SD.generate(s).puzzles)
-    if (a !== b) report(c[0] + '/' + c[1] + '：同一种子两次生成结果不同（不可复现）')
+    if (a !== b) report(label + '：同一种子两次生成结果不同（不可复现）')
 
     /* 换个种子应当换一批题，否则说明种子根本没起作用 */
     var other = JSON.stringify(SD.generate({
-      shape: c[0], level: c[1], count: 6, seed: 20260912, noDuplicates: true
+      shape: c[0], clues: c[1], count: 6, seed: 20260912, noDuplicates: true
     }).puzzles)
-    if (a === other) report(c[0] + '/' + c[1] + '：换种子后题目没变（种子没生效）')
+    if (a === other) report(label + '：换种子后题目没变（种子没生效）')
   })
 }
 
 function checkNoDuplicates(report) {
-  var s = { shape: 's3', level: 'normal', count: 12, seed: 424242, noDuplicates: true }
+  var s = { shape: 's4', clues: 12, count: 20, seed: 424242, noDuplicates: true }
   var res = SD.generate(s)
   var seen = {}
   res.puzzles.forEach(function (q) {
-    if (seen[q.key]) report('s3/normal：开了「题目不重复」仍出现重复题面')
+    if (seen[q.key]) report('s4/12提示：开了「题目不重复」仍出现重复题面')
     seen[q.key] = 1
   })
-  if (res.puzzles.length !== 12) {
-    report('s3/normal：要 12 题只出了 ' + res.puzzles.length + ' 题（shortfall=' + res.shortfall + '）')
+  if (res.puzzles.length !== 20) {
+    report('s4/12提示：要 20 题只出了 ' + res.puzzles.length + ' 题（shortfall=' + res.shortfall + '）')
   }
+}
+
+/*
+ * 设置层：钳位与老链接翻译。放在这里一起验，是因为「滑块写几个就出几个」
+ * 这条承诺一半靠生成器、一半靠 sanitize 的钳位，只验生成器不够。
+ */
+function checkSettings(report) {
+  var ST = globalThis.SumSum.shuduSettings
+  if (!ST) { report('shudu-settings.js 没加载上'); return }
+
+  Object.keys(RANGE).forEach(function (sk) {
+    var r = RANGE[sk]
+    /* 越界值必须被钳进区间，而不是原样透传给生成器 */
+    if (ST.sanitize({ shape: sk, clues: r.min - 3 }).clues !== r.min) report(sk + '：低于下限没被钳到 ' + r.min)
+    if (ST.sanitize({ shape: sk, clues: r.max + 9 }).clues !== r.max) report(sk + '：高于上限没被钳到 ' + r.max)
+    if (ST.sanitize({ shape: sk, clues: 'abc' }).clues == null) report(sk + '：非数字输入没有回退到默认值')
+    /* 没给 clues 时要用【该盘型自己的】默认值，不能套用四宫格的 7 再钳到六宫格下限 */
+    var d = ST.sanitize({ shape: sk }).clues
+    if (d < r.min || d > r.max) report(sk + '：缺省 clues 落到了区间外（' + d + '）')
+  })
+  if (ST.sanitize({ shape: 's6' }).clues === RANGE.s6.min) {
+    report('s6：只给 shape 时拿到的是区间下限（最难），说明没按盘型取默认值')
+  }
+
+  /* 老链接 ?level=hard 要能翻译成对应的提示数 */
+  if (ST.sanitize({ shape: 's4', level: 'hard' }).clues !== 5) report('老链接 level=hard 没翻译成 5 个提示')
+  if (ST.sanitize({ shape: 's4', level: 'easy' }).clues !== 9) report('老链接 level=easy 没翻译成 9 个提示')
+  /* 同时给了 clues 时以 clues 为准 */
+  if (ST.sanitize({ shape: 's4', level: 'hard', clues: 11 }).clues !== 11) report('clues 与 level 同时出现时没有以 clues 为准')
+  /* 三宫格已下架，必须回退到四宫格而不是留下一个不存在的盘型 */
+  if (ST.sanitize({ shape: 's3' }).shape !== 's4') report('已下架的 s3 没有回退到 s4')
 }
 
 function main() {
@@ -263,24 +293,31 @@ function main() {
   }
   console.log('✓ 校验器自检通过')
 
-  var shapes = ['s3', 's4', 's6']
-  var levels = ['easy', 'normal', 'hard']
   var total = 0
   var t0 = Date.now()
 
-  shapes.forEach(function (sk) {
-    levels.forEach(function (lv) {
-      var before = problems.length
-      checkCombo(sk, lv, report)
+  /* 难度是连续区间，所以整个区间每一档都要扫，不能只挑几个点 */
+  Object.keys(RANGE).forEach(function (sk) {
+    var r = RANGE[sk]
+    var before = problems.length
+    var marks = []
+    for (var t = r.min; t <= r.max; t++) {
+      var b0 = problems.length
+      checkCombo(sk, t, report)
       total += ROUNDS
-      var bad = problems.length - before
-      console.log(
-        (bad ? '✗' : '✓') + ' ' + sk + '/' + lv +
-        '  目标 ' + TARGET[sk][lv] + ' 提示  ' + ROUNDS + ' 局' +
-        (bad ? '  —— ' + bad + ' 处问题' : '')
-      )
-    })
+      marks.push(t + (problems.length > b0 ? '✗' : '✓'))
+    }
+    var bad = problems.length - before
+    console.log(
+      (bad ? '✗' : '✓') + ' ' + sk + '  提示数 ' + r.min + '~' + r.max +
+      ' 各 ' + ROUNDS + ' 局：' + marks.join(' ') +
+      (bad ? '  —— ' + bad + ' 处问题' : '')
+    )
   })
+
+  var setBefore = problems.length
+  checkSettings(report)
+  console.log((problems.length > setBefore ? '✗' : '✓') + ' 设置钳位与老链接翻译')
 
   var reproBefore = problems.length
   checkReproducible(report)

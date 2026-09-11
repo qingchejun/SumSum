@@ -36,7 +36,6 @@
     <section class="group">
       <h2 class="group-title">盘型</h2>
       <select id="f-shape" class="input">
-        <option value="s3">三宫格 3×3 · 只看行和列</option>
         <option value="s4">四宫格 4×4 · 行、列、2×2 宫</option>
         <option value="s6">六宫格 6×6 · 行、列、2×3 宫</option>
       </select>
@@ -44,9 +43,11 @@
     </section>
 
     <section class="group">
-      <h2 class="group-title">难度</h2>
-      <select id="f-level" class="input"></select>
-      <p class="hint">提示给得越少越难。无论哪一档，都保证【不用猜】就能一步步推出来。</p>
+      <h2 class="group-title">难度：<span id="clues-label"></span></h2>
+      <input type="range" id="f-clues" class="slider" step="1" />
+      <div class="slider-ends"><span id="clues-min"></span><span id="clues-max"></span></div>
+      <p class="hint">提示给得越少越难。<b>无论拖到哪一档，都保证不用猜</b>——任何时候盘上
+        总有一个格子能直接排除出唯一答案，孩子不会卡死在那儿瞎蒙。</p>
     </section>
 
     <section class="group">
@@ -80,7 +81,7 @@
 
     <section class="group">
       <h2 class="group-title">练习纸标题（选填）</h2>
-      <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：四宫格数独 · 普通" />
+      <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：四宫格数独 · 给 7 个提示" />
     </section>
 
     <p class="hint">设置和这批题目都写进了网址：收藏或分享这个链接，打开后就是一模一样的一张卷子。想换一批题，点「重新生成」。</p>

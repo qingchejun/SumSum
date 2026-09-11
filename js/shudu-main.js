@@ -16,7 +16,7 @@
 
   var els = {
     shape: $('f-shape'),
-    level: $('f-level'),
+    clues: $('f-clues'),
     count: $('f-count'),
     copies: $('f-copies'),
     play: $('f-play'),
@@ -28,24 +28,24 @@
   var settings = S.shuduSettings.load()
 
   /*
-   * 难度下拉的文案随盘型变：直接把提示数写出来（「普通 · 给 7 个提示」），
-   * 家长一眼就知道调的是什么，不用猜「普通」到底有多普通。
+   * 难度滑块的范围随盘型变（四宫格 5~12、六宫格 13~26），所以每次渲染表单
+   * 都要重设 min/max。下限是实测 100% 挖得到的值，保证滑块上写几个、
+   * 卷子上就是几个 —— 见 shudu-core 的 CLUE_RANGE 注释。
    */
-  function fillLevels(shape) {
-    var keep = els.level.value
-    els.level.innerHTML = S.shudu.LEVELS.map(function (lv) {
-      return (
-        '<option value="' + lv.key + '">' + lv.name +
-        ' · 给 ' + S.shudu.cluesFor(shape, lv.key) + ' 个提示</option>'
-      )
-    }).join('')
-    if (keep) els.level.value = keep
+  function fillClueSlider(s) {
+    var r = S.shudu.clueRange(s.shape)
+    var n = S.shudu.shapeOf(s.shape).n
+    els.clues.min = String(r.min)
+    els.clues.max = String(r.max)
+    els.clues.value = String(s.clues)
+    $('clues-label').textContent = '给 ' + s.clues + ' 个提示（要填 ' + (n * n - s.clues) + ' 个空）'
+    $('clues-min').textContent = r.min + ' 个 · 最难'
+    $('clues-max').textContent = '最容易 · ' + r.max + ' 个'
   }
 
   function fillForm(s) {
     els.shape.value = s.shape
-    fillLevels(s.shape)
-    els.level.value = s.level
+    fillClueSlider(s)
     els.count.value = s.count
     els.copies.value = String(s.copies)
     els.play.checked = s.playMode
@@ -57,7 +57,7 @@
   function readForm() {
     return S.shuduSettings.sanitize({
       shape: els.shape.value,
-      level: els.level.value,
+      clues: els.clues.value,
       count: els.count.value,
       copies: els.copies.value,
       playMode: els.play.checked,
@@ -68,14 +68,8 @@
     })
   }
 
-  /* 盘型说明：三宫格没有「宫」，要明说，免得孩子形成「数独只要管行列」的印象 */
   function shapeHint(s) {
-    var sp = S.shudu.shapeOf(s.shape)
-    if (sp.key === 's3') {
-      return '三宫格只有行和列两条规则（严格说是「拉丁方」，不算真正的数独），' +
-        '适合第一次讲规则用，玩熟两三张就可以换四宫格了。'
-    }
-    if (sp.key === 's4') {
+    if (s.shape === 's4') {
       return '四宫格是真正意义上最小的标准数独，行、列、2×2 小宫三条规则齐全，一年级 1~3 分钟一题。'
     }
     return '六宫格的小宫是 2 行 × 3 列（横着的长方形），比四宫格明显难，一题要 5~15 分钟。'
@@ -143,12 +137,28 @@
   })
 
   /*
-   * 换盘型时难度下拉要先跟着换文案（提示数随盘型变），
+   * 滑块拖动时先只更新文字，松手（change）才真的重新出题。
+   * 否则从 5 拖到 12 会一路生成七八批题、预览疯狂闪。
+   */
+  els.clues.addEventListener('input', function () {
+    var n = S.shudu.shapeOf(els.shape.value).n
+    var v = Number(els.clues.value)
+    $('clues-label').textContent = '给 ' + v + ' 个提示（要填 ' + (n * n - v) + ' 个空）'
+  })
+
+  /*
+   * 换盘型时提示数要等比搬过去（见 shudu-core 的 remapClues），
    * 而且换盘型等于换一整批题，顺手换个种子更符合直觉。
    */
   els.shape.addEventListener('change', function () {
-    fillLevels(els.shape.value)
-    settings = Object.assign({}, readForm(), { seed: S.shuduSettings.newSeed() })
+    var to = els.shape.value
+    settings = S.shuduSettings.sanitize(
+      Object.assign({}, settings, {
+        shape: to,
+        clues: S.shudu.remapClues(settings.clues, settings.shape, to),
+        seed: S.shuduSettings.newSeed()
+      })
+    )
     refresh()
   })
 

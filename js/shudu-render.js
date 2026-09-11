@@ -112,9 +112,10 @@
   function puzzleSheetHTML(q, opts) {
     var SD = root.SumSum.shudu
     var sp = SD.shapeOf(q.shape)
-    var rule = sp.key === 's3'
-      ? '每行、每列都要有 1~' + sp.n + '，各出现一次'
-      : '每行、每列、每个粗框小宫都要有 1~' + sp.n + '，各出现一次'
+    /* 没有宫的盘型（bh 为 0）只说行和列，免得孩子照着找不存在的粗框 */
+    var rule = sp.bh
+      ? '每行、每列、每个粗框小宫都要有 1~' + sp.n + '，各出现一次'
+      : '每行、每列都要有 1~' + sp.n + '，各出现一次'
 
     return (
       '<section class="sheet sheet-sudoku">' +

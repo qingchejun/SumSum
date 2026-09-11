@@ -27,6 +27,23 @@
   color: #000;
 }
 
+/* ---------- 难度滑块 ---------- */
+
+.slider {
+  width: 100%;
+  margin: 2px 0 0;
+  accent-color: var(--red, #c8461d);
+}
+
+/* 两端标注哪头难哪头容易——光给数字，家长得想一下「多给提示是更难还是更简单」 */
+.slider-ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-soft, #7a6a4c);
+}
+
 /* ---------- 盘 ---------- */
 
 .sudoku {

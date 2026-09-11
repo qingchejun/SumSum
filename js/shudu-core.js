@@ -1,11 +1,11 @@
 /**
  * 数独题目生成（无 DOM 依赖，可在 node 中直接测试）。
  *
- * 三种盘型共用一套数据结构：棋盘是长度 n² 的一维数组，0 表示空格。
- *  - 三宫格 3×3：只有行、列两个约束（严格说是拉丁方，没有「宫」）
+ * 两种盘型共用一套数据结构：棋盘是长度 n² 的一维数组，0 表示空格。
  *  - 四宫格 4×4：2×2 的宫
  *  - 六宫格 6×6：2 行 × 3 列的宫
- * 三宫格的「没有宫」靠 bh === 0 表达，不另写一套代码。
+ * makeShape 仍保留 bh === 0 表示「没有宫」（纯拉丁方）的分支：代价是几行，
+ * 而有了它，将来若要再加盘型就不必改结构。
  *
  * 质量红线：每一局都必须能【只用「唯一候选数」一招】推到底——任何时刻棋盘上
  * 都至少存在一个空格，它的行/列/宫里已出现了除一个数以外的所有数。一年级的孩子
@@ -14,7 +14,7 @@
  * 不存在第二条路），不需要另外做唯一性检查。
  *
  * 题目对象：{ shape, puzzle, solution, clues, key }
- *  - shape：盘型 key，'s3' / 's4' / 's6'
+ *  - shape：盘型 key，'s4' / 's6'
  *  - puzzle：题面，一维数组，0 = 待填
  *  - solution：完整解，同长度
  *  - clues：题面里非 0 的个数（= 提示数）
@@ -44,40 +44,57 @@
 
   /* ---------- 盘型 ---------- */
 
-  /*
-   * 盘型定义。bh / bw = 宫的高 / 宽；bh 为 0 表示没有宫。
-   * name 之外还给了 note：三宫格没有宫，规则和真正的数独不一样，
-   * 界面上要明说，免得孩子形成「数独只要管行列」的错误印象。
-   */
+  /* 盘型定义。bh / bw = 宫的高 / 宽；bh 为 0 表示没有宫（纯拉丁方） */
   var SHAPES = [
-    { key: 's3', n: 3, bh: 0, bw: 0, name: '三宫格', label: '三宫格 3×3', note: '只看行和列' },
     { key: 's4', n: 4, bh: 2, bw: 2, name: '四宫格', label: '四宫格 4×4', note: '行、列、2×2 宫' },
     { key: 's6', n: 6, bh: 2, bw: 3, name: '六宫格', label: '六宫格 6×6', note: '行、列、2×3 宫' }
   ]
 
   /*
-   * 难度 → 提示数。用「提示数」而不是「推理步数」当难度参数：提示数可以直接
-   * 控制并且实测 2699/2700 局精确命中，而步数只能事后测量、没法当输入。
-   * 这几个数是实测挑出来的——挑战档已经接近各盘型的理论下限
-   * （贪心挖到最少：3×3 要 2~3 个、4×4 要 4~5 个、6×6 要 8~12 个）。
+   * 难度就是「给几个提示」，由用户直接拖滑块选，不再套「简单/普通/挑战」三档——
+   * 三档是我们替家长猜的，而每个孩子卡在哪一档只有家长知道，直接给数字更灵活。
+   *
+   * min 不是理论下限，而是**实测 300 局 100% 能挖到**的那个值：
+   *   四宫格贪心挖到底是 4~5 个提示，但目标 4 只有 68% 能挖到，5 才是 100%；
+   *   六宫格贪心到底是 9~12，目标 9 只有 11%、10 有 60%、11 有 98%、12 有 99%，13 才是 100%。
+   * 取 100% 的那个值当下限，是为了保证「面板上写几个，卷子上就是几个」——
+   * 否则家长拖到 4 却总拿到 5，会以为程序坏了。
+   * max 取到「只剩四五个空」为止，再多就没什么可推的了。
    */
-  var CLUES = {
-    s3: { easy: 5, normal: 4, hard: 3 },
-    s4: { easy: 9, normal: 7, hard: 5 },
-    s6: { easy: 20, normal: 16, hard: 12 }
+  var CLUE_RANGE = {
+    s4: { min: 5, max: 12, def: 7 },
+    s6: { min: 13, max: 26, def: 16 }
   }
-
-  var LEVELS = [
-    { key: 'easy', name: '简单' },
-    { key: 'normal', name: '普通' },
-    { key: 'hard', name: '挑战' }
-  ]
 
   function shapeOf(key) {
     for (var i = 0; i < SHAPES.length; i++) {
       if (SHAPES[i].key === key) return SHAPES[i]
     }
-    return SHAPES[1] // 默认四宫格
+    return SHAPES[0] // 默认四宫格
+  }
+
+  function clueRange(shapeKey) {
+    return CLUE_RANGE[shapeKey] || CLUE_RANGE.s4
+  }
+
+  function clampClues(shapeKey, v) {
+    var r = clueRange(shapeKey)
+    var n = Math.round(Number(v))
+    if (!Number.isFinite(n)) return r.def
+    return Math.min(r.max, Math.max(r.min, n))
+  }
+
+  /*
+   * 换盘型时把提示数搬过去：按「空格占比」等比映射，而不是原样带过去。
+   * 四宫格 7 个提示是 9/16 = 56% 的格子要填；同样 56% 搬到六宫格是 20 个空、
+   * 也就是 16 个提示 —— 难度感受接近，家长不用每换一次盘型就重新试。
+   * 直接原样带过去的话，四宫格的 7 到了六宫格会被钳到下限 13，一换就变最难档。
+   */
+  function remapClues(clues, fromShape, toShape) {
+    var a = shapeOf(fromShape)
+    var b = shapeOf(toShape)
+    var blankRatio = (a.n * a.n - clues) / (a.n * a.n)
+    return clampClues(toShape, Math.round(b.n * b.n * (1 - blankRatio)))
   }
 
   /*
@@ -248,11 +265,10 @@
     return { puzzle: g, solution: solution, clues: left }
   }
 
-  /* 单局：按盘型 + 难度出一道题 */
-  function makeOne(shapeKey, level, rnd) {
+  /* 单局：按盘型 + 提示数出一道题 */
+  function makeOne(shapeKey, clues, rnd) {
     var B = board(shapeKey)
-    var target = (CLUES[shapeKey] || CLUES.s4)[level]
-    var d = digTo(B, rnd, target)
+    var d = digTo(B, rnd, clampClues(shapeKey, clues))
     return {
       shape: shapeKey,
       puzzle: d.puzzle,
@@ -264,9 +280,8 @@
 
   /*
    * 主入口：按设置生成一批题目。
-   * 去重按题面字符串——三宫格只有 12 个完整解，但普通档仍有近千种不同题面，
-   * 实测 10 题一张卷 200 张里只有 6 张撞题，简单去重就够，不必特殊处理。
-   * 尝试上限 count × 50：撞题率本来就极低，这个上限只是防死循环。
+   * 去重按题面字符串。尝试上限 count × 50：四宫格 2000 次生成能得 1999 个不同题面，
+   * 撞题率本来就极低，这个上限只是防死循环。
    */
   function generate(s) {
     var rnd = s.seed ? makeRandom(s.seed) : Math.random
@@ -275,7 +290,7 @@
     var maxAttempts = s.count * 50
 
     for (var i = 0; i < maxAttempts && puzzles.length < s.count; i++) {
-      var q = makeOne(s.shape, s.level, rnd)
+      var q = makeOne(s.shape, s.clues, rnd)
       if (s.noDuplicates && seen[q.key]) continue
       seen[q.key] = 1
       puzzles.push(q)
@@ -283,27 +298,18 @@
     return { puzzles: puzzles, shortfall: s.count - puzzles.length }
   }
 
-  /* 自动标题：如「四宫格数独 · 普通」；三宫格顺带说明它只看行和列 */
+  /* 自动标题：如「四宫格数独 · 给 7 个提示」 */
   function titleFor(s) {
-    var sp = shapeOf(s.shape)
-    var levelName = '普通'
-    for (var i = 0; i < LEVELS.length; i++) {
-      if (LEVELS[i].key === s.level) levelName = LEVELS[i].name
-    }
-    if (sp.key === 's3') return sp.name + '数独 · ' + levelName + '（只看行和列）'
-    return sp.name + '数独 · ' + levelName
-  }
-
-  /* 当前盘型该难度给几个提示，面板文案要用（「普通 · 给 7 个提示」） */
-  function cluesFor(shapeKey, level) {
-    return (CLUES[shapeKey] || CLUES.s4)[level]
+    return shapeOf(s.shape).name + '数独 · 给 ' + clampClues(s.shape, s.clues) + ' 个提示'
   }
 
   root.SumSum = root.SumSum || {}
   root.SumSum.shudu = {
     SHAPES: SHAPES,
-    LEVELS: LEVELS,
-    CLUES: CLUES,
+    CLUE_RANGE: CLUE_RANGE,
+    clueRange: clueRange,
+    clampClues: clampClues,
+    remapClues: remapClues,
     shapeOf: shapeOf,
     board: board,
     candidates: candidates,
@@ -313,7 +319,6 @@
     makeOne: makeOne,
     makeRandom: makeRandom,
     generate: generate,
-    titleFor: titleFor,
-    cluesFor: cluesFor
+    titleFor: titleFor
   }
 })(typeof window !== 'undefined' ? window : globalThis)
