@@ -76,6 +76,7 @@
       <h2 class="group-title">进位 / 退位</h2>
       <select id="f-carry" class="input">
         <option value="random">随机（不限制）</option>
+        <option value="carrymore">以进位 / 退位为主</option>
         <option value="nocarry">不出进位 / 退位题</option>
         <option value="carryonly">只出进位 / 退位题</option>
       </select>
@@ -123,6 +124,9 @@
       </label>
       <label class="check" data-show-inline="mixed">
         <input type="checkbox" id="f-parens" /><span>四则运算允许括号</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="f-skiptrivial" /><span>跳过送分题（如 7 + 0、5 × 1、8 − 8）</span>
       </label>
       <label class="check">
         <input type="checkbox" id="f-nodup" /><span>题目不重复</span>

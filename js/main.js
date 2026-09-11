@@ -26,6 +26,7 @@
     nonneg: $('f-nonneg'),
     exactdiv: $('f-exactdiv'),
     parens: $('f-parens'),
+    skiptrivial: $('f-skiptrivial'),
     nodup: $('f-nodup'),
     anspage: $('f-anspage'),
     title: $('f-title')
@@ -47,6 +48,7 @@
     els.nonneg.checked = !s.allowNegative // 勾选「不出负数」= 不允许负数
     els.exactdiv.checked = s.exactDivision
     els.parens.checked = s.parens
+    els.skiptrivial.checked = s.skipTrivial
     els.nodup.checked = s.noDuplicates
     els.anspage.checked = s.answerPage
     els.title.value = s.title
@@ -99,6 +101,7 @@
       allowNegative: !els.nonneg.checked,
       exactDivision: els.exactdiv.checked,
       parens: els.parens.checked,
+      skipTrivial: els.skiptrivial.checked,
       noDuplicates: els.nodup.checked,
       answerPage: els.anspage.checked,
       title: els.title.value.trim()
@@ -176,7 +179,8 @@
       notice.textContent =
         '当前参数下不重复的题目只有 ' + result.questions.length +
         ' 道（少于设定的 ' + settings.count +
-        ' 道）。可以减少题量、扩大数值范围，或关闭「题目不重复」。'
+        ' 道）。可以减少题量、扩大数值范围，或关闭「题目不重复」' +
+        (settings.skipTrivial ? '、「跳过送分题」' : '') + '。'
       notice.hidden = false
     } else if (settings.mode === 'mixed' && mulDivShare(result.questions) < 0.15) {
       /* 乘除操作数太大时，乘积超出「数值范围」会被整题否掉，卷面会退化成纯加减 */

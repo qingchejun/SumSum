@@ -47,11 +47,36 @@
     return false
   }
 
-  /* 进退位约束：nocarry = 不允许进/退位；carryonly = 必须进/退位；random = 不限 */
+  /*
+   * 进退位约束：nocarry = 不允许进/退位；carryonly = 必须进/退位；
+   * carrymore = 以进/退位为主（不进位的题按 30% 概率保留，卷面不至于太单调）；
+   * random = 不限。
+   */
   function carryOk(mode, flag) {
     if (mode === 'nocarry') return !flag
     if (mode === 'carryonly') return flag
+    if (mode === 'carrymore') return flag || Math.random() < 0.3
     return true
+  }
+
+  /*
+   * 送分题：加/减 0、自己减自己、乘/除 1、自己除自己——写上去就是答案，
+   * 占了题量却练不到任何东西（实测「10以内加减」预设里占到 28%）。
+   * 逐个运算步骤扫一遍，四则运算里夹着的 ×1、÷1 同样算送分。
+   */
+  function isTrivial(tokens) {
+    for (var i = 1; i < tokens.length; i++) {
+      var op = tokens[i]
+      if (OPS.indexOf(op) < 0) continue
+      var left = tokens[i - 1]
+      var right = tokens[i + 1]
+      var sameNum = typeof left === 'number' && left === right
+      if (op === '+' && (left === 0 || right === 0)) return true
+      if (op === '−' && (right === 0 || sameNum)) return true
+      if (op === '×' && (left === 1 || right === 1 || left === 0 || right === 0)) return true
+      if (op === '÷' && (right === 1 || sameNum)) return true
+    }
+    return false
   }
 
   function makeQuestion(tokens, answer, remainder) {
@@ -65,14 +90,16 @@
   }
 
   /* 加法：两个加数 ∈ [min, max]，且和 ≤ max（"20 以内"＝参与数和结果都不超过 20）。
-     先取 a，再在 [min, max-a] 里取 b，避免大范围下反复拒绝；
+     先定和再拆成两个加数——若像原来那样先取 a、再在 [min, max-a] 里取 b，
+     b 会被压得越来越小（实测 0~20 档近三成的 b 落在 0~1），答案也全堆在上限附近。
      当 2×min > max（无解）时恒返回 null，由 sanitize 提前钳位兜底。 */
   function genAdd(s) {
-    var a = randInt(s.min, s.max)
-    if (s.max - a < s.min) return null
-    var b = randInt(s.min, s.max - a)
+    if (s.min * 2 > s.max) return null
+    var sum = randInt(s.min * 2, s.max)
+    var a = randInt(s.min, sum - s.min)
+    var b = sum - a
     if (!carryOk(s.carryMode, hasCarry(a, b))) return null
-    return makeQuestion([a, '+', b], a + b)
+    return makeQuestion([a, '+', b], sum)
   }
 
   /* 减法：被减数、减数 ∈ [min, max]；默认不出负数（交换两数保证 a ≥ b） */
@@ -262,6 +289,7 @@
     for (var i = 0; i < maxAttempts && questions.length < s.count; i++) {
       var raw = pick(gens)(s)
       if (!raw) continue
+      if (s.skipTrivial && isTrivial(raw.tokens)) continue
       var q = applyBlank(raw, s)
       var key = q.key + '#' + q.blank
       if (s.noDuplicates && seen.has(key)) continue

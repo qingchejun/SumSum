@@ -1,22 +1,27 @@
 /**
- * 知识点「32 图形计数初步」：数线段、数角、数长方形——按顺序分类数，不重不漏。
+ * 知识点「32 图形计数初步」：数线段、数角、数三角形、数长方形——
+ * 按顺序分类数，不重不漏。
  * 每题的答案都由生成器独立枚举复算（不是套公式），解析里的分类清单
  * 由 listPairs 统一生成，清单项数与答案在生成时断言一致。
  * 题干配内联 SVG（stemHTML），黑白打印安全。
+ *
+ * 每道题只由一个小整数 n 决定，所以图形种类少的时候题库会非常浅
+ * （原先只有数线段+数角两种、5 道题，连出两张卷子就一模一样）。
+ * 故而多备了一种图形（三角形）并让数长方形支持一排/两排。
  */
 (function (root) {
   'use strict'
 
   var U = root.SumSum.aoshu.util
 
-  var LETTERS = 'ABCDEF'
+  var LETTERS = 'ABCDEFG' // 数三角形时底边点从 B 开始标，比点数多留一个
   var CIRCLED = '①②③④⑤⑥'
 
-  /* 各难度档的规模上限（点数/射线数/方格数） */
+  /* 各难度档的规模上限（点数/射线数/底边点数/方格数） */
   var RANGE = {
-    L1: { seg: [3, 5], angle: [3, 4], rect: [3, 4] },
-    L2: { seg: [3, 5], angle: [3, 5], rect: [3, 4] },
-    L3: { seg: [4, 6], angle: [4, 5], rect: [3, 5] }
+    L1: { seg: [3, 5], angle: [3, 4], tri: [3, 4], rect: [3, 4] },
+    L2: { seg: [3, 6], angle: [3, 5], tri: [3, 5], rect: [3, 5] },
+    L3: { seg: [4, 6], angle: [4, 6], tri: [4, 6], rect: [3, 6] }
   }
 
   function range(s, kind) {
@@ -88,13 +93,40 @@
     return parts.join('')
   }
 
-  /* 一行 n 个并连方格的 SVG */
-  function gridSVG(n) {
-    var cell = 34
+  /* rows 排 × n 列并连方格的 SVG */
+  function gridSVG(n, rows) {
+    var cell = 30
     var w = n * cell + 8
-    var parts = ['<svg viewBox="0 0 ' + w + ' 44" width="' + (w * 0.7).toFixed(0) + '" height="30" style="vertical-align:middle">']
-    for (var i = 0; i < n; i++) {
-      parts.push('<rect x="' + (4 + i * cell) + '" y="4" width="' + cell + '" height="' + cell + '" fill="#fff" stroke="#000" stroke-width="2"/>')
+    var h = rows * cell + 8
+    var parts = ['<svg viewBox="0 0 ' + w + ' ' + h + '" width="' + (w * 0.7).toFixed(0) + '" height="' + (h * 0.7).toFixed(0) + '" style="vertical-align:middle">']
+    for (var r = 0; r < rows; r++) {
+      for (var i = 0; i < n; i++) {
+        parts.push('<rect x="' + (4 + i * cell) + '" y="' + (4 + r * cell) + '" width="' + cell + '" height="' + cell + '" fill="#fff" stroke="#000" stroke-width="2"/>')
+      }
+    }
+    parts.push('</svg>')
+    return parts.join('')
+  }
+
+  /* 三角形 ABC，从顶点 A 向底边上的中间点连线：底边共 k 个点 */
+  function triSVG(k) {
+    var w = 50 + (k - 1) * 44
+    var h = 74
+    var ax = w / 2
+    var ay = 10
+    var parts = ['<svg viewBox="0 0 ' + w + ' ' + (h + 14) + '" width="' + (w * 0.62).toFixed(0) + '" height="' + ((h + 14) * 0.62).toFixed(0) + '" style="vertical-align:middle">']
+    var xs = []
+    for (var i = 0; i < k; i++) xs.push(16 + i * ((w - 32) / (k - 1)))
+    /* 先画两条腰与底边，再画中间的连线 */
+    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + xs[0] + '" y2="' + h + '" stroke="#000" stroke-width="2"/>')
+    parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + xs[k - 1] + '" y2="' + h + '" stroke="#000" stroke-width="2"/>')
+    parts.push('<line x1="' + xs[0] + '" y1="' + h + '" x2="' + xs[k - 1] + '" y2="' + h + '" stroke="#000" stroke-width="2"/>')
+    for (var j = 1; j < k - 1; j++) {
+      parts.push('<line x1="' + ax + '" y1="' + ay + '" x2="' + xs[j].toFixed(1) + '" y2="' + h + '" stroke="#000" stroke-width="1.5"/>')
+    }
+    parts.push('<text x="' + ax + '" y="' + (ay - 1) + '" font-size="14" text-anchor="middle">A</text>')
+    for (var m = 0; m < k; m++) {
+      parts.push('<text x="' + xs[m].toFixed(1) + '" y="' + (h + 13) + '" font-size="14" text-anchor="middle">' + LETTERS[m + 1] + '</text>')
     }
     parts.push('</svg>')
     return parts.join('')
@@ -158,40 +190,95 @@
     }
   }
 
-  /* 变式③数长方形：一排并连的 n 个小方格，按「由几个小格拼成」分类 */
+  /* 变式③数三角形：三角形 ABC，从顶点 A 向底边的 k 个点连线，两点夹一个三角形 */
+  function genTriangle(s) {
+    var k = range(s, 'tri')
+    var names = LETTERS.slice(1, k + 1).split('') // 底边上的点：B、C、D…
+    var count = 0
+    for (var i = 0; i < k; i++) for (var j = i + 1; j < k; j++) count++
+    var list = listPairs(names, '左端点', '个')
+    if (list.count !== count) return null
+    var stem =
+      '三角形的顶点 A 和底边上的 ' + names.join('、') + ' 这 ' + k +
+      ' 个点都连了线（如图），一共能数出几个三角形？'
+    return {
+      topic: 'jishu',
+      variant: 'triangle',
+      stem: stem,
+      stemHTML: stem + '<div>' + triSVG(k) + '</div>',
+      answer: count,
+      unit: '个',
+      ansLabel: '答：一共能数出',
+      ansSuffix: '个三角形。',
+      solution: [
+        { tag: '想一想', text: '每个三角形的顶点都是 A，底边是下面那条线上的一段——底边上取两个点，就夹出一个三角形。' },
+        { tag: '列一列', text: list.text + '（每一组配上顶点 A 就是一个三角形）。' },
+        { tag: '列算式', text: sumExpr(k) + '（个）。' },
+        { tag: '验一验', text: '底边上每两个点都配过一次对，也只配过一次——不重不漏 ✓' },
+        { tag: '答', text: '一共能数出 ' + count + ' 个三角形。' }
+      ],
+      key: 'triangle:' + k
+    }
+  }
+
+  /*
+   * 变式④数长方形：并连的小方格，按「由几个小格拼成」分类。
+   * 一排（rows=1）按长度分类；两排（rows=2）要先选上下边、再选左右边，
+   * 是同一套思路往上走一层。
+   */
   function genRect(s) {
     var n = range(s, 'rect')
-    /* 独立枚举：所有连续子段 (i..j) */
+    var rows = Math.random() < 0.5 ? 1 : 2
+    /* 独立枚举：所有「连续列区间 × 连续行区间」的组合 */
     var count = 0
-    for (var i = 0; i < n; i++) for (var j = i; j < n; j++) count++
+    for (var i = 0; i < n; i++) {
+      for (var j = i; j < n; j++) {
+        for (var a = 0; a < rows; a++) {
+          for (var b = a; b < rows; b++) count++
+        }
+      }
+    }
     var parts = []
     var total = 0
-    for (var size = 1; size <= n; size++) {
-      var c = n - size + 1
-      total += c
-      parts.push('由 ' + size + ' 个小格拼成的：' + c + ' 个')
+    var terms = []
+    if (rows === 1) {
+      for (var size = 1; size <= n; size++) {
+        var c = n - size + 1
+        total += c
+        parts.push('由 ' + size + ' 个小格拼成的：' + c + ' 个')
+      }
+      for (var k = n; k >= 1; k--) terms.push(k)
+    } else {
+      /* 两排：先数「只占一排的」，再数「上下两排都占的」 */
+      var oneRow = 0
+      for (var w1 = 1; w1 <= n; w1++) oneRow += n - w1 + 1
+      total = oneRow * 2 + oneRow
+      parts.push('只在上面一排里的：' + oneRow + ' 个')
+      parts.push('只在下面一排里的：' + oneRow + ' 个')
+      parts.push('上下两排一起占的：' + oneRow + ' 个')
+      terms = [oneRow, oneRow, oneRow]
     }
     if (total !== count) return null
-    var terms = []
-    for (var k = n; k >= 1; k--) terms.push(k)
-    var stem = '一排连在一起的 ' + n + ' 个小方格（如图），一共能数出几个长方形（正方形也算）？'
+    var stem =
+      (rows === 1 ? '一排连在一起的 ' + n + ' 个小方格' : n + ' 列 2 排共 ' + n * 2 + ' 个小方格') +
+      '（如图），一共能数出几个长方形（正方形也算）？'
     return {
       topic: 'jishu',
       variant: 'rect',
       stem: stem,
-      stemHTML: stem + '<div>' + gridSVG(n) + '</div>',
+      stemHTML: stem + '<div>' + gridSVG(n, rows) + '</div>',
       answer: count,
       unit: '个',
       ansLabel: '答：一共能数出',
       ansSuffix: '个长方形。',
       solution: [
-        { tag: '想一想', text: '除了一格一格的小方块，几个小格连在一起也能拼成长方形。按「由几个小格拼成」分类数。' },
+        { tag: '想一想', text: '除了一格一格的小方块，几个小格连在一起也能拼成长方形。' + (rows === 1 ? '按「由几个小格拼成」分类数。' : '先按「占了哪几排」分成三类，每类里再按长度数。') },
         { tag: '列一列', text: parts.join('；') + '。' },
         { tag: '列算式', text: terms.join(' + ') + ' = ' + count + '（个）。' },
-        { tag: '验一验', text: '从最小数到最大，每一种大小都数过了——不重不漏 ✓' },
+        { tag: '验一验', text: rows === 1 ? '从最小数到最大，每一种大小都数过了——不重不漏 ✓' : '每个长方形要么只占一排，要么上下都占，三类正好不重不漏 ✓' },
         { tag: '答', text: '一共能数出 ' + count + ' 个长方形。' }
       ],
-      key: 'rect:' + n
+      key: 'rect:' + n + 'x' + rows
     }
   }
 
@@ -234,6 +321,7 @@
     variants: [
       { id: 'segment', setting: 'vJsSegment', label: '数线段', gen: genSegment },
       { id: 'angle', setting: 'vJsAngle', label: '数角', gen: genAngle },
+      { id: 'triangle', setting: 'vJsTriangle', label: '数三角形', gen: genTriangle },
       { id: 'rect', setting: 'vJsRect', label: '数长方形', def: false, gen: genRect }
     ],
     generate: function (s) {

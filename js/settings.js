@@ -19,6 +19,7 @@
     mulMin: 1,
     mulMax: 9,
     noDuplicates: true,
+    skipTrivial: true, // 跳过 +0 / ×1 这类送分题
     blankMode: 'end',
     answerPage: false,
     paper: 'portrait',
@@ -27,14 +28,14 @@
   })
 
   var MODES = ['add', 'sub', 'addsub', 'mul', 'div', 'muldiv', 'mixed']
-  var CARRY = ['random', 'nocarry', 'carryonly']
+  var CARRY = ['random', 'carrymore', 'nocarry', 'carryonly']
   var BLANK = ['end', 'random']
   var PAPER = ['portrait', 'landscape']
 
   var PRESETS = [
     { label: '10以内加减', patch: { mode: 'addsub', min: 0, max: 10, carryMode: 'random' } },
     { label: '20以内进退位', patch: { mode: 'addsub', min: 0, max: 20, carryMode: 'carryonly' } },
-    { label: '100以内加减', patch: { mode: 'addsub', min: 0, max: 100, carryMode: 'random' } },
+    { label: '100以内加减', patch: { mode: 'addsub', min: 0, max: 100, carryMode: 'carrymore' } },
     { label: '乘法口诀', patch: { mode: 'mul', mulMin: 1, mulMax: 9 } },
     { label: '四则入门', patch: { mode: 'mixed', min: 0, max: 20, parens: false } }
   ]
@@ -71,6 +72,7 @@
       mulMin: clampInt(s.mulMin, 1, 999, DEFAULTS.mulMin),
       mulMax: clampInt(s.mulMax, 1, 999, DEFAULTS.mulMax),
       noDuplicates: toBool(s.noDuplicates, DEFAULTS.noDuplicates),
+      skipTrivial: toBool(s.skipTrivial, DEFAULTS.skipTrivial),
       blankMode: oneOf(s.blankMode, BLANK, DEFAULTS.blankMode),
       answerPage: toBool(s.answerPage, DEFAULTS.answerPage),
       paper: oneOf(s.paper, PAPER, DEFAULTS.paper),

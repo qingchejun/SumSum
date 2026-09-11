@@ -84,13 +84,40 @@
         key: 'cmp:a:' + a + ',' + b1 + ',' + b2
       }
     }
-    /* 形态 b：a×b ○ a+b，乘法是好几个相加 */
-    var x = U.randInt(r.fMin, r.fMax)
-    var y = U.randInt(r.fMin, r.fMax)
+    /*
+     * 形态 b：a×b ○ a+b，乘法是好几个相加。
+     * 因数都 ≥2 时乘积必然更大，答案会清一色是「>」，孩子全填 > 就能蒙对
+     * （实测占到七成）。这里先定答案再造数：带 1 的乘法反而更小，是最能
+     * 检验「乘法到底是几个几」的一档，(2,2) 则是唯一相等的情形。
+     */
+    var want = Math.random()
+    var x, y
+    if (want < 0.1) {
+      x = 2
+      y = 2 // 2 × 2 = 2 + 2，唯一相等的一组
+    } else if (want < 0.5) {
+      /* 一个因数取 1：1 个 y 就是 y，而 1 + y 还多 1，左边反而小 */
+      if (Math.random() < 0.5) {
+        x = 1
+        y = U.randInt(Math.max(2, r.fMin), r.fMax)
+      } else {
+        x = U.randInt(Math.max(2, r.fMin), r.fMax)
+        y = 1
+      }
+    } else {
+      x = U.randInt(Math.max(2, r.fMin), r.fMax)
+      y = U.randInt(Math.max(2, r.fMin), r.fMax)
+      if (x === 2 && y === 2) y = 3 // 避开相等的情形，留给上面那一档
+    }
     var sign2 = signOf(x * y, x + y)
     var reason
     if (sign2 === '=') {
       reason = x + ' × ' + y + ' 正好就是 ' + x + ' + ' + y + '（2 个 2 相加），两边一样多。'
+    } else if (sign2 === '<') {
+      var one = x === 1 ? y : x // 另一个因数
+      reason =
+        x + ' × ' + y + ' 只有 1 个 ' + one + '，就是 ' + one + '；' +
+        x + ' + ' + y + ' 在 ' + one + ' 上又多加了 1，所以左边小。'
     } else {
       reason = x + ' × ' + y + ' 是 ' + y + ' 个 ' + x + ' 相加，' + x + ' + ' + y + ' 只加了一次，' + y + ' 个 ' + x + ' 多得多，左边大。'
     }
