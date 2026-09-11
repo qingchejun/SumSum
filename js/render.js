@@ -118,14 +118,18 @@
   /*
    * 长算式防溢出：先把每格缩到刚好放下，再取整张纸的最小字号统一应用，
    * 保证同一页字号一致。屏幕与打印的栏宽同为 mm 单位，缩放结果一致。
+   * 缩到下限仍放不下的（四则运算 4 列会遇到），最后让算式折行——
+   * 宁可这一格排得挤一点，也绝不能把算式或答案裁掉。
    */
+  var MIN_FONT = 11
+
   function fitSheet(sheet) {
     var cells = sheet.querySelectorAll('.q')
     var minSize = Infinity
     Array.prototype.forEach.call(cells, function (cell) {
       var expr = cell.querySelector('.q-expr')
       var size = parseFloat(root.getComputedStyle(expr).fontSize)
-      while (cell.scrollWidth > cell.clientWidth + 1 && size > 12) {
+      while (cell.scrollWidth > cell.clientWidth + 1 && size > MIN_FONT) {
         size -= 1
         expr.style.fontSize = size + 'px'
       }
@@ -134,6 +138,10 @@
     if (minSize === Infinity) return
     Array.prototype.forEach.call(cells, function (cell) {
       cell.querySelector('.q-expr').style.fontSize = minSize + 'px'
+    })
+    /* 统一字号后仍溢出的格子改为折行显示，保证内容完整 */
+    Array.prototype.forEach.call(cells, function (cell) {
+      cell.classList.toggle('q-wrap', cell.scrollWidth > cell.clientWidth + 1)
     })
   }
 

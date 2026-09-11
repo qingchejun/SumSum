@@ -97,6 +97,17 @@
     preview.style.zoom = factor < 1 ? String(factor) : ''
   }
 
+  /* 四则运算里含 × 或 ÷ 的题目占比，用来判断卷面是不是退化成了纯加减 */
+  function mulDivShare(questions) {
+    if (!questions.length) return 1
+    var hit = questions.filter(function (q) {
+      return q.tokens.some(function (t) {
+        return t === '×' || t === '÷'
+      })
+    }).length
+    return hit / questions.length
+  }
+
   /* 主流程：保存设置 → 同步表单与显隐 → 生成题目 → 渲染练习纸 */
   function refresh() {
     S.settings.save(settings)
@@ -109,11 +120,24 @@
     fitPreview()
 
     var notice = $('notice')
+    /* 折行的格子由 render.fitSheet 打上 .q-wrap：算式没被裁掉，但版面挤 */
+    var wrapped = $('preview').querySelectorAll('.q-wrap').length
     if (result.shortfall > 0) {
       notice.textContent =
         '当前参数下不重复的题目只有 ' + result.questions.length +
         ' 道（少于设定的 ' + settings.count +
         ' 道）。可以减少题量、扩大数值范围，或关闭「题目不重复」。'
+      notice.hidden = false
+    } else if (settings.mode === 'mixed' && mulDivShare(result.questions) < 0.15) {
+      /* 乘除操作数太大时，乘积超出「数值范围」会被整题否掉，卷面会退化成纯加减 */
+      notice.textContent =
+        '这批题里乘除法很少——「乘除数范围」相对「数值范围」偏大，乘出来的数超过了结果上限。' +
+        '把数值范围的最大值调大，或把乘除数范围调小，乘除题就会多起来。'
+      notice.hidden = false
+    } else if (wrapped > 0) {
+      notice.textContent =
+        '有 ' + wrapped + ' 道题的算式一行放不下，已自动折行（内容完整，不会被裁掉）。' +
+        '想让版面更清爽，可以把列数改少一点。'
       notice.hidden = false
     } else {
       notice.hidden = true

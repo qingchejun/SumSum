@@ -194,11 +194,28 @@
       return op === '×' || op === '÷'
     }
 
+    /*
+     * ×÷ 的操作数上限还要再受结果范围压一道：比 s.max 大的因数不可能凑出
+     * ≤ s.max 的积，safeEval 会把整道题否掉。若不压这一道，用户把「乘除数
+     * 范围」调到大于「数值范围」时，乘除步骤几乎全军覆没，拿到的是一张
+     * 没有乘除的「四则运算」卷，且毫无提示。
+     */
+    var mulHi = Math.max(s.mulMin, Math.min(s.mulMax, s.max))
+
     var nums = []
     for (var j = 0; j <= steps; j++) {
       var nearMulDiv =
         (j > 0 && isMulDiv(ops[j - 1])) || (j < steps && isMulDiv(ops[j]))
-      nums.push(nearMulDiv ? randInt(s.mulMin, s.mulMax) : randInt(s.min, s.max))
+      if (!nearMulDiv) {
+        nums.push(randInt(s.min, s.max))
+        continue
+      }
+      /* 紧跟在 × 右边的因数再按左边已定的因数收一收，让乘积有机会落进 s.max */
+      var hi = mulHi
+      if (j > 0 && ops[j - 1] === '×' && nums[j - 1] > 0) {
+        hi = Math.max(s.mulMin, Math.min(hi, Math.floor(s.max / nums[j - 1])))
+      }
+      nums.push(randInt(s.mulMin, hi))
     }
 
     var tokens = []

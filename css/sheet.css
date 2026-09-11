@@ -90,6 +90,17 @@ body.landscape .sheet {
   white-space: nowrap;
 }
 
+/* 缩到最小字号仍放不下时由 fitSheet 打上：改为折行，绝不裁切算式与答案 */
+.q.q-wrap {
+  align-items: flex-start;
+  padding-top: 1mm;
+}
+
+.q.q-wrap .q-expr {
+  white-space: normal;
+  line-height: 1.35;
+}
+
 .sheet[data-cols="4"] .q-expr {
   font-size: 19px;
 }
