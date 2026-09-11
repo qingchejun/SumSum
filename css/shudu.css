@@ -169,6 +169,25 @@
 
 /* ============ 在线作答态（只在屏幕上生效） ============ */
 
+/*
+ * ⚠️【状态优先级表 —— 这一段的源码顺序就是优先级，别乱挪】
+ * 同一个格子会同时带好几个作答态，谁的底色盖住谁必须写死。所有选择器
+ * 一律写满 .sheet.playable .sudoku .cell.X（特异性都是 0,4,2、完全相等），
+ * 于是纯粹由【写在后面的赢】。从低到高：
+ *
+ *   .scan  高亮数字占住的行/列   极淡灰蓝
+ *   .peer  选中格的同行同列同宫   淡蓝
+ *   .same  与高亮数字相同的格子   中蓝
+ *   .sel   当前选中格             深蓝 + 内描边
+ *   .dup   重复（规则检查，实时） 黄
+ *   .bad   填错（答案检查，交卷后）红
+ *
+ * 本项目已经因为特异性栽过三次（见下方 @media print 段和 .bad 的注释），
+ * 所以新增作答态时：① 照抄这个选择器深度 ② 插到表里正确的位置
+ * ③ 【只改 background，不要动 color / box-shadow / border】——
+ * 打印还原那条规则只兜得住背景色，动了别的就会漏到纸上。
+ */
+
 /* 空格默认就是空白格子；只有开了在线玩才显出可点击的样子 */
 .sheet.playable .sudoku .cell.blank {
   cursor: pointer;
@@ -181,14 +200,52 @@
   background: #f3eedd;
 }
 
-/* 选中格 + 同行同列同宫的淡色高亮，帮孩子看清「这一格受谁约束」 */
+/* 已填的格子点了是「高亮这个数字」，也给个手型 */
+.sheet.playable .sudoku .cell.given {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* ① 高亮数字管到的行列：没被染色的空格 = 这个数字还能放的地方 */
+.sheet.playable .sudoku .cell.scan {
+  background: #f2f5fa;
+}
+
+/* ② 选中格的同行同列同宫，帮孩子看清「这一格受谁约束」 */
 .sheet.playable .sudoku .cell.peer {
   background: #eef3fb;
 }
 
+/* ③ 与高亮数字相同的格子 */
+.sheet.playable .sudoku .cell.same {
+  background: #cfe0f7;
+}
+
+/* ④ 当前选中格 */
 .sheet.playable .sudoku .cell.sel {
   background: #d9e6fa;
   box-shadow: inset 0 0 0 0.8mm var(--blue, #2d5185);
+}
+
+/*
+ * ⑤ 重复（黄）：同一行/列/宫出现了两个一样的数，填的当场就标。
+ * 这是【规则检查】，不是答案检查 —— 孩子自己一眼也能看出来，只是帮他看快一点。
+ * 所以文案只说「这一行已经有 3 了」，绝不说「你填错了」。
+ */
+.sheet.playable .sudoku .cell.dup {
+  background: #fdf0c8;
+}
+
+/*
+ * ⑥ 填错（红）：只在点了「提交批改」之后才出现，见 js/shudu-play.js 的 submit()。
+ * 必须排在 .dup 之后 —— 一格既重复又填错时，该显示更严重的那个。
+ *
+ * ⚠️ 选择器必须写满三级跟 .sel / .peer 打平再靠顺序取胜。写成 .sudoku .cell.bad
+ * （0,3,1）会被 .sel 压住 —— 而刚改过的那一格往往正是选中态，等于红底
+ * 在最该出现的时候不出现。实测踩过。
+ */
+.sheet.playable .sudoku .cell.bad {
+  background: #fdeae3;
 }
 
 /* 孩子填进去的数字：蓝色、不加粗，一眼区分于题面的黑色粗体提示 */
@@ -201,16 +258,8 @@
   color: #9a9a9a;
 }
 
-/*
- * 交卷批改后，填错的格子标红（红字 + 淡红底）。只有点了「提交批改」才会出现，
- * 填的过程中不判对错 —— 见 js/shudu-play.js 的 submit()。
- *
- * ⚠️ 选择器必须写满 .sheet.playable .sudoku 三级（0,4,2），跟上面的 .sel / .peer
- * 打平再靠「写在后面」取胜。写成 .sudoku .cell.bad（0,3,1）会被 .sel 压住 ——
- * 而刚改过的那一格往往正是选中态，等于红底在最该出现的时候不出现。实测踩过。
- */
+/* 填错的数字本身也变红（文字色不参与上面那张背景优先级表） */
 .sheet.playable .sudoku .cell.bad {
-  background: #fdeae3;
   color: var(--red, #c8461d);
 }
 
@@ -236,11 +285,10 @@
   bottom: 0;
   z-index: 5;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  /* 底部多让出 iPhone 的 Home 条高度，否则「看答案」那颗键会被它压住 */
-  padding: 12px 10px calc(12px + env(safe-area-inset-bottom, 0px));
+  flex-direction: column;
+  gap: 7px;
+  /* 底部多让出 iPhone 的 Home 条高度，否则最后一行会被它压住 */
+  padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
   background: var(--card, #fffdf6);
   border-top: 1px solid var(--card-edge, #e7dcc2);
   box-shadow: 0 -3px 14px rgba(90, 70, 30, 0.12);
@@ -249,12 +297,12 @@
 /*
  * 数字条浮在上面，要给预览区垫出底部留白，免得盖住最后一张纸。
  * 这里只是个兜底值，真正的高度由 shudu-play.js 实测数字条后写成内联样式 ——
- * 因为条高随盘型和屏宽变：四宫格在桌面上是一行 90px，九宫格在 375px 手机上
- * 会折成三行 214px，写死一个数必然有一头不对。
+ * 因为条高随盘型和屏宽变：四宫格在桌面上两行，九宫格在 375px 手机上
+ * 数字键会折行、整条高得多，写死一个数必然有一头不对。
  * 打印段那条 padding:0 !important 压得住内联样式，不必担心留白印到纸上。
  */
 body.playing .preview {
-  padding-bottom: 140px;
+  padding-bottom: 160px;
 }
 
 @media (max-width: 900px) {
@@ -264,10 +312,18 @@ body.playing .preview {
   }
 }
 
+.bar-nums,
+.bar-acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+}
+
 .num-bar button {
-  min-width: 52px;
-  padding: 10px 12px;
-  font: 700 20px/1.2 inherit;
+  min-width: 48px;
+  padding: 9px 12px;
+  font: 700 19px/1.2 inherit;
   color: var(--blue-deep, #1f3a60);
   background: #fff;
   border: 1.5px solid var(--blue, #2d5185);
@@ -280,7 +336,9 @@ body.playing .preview {
 }
 
 .num-bar button.wide {
-  font-size: 15px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 /* 提交是这一排里的主操作，做成实心，免得淹没在一堆同样的描边按钮里 */
@@ -290,16 +348,99 @@ body.playing .preview {
   border-color: var(--red, #c8461d);
 }
 
-.num-bar .num-tip {
-  flex-basis: 100%;
-  text-align: center;
+.num-bar button:disabled {
+  color: #b8b2a4;
+  border-color: #ddd6c6;
+  cursor: default;
+}
+
+/* 数字键右上角的小角标：这个数字还差几个没填，填满了显示 ✓ */
+.num-bar button[data-v] {
+  position: relative;
+}
+
+.num-bar .left {
+  position: absolute;
+  top: 2px;
+  right: 5px;
+  font: 600 10px/1 inherit;
+  color: var(--ink-soft, #7a6a4c);
+}
+
+/* 填满的数字没什么可填了，压暗；但仍可点，用来回看它都放在哪儿 */
+.num-bar button.used {
+  color: #b0a996;
+  border-color: #e0d8c6;
+}
+
+.num-bar button.used .left {
+  color: #b0a996;
+}
+
+/* 荧光笔开着的那个数字 */
+.num-bar button.lit {
+  color: #fff;
+  background: var(--blue, #2d5185);
+  border-color: var(--blue, #2d5185);
+}
+
+.num-bar button.lit .left {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* 末行：计时 + 提示条 + 两个次要操作做成文字链 */
+.bar-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 13px;
   color: var(--ink-soft, #7a6a4c);
 }
 
-.num-bar .num-tip.win {
+.bar-foot .clock {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-foot .num-tip {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.bar-foot .num-tip.win {
   font-weight: 700;
   color: var(--red, #c8461d);
+}
+
+.bar-links {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.num-bar button.link {
+  min-width: 0;
+  padding: 2px 4px;
+  font: 400 13px/1.2 inherit;
+  color: var(--blue, #2d5185);
+  background: none;
+  border: none;
+  text-decoration: underline;
+}
+
+@media (max-width: 560px) {
+  /* 窄屏：提示条自己占一行，免得把计时和链接挤成竖排 */
+  .bar-foot {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .bar-foot .num-tip {
+    order: 3;
+    flex-basis: 100%;
+    text-align: center;
+  }
 }
 
 /* ============ 打印样式 ============ */
