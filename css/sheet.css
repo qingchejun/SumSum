@@ -80,9 +80,31 @@ body.landscape .sheet {
 
 .q-num {
   flex: none;
-  min-width: 6mm; /* 51.~100. 比圆圈数字宽，用 min-width 防止挤压换行 */
+  min-width: 6mm; /* (51)~(100) 比圆圈数字宽，用 min-width 防止挤压换行 */
   white-space: nowrap;
   font-size: 13px;
+}
+
+.q-body {
+  min-width: 0;
+}
+
+/* 答案页的凑十/破十提示：算式下方一行小灰字，供家长照着讲 */
+.q.has-hint {
+  align-items: flex-start;
+  padding-top: 1mm;
+}
+
+.q.has-hint .q-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.q-hint {
+  margin-top: 0.5mm;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #666;
 }
 
 .q-expr {

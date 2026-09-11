@@ -22,6 +22,7 @@
     skipTrivial: true, // 跳过 +0 / ×1 这类送分题
     blankMode: 'end',
     answerPage: false,
+    stepHint: true, // 答案页给进退位题附凑十/破十提示
     paper: 'portrait',
     parens: false,
     seed: 0, // 0 = 未指定；load() 会补一个随机种子，见 newSeed()
@@ -76,6 +77,7 @@
       skipTrivial: toBool(s.skipTrivial, DEFAULTS.skipTrivial),
       blankMode: oneOf(s.blankMode, BLANK, DEFAULTS.blankMode),
       answerPage: toBool(s.answerPage, DEFAULTS.answerPage),
+      stepHint: toBool(s.stepHint, DEFAULTS.stepHint),
       paper: oneOf(s.paper, PAPER, DEFAULTS.paper),
       parens: toBool(s.parens, DEFAULTS.parens),
       seed: clampInt(s.seed, 0, 999999999, DEFAULTS.seed),

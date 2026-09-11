@@ -29,6 +29,7 @@
     skiptrivial: $('f-skiptrivial'),
     nodup: $('f-nodup'),
     anspage: $('f-anspage'),
+    stephint: $('f-stephint'),
     title: $('f-title')
   }
 
@@ -51,6 +52,7 @@
     els.skiptrivial.checked = s.skipTrivial
     els.nodup.checked = s.noDuplicates
     els.anspage.checked = s.answerPage
+    els.stephint.checked = s.stepHint
     els.title.value = s.title
   }
 
@@ -104,6 +106,7 @@
       skipTrivial: els.skiptrivial.checked,
       noDuplicates: els.nodup.checked,
       answerPage: els.anspage.checked,
+      stepHint: els.stephint.checked,
       seed: settings.seed, // 种子不是表单项，改参数时沿用，只有「重新生成」才换
       title: els.title.value.trim()
     })

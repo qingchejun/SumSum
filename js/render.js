@@ -81,12 +81,44 @@
     )
   }
 
-  function cellHTML(q, idx, showAnswer) {
+  /*
+   * 答案页上的凑十 / 破十提示：孩子算错时，家长照着这一行就能讲，
+   * 不必自己现想拆法（奥数板块每题都有分步解析，口算这边原先只有一个数字）。
+   * 只覆盖 20 以内最核心的两种情形——加数/减数不超过 10 的进位加与退位减，
+   * 其余（如 23−17）拆法不唯一，讲起来反而绕，就不给提示。
+   */
+  function stepHint(q) {
+    var t = q.tokens
+    if (t.length !== 3) return ''
+    var a = t[0]
+    var op = t[1]
+    var b = t[2]
+    if (typeof a !== 'number' || typeof b !== 'number' || b > 10) return ''
+    if (op === '+' && a >= 1 && a % 10 !== 0 && (a % 10) + (b % 10) >= 10) {
+      var need = 10 - (a % 10)
+      var rest = b - need
+      /* rest 为 0 说明正好凑满整十，「分成 4 和 0」是废话，不给提示 */
+      if (rest <= 0) return ''
+      /* 写法尽量短：3、4 列时栏宽只有百来像素，长句子会撑破格子 */
+      return '凑十：' + a + '+' + need + '=' + (a + need) + '，' + (a + need) + '+' + rest
+    }
+    if (op === '−' && a > 10 && a % 10 < b % 10 && a - b >= 0) {
+      var low = a - 10
+      /* a 正好是 10 时「10 分成 0 和 10」是废话，本来也不用破十（已在上面排除） */
+      return '破十：10−' + b + '=' + (10 - b) + '，' + (10 - b) + '+' + low
+    }
+    return ''
+  }
+
+  function cellHTML(q, idx, showAnswer, withHint) {
+    var hint = withHint && showAnswer ? stepHint(q) : ''
     return (
-      '<div class="q"><span class="q-num">' +
+      '<div class="q' + (hint ? ' has-hint' : '') + '"><span class="q-num">' +
       numLabel(idx) +
-      '</span><span class="q-expr">' +
+      '</span><span class="q-body"><span class="q-expr">' +
       exprHTML(q, showAnswer) +
+      '</span>' +
+      (hint ? '<span class="q-hint">' + esc(hint) + '</span>' : '') +
       '</span></div>'
     )
   }
@@ -94,7 +126,7 @@
   function pageHTML(opts) {
     var cells = opts.questions
       .map(function (q, i) {
-        return cellHTML(q, opts.startIdx + i, opts.showAnswer)
+        return cellHTML(q, opts.startIdx + i, opts.showAnswer, opts.stepHint)
       })
       .join('')
     return (
@@ -201,6 +233,7 @@
             startIdx: startIdx[p],
             cols: s.columns,
             rowMM: rowHeightMM(page.length, s.columns, s.paper),
+            stepHint: s.stepHint,
             pageNo: p + 1,
             pageTotal: pages.length,
             showAnswer: showAnswer,
