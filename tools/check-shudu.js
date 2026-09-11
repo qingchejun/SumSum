@@ -21,7 +21,8 @@ var SD = globalThis.SumSum.shudu
 /* 盘型参数在这里【重新写一遍】，不从 shudu-core 取——那边写错了这里才能发现 */
 var SHAPES = {
   s4: { n: 4, bh: 2, bw: 2 },
-  s6: { n: 6, bh: 2, bw: 3 }
+  s6: { n: 6, bh: 2, bw: 3 },
+  s9: { n: 9, bh: 3, bw: 3 }
 }
 
 /*
@@ -31,10 +32,13 @@ var SHAPES = {
  */
 var RANGE = {
   s4: { min: 5, max: 12 },
-  s6: { min: 13, max: 26 }
+  s6: { min: 11, max: 26 },
+  s9: { min: 27, max: 50 }
 }
 
-var ROUNDS = 60
+/* 每档跑多少局。九宫格单局贵得多（81 格，独立回溯计数器约 2ms 一局），
+   档位又有 23 个，所以比小盘少一些；实测整脚本仍在 2 秒内跑完。 */
+var ROUNDS = { s4: 60, s6: 60, s9: 50 }
 
 /* ---------- 独立实现的基础工具 ---------- */
 
@@ -171,6 +175,16 @@ function selfTest() {
   if (boxOf(sp6, 0) !== boxOf(sp6, 6)) fails.push('boxOf 认为六宫格的 (0,0) 与 (1,0) 不同宫')
   if (boxOf(sp6, 0) === boxOf(sp6, 12)) fails.push('boxOf 认为六宫格的 (0,0) 与 (2,0) 同宫')
 
+  /* 九宫格的宫是 3×3：格 0 与 (2,2)=20 同宫，与 (0,3)=3 和 (3,0)=27 不同宫；
+     另验一个非左上角的宫，免得 boxOf 的整除只在第 0 宫碰巧算对 */
+  var sp9 = SHAPES.s9
+  if (boxOf(sp9, 0) !== boxOf(sp9, 20)) fails.push('boxOf 认为九宫格的 (0,0) 与 (2,2) 不同宫')
+  if (boxOf(sp9, 0) === boxOf(sp9, 3)) fails.push('boxOf 认为九宫格的 (0,0) 与 (0,3) 同宫')
+  if (boxOf(sp9, 0) === boxOf(sp9, 27)) fails.push('boxOf 认为九宫格的 (0,0) 与 (3,0) 同宫')
+  if (boxOf(sp9, 40) !== boxOf(sp9, 30)) fails.push('boxOf 认为九宫格的 (4,4) 与 (3,3) 不同宫')
+  if (boxOf(sp9, 40) === boxOf(sp9, 29)) fails.push('boxOf 认为九宫格的 (4,4) 与 (3,2) 同宫')
+  if (boxOf(sp9, 80) !== 8) fails.push('boxOf 认为九宫格右下角不在第 8 宫')
+
   return fails
 }
 
@@ -179,7 +193,7 @@ function selfTest() {
 function checkCombo(shapeKey, target, report) {
   var sp = SHAPES[shapeKey]
 
-  for (var r = 1; r <= ROUNDS; r++) {
+  for (var r = 1; r <= ROUNDS[shapeKey]; r++) {
     var seed = r * 7919 + shapeKey.charCodeAt(1) * 131 + target
     var res = SD.generate({ shape: shapeKey, clues: target, count: 1, seed: seed, noDuplicates: false })
     var q = res.puzzles[0]
@@ -221,7 +235,7 @@ function checkCombo(shapeKey, target, report) {
 }
 
 function checkReproducible(report) {
-  var combos = [['s4', 5], ['s4', 12], ['s6', 13], ['s6', 26]]
+  var combos = [['s4', 5], ['s4', 12], ['s6', 11], ['s6', 26], ['s9', 27], ['s9', 50]]
   combos.forEach(function (c) {
     var label = c[0] + '/' + c[1] + '提示'
     var s = { shape: c[0], clues: c[1], count: 6, seed: 20260911, noDuplicates: true }
@@ -300,18 +314,20 @@ function main() {
   Object.keys(RANGE).forEach(function (sk) {
     var r = RANGE[sk]
     var before = problems.length
-    var marks = []
+    var st = Date.now()
+    var bads = []
     for (var t = r.min; t <= r.max; t++) {
       var b0 = problems.length
       checkCombo(sk, t, report)
-      total += ROUNDS
-      marks.push(t + (problems.length > b0 ? '✗' : '✓'))
+      total += ROUNDS[sk]
+      if (problems.length > b0) bads.push(t)
     }
     var bad = problems.length - before
     console.log(
       (bad ? '✗' : '✓') + ' ' + sk + '  提示数 ' + r.min + '~' + r.max +
-      ' 各 ' + ROUNDS + ' 局：' + marks.join(' ') +
-      (bad ? '  —— ' + bad + ' 处问题' : '')
+      ' 每档 ' + ROUNDS[sk] + ' 局，共 ' + ((r.max - r.min + 1) * ROUNDS[sk]) + ' 局' +
+      '  (' + (Date.now() - st) + 'ms)' +
+      (bad ? '  —— 出问题的档位：' + bads.join(',') : '')
     )
   })
 

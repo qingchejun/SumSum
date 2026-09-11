@@ -67,16 +67,17 @@
   color: #000;
 }
 
-/* 最后一列/行不画内部线，否则会与外框叠成双线 */
-.sudoku[data-n="3"] .cell:nth-child(3n),
+/* 最后一列/行不画内部线，否则会与外框叠成双线。
+   nth-child(n + X) 里的 X = n²−n+1，即最后一行的第一格。 */
 .sudoku[data-n="4"] .cell:nth-child(4n),
-.sudoku[data-n="6"] .cell:nth-child(6n) {
+.sudoku[data-n="6"] .cell:nth-child(6n),
+.sudoku[data-n="9"] .cell:nth-child(9n) {
   border-right: none;
 }
 
-.sudoku[data-n="3"] .cell:nth-child(n + 7),
 .sudoku[data-n="4"] .cell:nth-child(n + 13),
-.sudoku[data-n="6"] .cell:nth-child(n + 31) {
+.sudoku[data-n="6"] .cell:nth-child(n + 31),
+.sudoku[data-n="9"] .cell:nth-child(n + 73) {
   border-bottom: none;
 }
 
@@ -94,9 +95,26 @@
   font-weight: 700;
 }
 
-/* 六宫格格子只有 28mm，字号相应收一点，留出书写余地 */
+/* 格子越小字号越收，留出孩子下笔的余地（格子边长：4→42mm，6→28mm，9→18.6mm） */
 .sudoku[data-n="6"] .cell {
   font-size: 24px;
+}
+
+.sudoku[data-n="9"] .cell {
+  font-size: 17px;
+}
+
+/* 九宫格 18.6mm 的格子里，1.2mm 的宫线显得过重、挤掉了写字的地方，收细一档 */
+.sudoku[data-n="9"] {
+  border-width: 0.9mm;
+}
+
+.sudoku[data-n="9"] .cell.br {
+  border-right-width: 0.9mm;
+}
+
+.sudoku[data-n="9"] .cell.bb {
+  border-bottom-width: 0.9mm;
 }
 
 /* ---------- 答案页：一页 6 个小图 ---------- */
@@ -232,7 +250,13 @@
   box-shadow: 0 -3px 14px rgba(90, 70, 30, 0.12);
 }
 
-/* 数字条浮在上面，给预览区垫出等高的底部留白，免得盖住最后一张纸 */
+/*
+ * 数字条浮在上面，要给预览区垫出底部留白，免得盖住最后一张纸。
+ * 这里只是个兜底值，真正的高度由 shudu-play.js 实测数字条后写成内联样式 ——
+ * 因为条高随盘型和屏宽变：四宫格在桌面上是一行 90px，九宫格在 375px 手机上
+ * 会折成三行 214px，写死一个数必然有一头不对。
+ * 打印段那条 padding:0 !important 压得住内联样式，不必担心留白印到纸上。
+ */
 body.playing .preview {
   padding-bottom: 140px;
 }

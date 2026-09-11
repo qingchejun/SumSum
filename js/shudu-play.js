@@ -102,6 +102,23 @@
     bar.hidden = false
   }
 
+  /*
+   * 数字条是 fixed 的，会盖住预览区最底下那张纸，所以要给预览垫出等高的留白。
+   * 必须实测而不能写死：四宫格在桌面上只有一行约 90px，九宫格在 375px 手机上
+   * 9 个数字键会折成三行、高到 214px，写死一个数总有一头不对。
+   * 窗口变窄变宽时折行数会变，所以 resize 也要重算（见 bind）。
+   */
+  function padForBar() {
+    var bar = $('num-bar')
+    var wrap = $('preview-wrap')
+    if (!wrap) return
+    if (!bar || bar.hidden) {
+      wrap.style.paddingBottom = ''
+      return
+    }
+    wrap.style.paddingBottom = bar.offsetHeight + 20 + 'px'
+  }
+
   function tip(text, win) {
     var el = $('num-tip')
     if (!el) return
@@ -169,7 +186,10 @@
       bar.hidden = true
       bar.innerHTML = ''
     }
-    if (!s.playMode || !puzzles.length) return
+    if (!s.playMode || !puzzles.length) {
+      padForBar()
+      return
+    }
 
     var sheet = container.querySelector('.sheet-sudoku')
     var boardEl = sheet && sheet.querySelector('.sudoku')
@@ -183,6 +203,7 @@
     tip(puzzles.length > 1
       ? '先点一个空格，再点数字（在线只玩第 1 题，打印是全部 ' + puzzles.length + ' 题）'
       : '先点一个空格，再点数字')
+    padForBar()
   }
 
   /* 事件委托绑一次就够：预览区和数字条的内容会反复重渲染，但容器本身不换 */
@@ -225,6 +246,9 @@
       var v = parseInt(btn.getAttribute('data-v'), 10)
       if (Number.isFinite(v)) put(v)
     })
+
+    /* 窗口变窄时数字条会多折一行，垫的留白得跟着变 */
+    root.addEventListener('resize', padForBar)
   }
 
   root.SumSum = root.SumSum || {}

@@ -11,7 +11,9 @@
   var DEFAULTS = Object.freeze({
     shape: 's4', // 四宫格是真正意义上最小的标准数独，一年级的默认起点
     clues: 7, // 给几个提示 = 难度，范围随盘型变，见 shudu-core 的 CLUE_RANGE
-    count: 4,
+    /* 一页一大题，所以默认就出 1 道 = 1 张纸。九宫格一道就能做很久，
+       想要几张再自己加，免得一进来就是一叠。 */
+    count: 1,
     copies: 1, // 2 = 同一道题连印两份，父子各一张同题比赛
     noDuplicates: true,
     answerPage: false,
@@ -20,13 +22,15 @@
     title: ''
   })
 
-  var SHAPES = ['s4', 's6']
+  var SHAPES = ['s4', 's6', 's9']
 
   /* 旧版本用「简单/普通/挑战」三档，链接里是 ?level=hard。三档已经换成直接选提示数，
-     这里把老链接翻译过去，免得收藏的链接打开变成默认难度。 */
+     这里把老链接翻译过去，免得收藏的链接打开变成默认难度。
+     s9 是后加的、从来没有过三档，但补齐一行免得将来有人以为是漏了。 */
   var LEGACY_LEVEL = {
     s4: { easy: 9, normal: 7, hard: 5 },
-    s6: { easy: 20, normal: 16, hard: 13 }
+    s6: { easy: 20, normal: 16, hard: 11 },
+    s9: { easy: 42, normal: 35, hard: 27 }
   }
 
   function clampInt(v, min, max, fallback) {
@@ -59,12 +63,12 @@
       clues = LEGACY_LEVEL[shape][given.level]
     } else {
       /* 没指定就用【该盘型自己的】默认值。不能直接用 DEFAULTS.clues（那是四宫格的 7）——
-         手敲 ?shape=s6 进来会被钳到六宫格下限 13，一上来就是最难的。 */
+         手敲 ?shape=s9 进来会被钳到九宫格下限，一上来就是最难的。 */
       clues = root.SumSum.shudu.clueRange(shape).def
     }
     return {
       shape: shape,
-      /* 钳位规则在 shudu-core：范围随盘型变（四宫格 5~12、六宫格 13~26），
+      /* 钳位规则在 shudu-core：范围随盘型变（四宫格 5~12、六宫格 11~26、九宫格 27~50），
          下限取的是实测 100% 能挖到的值，保证面板写几个、卷子上就是几个 */
       clues: root.SumSum.shudu.clampClues(shape, clues),
       /* 一页一大题，20 题就是 20 页（对战双份则是 40 页），再多没意义 */
