@@ -52,11 +52,43 @@
     els.title.value = s.title
   }
 
+  /*
+   * sanitize 会把不可行的范围钳回可行域（如加法要求 2×min ≤ max），
+   * 钳完的值又被 fillForm 写回输入框——用户看到数字自己变了却不知为何。
+   * 这里记下这一次改写，refresh() 会在提示条里说明原因。
+   */
+  var rangeNote = ''
+  var lastTouched = '' // 'min' / 'max'：用户刚改的那个值优先保住，调另一个
+
+  function hasAdd(mode) {
+    return mode === 'add' || mode === 'addsub' || mode === 'mixed'
+  }
+
+  /* 含加法的模式要求 2×min ≤ max，其余只要求 max > min */
+  function neededMax(mode, min) {
+    return hasAdd(mode) ? min * 2 : min + 1
+  }
+
   function readForm() {
-    return S.settings.sanitize({
+    var typedMin = Number(els.min.value)
+    var typedMax = Number(els.max.value)
+    var rawMax = els.max.value
+    /*
+     * 用户刚调大最小值时，别把它钳回去——那样他刚输入的数字会凭空消失，
+     * 而且再去改最大值也救不回来。这里改为顺势把最大值抬到可行域。
+     */
+    if (
+      lastTouched === 'min' &&
+      Number.isFinite(typedMin) &&
+      Number.isFinite(typedMax)
+    ) {
+      var need = neededMax(els.mode.value, typedMin)
+      if (typedMax < need) rawMax = String(Math.min(10000, need))
+    }
+    var clean = S.settings.sanitize({
       mode: els.mode.value,
       min: els.min.value,
-      max: els.max.value,
+      max: rawMax,
       mulMin: els.mulmin.value,
       mulMax: els.mulmax.value,
       carryMode: els.carry.value,
@@ -71,6 +103,21 @@
       answerPage: els.anspage.checked,
       title: els.title.value.trim()
     })
+    rangeNote = ''
+    var why = hasAdd(els.mode.value)
+      ? '加法要求两个加数都不小于最小值、和又不超过最大值，所以最小值最多是最大值的一半'
+      : '最大值必须大于最小值'
+    if (Number.isFinite(typedMin) && Number.isFinite(typedMax)) {
+      if (clean.max !== typedMax) {
+        rangeNote =
+          '为了让最小值 ' + clean.min + ' 生效，最大值已自动调到 ' +
+          clean.max + '（' + why + '）。'
+      } else if (clean.min !== typedMin) {
+        rangeNote =
+          '最小值已从 ' + typedMin + ' 改成 ' + clean.min + '：' + why + '。'
+      }
+    }
+    return clean
   }
 
   /* 按当前模式显隐相关控件（HTML 中用 data-show / data-show-inline 标注适用模式） */
@@ -122,7 +169,10 @@
     var notice = $('notice')
     /* 折行的格子由 render.fitSheet 打上 .q-wrap：算式没被裁掉，但版面挤 */
     var wrapped = $('preview').querySelectorAll('.q-wrap').length
-    if (result.shortfall > 0) {
+    if (rangeNote) {
+      notice.textContent = rangeNote
+      notice.hidden = false
+    } else if (result.shortfall > 0) {
       notice.textContent =
         '当前参数下不重复的题目只有 ' + result.questions.length +
         ' 道（少于设定的 ' + settings.count +
@@ -150,7 +200,10 @@
   }
 
   Object.keys(els).forEach(function (k) {
-    els[k].addEventListener('change', onFormChange)
+    els[k].addEventListener('change', function () {
+      lastTouched = k === 'min' || k === 'max' ? k : ''
+      onFormChange()
+    })
   })
 
   /* 预设按钮：套用参数并清空自定义标题（标题改为自动生成） */
@@ -160,6 +213,8 @@
     btn.className = 'preset'
     btn.textContent = p.label
     btn.addEventListener('click', function () {
+      lastTouched = ''
+      rangeNote = '' // 预设是完整的一套参数，不存在「钳回可行域」的困惑
       settings = S.settings.sanitize(
         Object.assign({}, settings, p.patch, { title: '' })
       )
