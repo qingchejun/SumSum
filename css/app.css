@@ -39,7 +39,7 @@ body {
   background-size: 28px 28px;
 }
 
-/* ---------- 顶部导航栏（口算 ↔ 奥数切换，打印时隐藏，见 sheet.css） ---------- */
+/* ---------- 顶部导航栏（口算 / 奥数 / 数独 切换，打印时隐藏，见 sheet.css） ---------- */
 
 .topbar {
   position: sticky;
@@ -59,6 +59,18 @@ body {
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/*
+ * 加上数独之后是三个标签了，375px 的手机上「三个标签 + 品牌名」一行放不下
+ * （实测约需 379px），标签会被挤到折行、「口算」竖着排成「口/算」。
+ * 标签是导航、必须完整显示，品牌名只是装饰 —— 窄屏直接收起来。
+ */
+@media (max-width: 460px) {
+  .topbar-brand {
+    display: none;
+  }
 }
 
 .topbar-tabs {
@@ -69,6 +81,7 @@ body {
 .topbar-tabs a {
   padding: 5px 16px;
   font-size: 14px;
+  white-space: nowrap;
   color: #cfc8b8;
   text-decoration: none;
   border-radius: 999px;

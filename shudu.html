@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>数独练习纸生成器</title>
+  <meta name="description" content="纯前端儿童数独生成与打印工具：三宫格、四宫格、六宫格，保证不用猜就能推出来，可在线玩，一键打印 A4 练习纸。" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔢</text></svg>" />
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="css/sheet.css" />
+  <link rel="stylesheet" href="css/shudu.css" />
+  <!-- 数独页固定 A4 纵向（一页一大题，横向排不下更大的盘），不像口算页那样动态切换 -->
+  <style>@page { size: A4 portrait; margin: 15mm; }</style>
+</head>
+<body>
+
+<header class="topbar">
+  <nav class="topbar-tabs">
+    <a href="index.html">口算</a>
+    <a href="aoshu.html">奥数</a>
+    <a href="shudu.html" class="active">数独</a>
+  </nav>
+  <span class="topbar-brand">✏️ SumSum 练习纸</span>
+</header>
+
+<div class="layout">
+
+  <!-- ======== 设置面板 ======== -->
+  <aside class="panel" id="panel">
+    <div class="brand">
+      <span class="brand-mark">１２３</span>
+      <h1 class="brand-name">数独练习纸</h1>
+      <p class="brand-sub">印两份，父子各一张，比谁先做出来</p>
+    </div>
+
+    <section class="group">
+      <h2 class="group-title">盘型</h2>
+      <select id="f-shape" class="input">
+        <option value="s3">三宫格 3×3 · 只看行和列</option>
+        <option value="s4">四宫格 4×4 · 行、列、2×2 宫</option>
+        <option value="s6">六宫格 6×6 · 行、列、2×3 宫</option>
+      </select>
+      <p class="hint" id="shape-hint"></p>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">难度</h2>
+      <select id="f-level" class="input"></select>
+      <p class="hint">提示给得越少越难。无论哪一档，都保证【不用猜】就能一步步推出来。</p>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">题量与份数（一页一大题）</h2>
+      <div class="pair">
+        <label class="field"><span>题目数量</span>
+          <input type="number" id="f-count" class="input" min="1" max="20" step="1" />
+        </label>
+        <label class="field"><span>打印份数</span>
+          <select id="f-copies" class="input">
+            <option value="1">1 份</option>
+            <option value="2">2 份（同题对战）</option>
+          </select>
+        </label>
+      </div>
+      <p class="hint" id="pages-hint"></p>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">选项</h2>
+      <label class="check">
+        <input type="checkbox" id="f-play" /><span>屏幕上可以直接玩（点格子填数字）</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="f-nodup" /><span>题目不重复</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="f-anspage" /><span>打印时附答案页（末尾集中小图）</span>
+      </label>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">练习纸标题（选填）</h2>
+      <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：四宫格数独 · 普通" />
+    </section>
+
+    <p class="hint">设置和这批题目都写进了网址：收藏或分享这个链接，打开后就是一模一样的一张卷子。想换一批题，点「重新生成」。</p>
+
+    <div class="actions">
+      <button type="button" id="btn-regen" class="btn btn-ghost">↻ 重新生成一批</button>
+      <button type="button" id="btn-print" class="btn btn-primary">🖨 打印练习纸</button>
+    </div>
+  </aside>
+
+  <!-- ======== 练习纸预览（所见即所得，也是在线作答区） ======== -->
+  <main class="preview" id="preview-wrap">
+    <div class="notice" id="notice" hidden></div>
+    <div id="preview"></div>
+    <div class="num-bar" id="num-bar" hidden></div>
+  </main>
+
+</div>
+
+<!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
+<script src="js/render.js"></script>
+<script src="js/shudu-core.js"></script>
+<script src="js/shudu-settings.js"></script>
+<script src="js/shudu-render.js"></script>
+<script src="js/shudu-play.js"></script>
+<script src="js/shudu-main.js"></script>
+</body>
+</html>

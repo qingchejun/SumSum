@@ -1,0 +1,317 @@
+/* ============ 数独练习纸（预览即打印效果） ============ */
+
+/*
+ * 盘的尺寸全部由 js/shudu-render.js 内联写死（width/height/grid-template-columns），
+ * 这里只管线条、字号和交互态。所以本文件里出现的 mm 数字只有一个：
+ * .sudoku-stage 的 min-height: 225mm —— 与 js/shudu-render.js 的 MM 注释、
+ * 口算 js/render.js 的 AREA_MM.portrait、css/sheet.css 的 .sheet-grid 同一个数。
+ */
+
+.sudoku-stage {
+  /* .sheet 是 flex column、.sheet-foot 有 margin-top:auto，
+     所以这里 flex:1 + 居中就能让盘自动落在页面正中，不用硬算 mm */
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sudoku-wrap {
+  text-align: center;
+}
+
+/* 题号 + 规则说明，印在盘上方 */
+.sudoku-rule {
+  margin: 0 0 6mm;
+  font-size: 14px;
+  color: #000;
+}
+
+/* ---------- 盘 ---------- */
+
+.sudoku {
+  display: grid;
+  margin: 0 auto;
+  /* 外框：粗线。内部细线由每个格子的 border-right/bottom 画 */
+  border: 1.2mm solid #000;
+  box-sizing: content-box;
+  background: #fff;
+}
+
+.sudoku .cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-right: 0.3mm solid #000;
+  border-bottom: 0.3mm solid #000;
+  font-size: 30px;
+  line-height: 1;
+  color: #000;
+}
+
+/* 最后一列/行不画内部线，否则会与外框叠成双线 */
+.sudoku[data-n="3"] .cell:nth-child(3n),
+.sudoku[data-n="4"] .cell:nth-child(4n),
+.sudoku[data-n="6"] .cell:nth-child(6n) {
+  border-right: none;
+}
+
+.sudoku[data-n="3"] .cell:nth-child(n + 7),
+.sudoku[data-n="4"] .cell:nth-child(n + 13),
+.sudoku[data-n="6"] .cell:nth-child(n + 31) {
+  border-bottom: none;
+}
+
+/* 宫的内部边界加粗（三宫格没有宫，渲染时就不会打这两个 class） */
+.sudoku .cell.br {
+  border-right: 1.2mm solid #000;
+}
+
+.sudoku .cell.bb {
+  border-bottom: 1.2mm solid #000;
+}
+
+/* 题面自带的提示数字：加粗，与孩子后填的区分开 */
+.sudoku .cell.given {
+  font-weight: 700;
+}
+
+/* 六宫格格子只有 28mm，字号相应收一点，留出书写余地 */
+.sudoku[data-n="6"] .cell {
+  font-size: 24px;
+}
+
+/* ---------- 答案页：一页 6 个小图 ---------- */
+
+.ans-grid {
+  display: grid;
+  justify-content: center;
+  align-content: start;
+  column-gap: 10mm;
+  row-gap: 10mm;
+  padding-top: 4mm;
+}
+
+.ans-item {
+  text-align: center;
+}
+
+.ans-no {
+  display: block;
+  height: 6mm;
+  font-size: 13px;
+  line-height: 6mm;
+}
+
+.ans-grid .sudoku {
+  border-width: 0.8mm;
+}
+
+.ans-grid .sudoku .cell {
+  border-right-width: 0.2mm;
+  border-bottom-width: 0.2mm;
+  font-size: 15px;
+}
+
+.ans-grid .sudoku .cell.br {
+  border-right-width: 0.8mm;
+}
+
+.ans-grid .sudoku .cell.bb {
+  border-bottom-width: 0.8mm;
+}
+
+/* 答案页上被挖空的那些格（= 孩子要填的）加粗，家长扫一眼就知道该对哪些 */
+.ans-grid .sudoku .cell.ans {
+  font-weight: 700;
+}
+
+.ans-grid .sudoku .cell.given {
+  font-weight: 400;
+  color: #666;
+}
+
+/* ============ 在线作答态（只在屏幕上生效） ============ */
+
+/* 空格默认就是空白格子；只有开了在线玩才显出可点击的样子 */
+.sheet.playable .sudoku .cell.blank {
+  cursor: pointer;
+  background: #fbfaf5;
+  /* 去掉移动端 300ms 点击延迟与双击缩放误触——格子挨得近，孩子连点两下很常见 */
+  touch-action: manipulation;
+}
+
+.sheet.playable .sudoku .cell.blank:hover {
+  background: #f3eedd;
+}
+
+/* 选中格 + 同行同列同宫的淡色高亮，帮孩子看清「这一格受谁约束」 */
+.sheet.playable .sudoku .cell.peer {
+  background: #eef3fb;
+}
+
+.sheet.playable .sudoku .cell.sel {
+  background: #d9e6fa;
+  box-shadow: inset 0 0 0 0.8mm var(--blue, #2d5185);
+}
+
+/* 孩子填进去的数字：蓝色、不加粗，一眼区分于题面的黑色粗体提示 */
+.sudoku .cell.mine {
+  color: var(--blue, #2d5185);
+}
+
+/* 「看答案」填出来的：灰色，明确区别于自己做出来的 */
+.sudoku .cell.revealed {
+  color: #9a9a9a;
+}
+
+/*
+ * 冲突：两边都上淡红底，让孩子看清是哪一对撞了；但只有【他自己填错的那个】
+ * 变红字。题面印好的提示按定义就是对的，把它也标成红字会让孩子以为要去改它。
+ *
+ * ⚠️ 选择器必须写满 .sheet.playable .sudoku 三级（0,4,2），跟上面的 .sel / .peer
+ * 打平再靠「写在后面」取胜。写成 .sudoku .cell.bad（0,3,1）会被 .sel 压住 ——
+ * 而刚填错的那一格恰恰永远是选中态，等于冲突底色在最该出现的时候不出现。实测踩过。
+ */
+.sheet.playable .sudoku .cell.bad,
+.sheet.playable .sudoku .cell.bad-peer {
+  background: #fdeae3;
+}
+
+.sheet.playable .sudoku .cell.bad {
+  color: var(--red, #c8461d);
+}
+
+.sudoku.done {
+  box-shadow: 0 0 0 1.5mm var(--blue, #2d5185);
+}
+
+/* ---------- 数字条 ---------- */
+
+/*
+ * 数字条用 position: fixed 而不是 sticky。
+ * .preview 设了 overflow-x: auto，按规范 overflow-y 也跟着变成 auto，于是它成了
+ * 一个滚动容器；但页面实际是整页在滚、.preview 自己从不滚动，sticky 就永远贴在
+ * 原地（实测：视口 800px 高时数字条落在 y=3504，根本看不见）。这和
+ * css/app.css:474 里记的 .panel 那个坑是同一个。
+ * A4 一整张有 1122px 高，屏幕放不下，孩子一定是滚着玩的，所以数字条必须常驻视口底部。
+ * left 与 .panel 的 336px 宽度对应，改面板宽度要同步改这里。
+ */
+.num-bar {
+  position: fixed;
+  left: 336px;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  /* 底部多让出 iPhone 的 Home 条高度，否则「看答案」那颗键会被它压住 */
+  padding: 12px 10px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--card, #fffdf6);
+  border-top: 1px solid var(--card-edge, #e7dcc2);
+  box-shadow: 0 -3px 14px rgba(90, 70, 30, 0.12);
+}
+
+/* 数字条浮在上面，给预览区垫出等高的底部留白，免得盖住最后一张纸 */
+body.playing .preview {
+  padding-bottom: 140px;
+}
+
+@media (max-width: 900px) {
+  /* 手机端面板是置顶的静态块，预览占满宽度，数字条也跟着贴满 */
+  .num-bar {
+    left: 0;
+  }
+}
+
+.num-bar button {
+  min-width: 52px;
+  padding: 10px 12px;
+  font: 700 20px/1.2 inherit;
+  color: var(--blue-deep, #1f3a60);
+  background: #fff;
+  border: 1.5px solid var(--blue, #2d5185);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.num-bar button:active {
+  transform: translateY(1px);
+}
+
+.num-bar button.wide {
+  font-size: 15px;
+}
+
+.num-bar .num-tip {
+  flex-basis: 100%;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-soft, #7a6a4c);
+}
+
+.num-bar .num-tip.win {
+  font-weight: 700;
+  color: var(--red, #c8461d);
+}
+
+/* ============ 打印样式 ============ */
+
+@media print {
+  /* 数字条是屏幕专用的，绝不上纸 */
+  .num-bar {
+    display: none !important;
+  }
+
+  /*
+   * 必须把 body.playing 垫出来的底部留白显式清掉。
+   * css/sheet.css 打印段里的 .preview { padding: 0 } 特异性是 (0,1,1)，
+   * 而 body.playing .preview 是 (0,2,1) —— 媒体查询不增加特异性，所以那条
+   * 反而压不住它，140px 留白会带进打印，实测多挤出一张空白页。
+   */
+  body.playing .preview {
+    padding: 0 !important;
+  }
+
+  /*
+   * 作答态样式全部还原：玩到一半随时打印，出来的都是干净题面。
+   * 孩子填过的数字也不印 —— 打印的语义是「拿一张新的去做」。
+   *
+   * ⚠️ 这两条的先后与特异性是有讲究的，改动前先想清楚：
+   * 孩子填过的格子【同时】带着 .blank 和 .mine（.blank 不会被摘掉）。
+   * 如果第一条写成 .cell.blank（0,4,2）去覆盖红字，它就会压过
+   * .cell.mine（0,3,1），孩子填的数字照样印出来 —— 实测踩过，整张答案全印上了纸。
+   * 所以第一条降到 .cell 一级（0,3,2），第二条保持 .cell.mine（0,4,2）更具体。
+   */
+  .sheet.playable .sudoku .cell {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #000 !important;
+  }
+
+  .sheet.playable .sudoku .cell.mine,
+  .sheet.playable .sudoku .cell.revealed {
+    color: transparent !important;
+  }
+
+  .sudoku.done {
+    box-shadow: none !important;
+  }
+
+  /* 内容区高度：与 css/sheet.css 打印段的 .sheet-grid { min-height: 225mm } 同一个数 */
+  .sudoku-stage {
+    min-height: 225mm;
+  }
+
+  .ans-grid {
+    min-height: 225mm;
+  }
+
+  .sudoku {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
