@@ -13,9 +13,10 @@
   /* 动态分页参数（mm）。capacity 与 css/aoshu.css 打印段的 min-height 硬对应 */
   var MM = {
     capacity: 225, // 每页内容区高度
-    workPad: 10, // 每题在内容之外追加的演算留白
+    workPad: 10, // 每题题干与答题线之间的基础演算留白
+    workMax: 14, // 演算留白上限：摊分页面余量时，这道缝隙最多撑到这么宽
+    tailMax: 14, // 答题线以下的收尾留白上限：余量超出演算上限的部分落在这里
     minQ: 25, // 题块最小高度：再短的题也留得下一行竖式
-    maxQ: 62, // 摊分页面剩余空间时单题的高度上限，防止两题撑满整页
     solPad: 3 // 解析块下方的呼吸空间
   }
 
@@ -29,7 +30,7 @@
   }
 
   /*
-   * 内联高度：装页后块高由 JS 定死（mm），演算留白 flex 吃掉题干外的剩余空间。
+   * 内联高度：装页后块高与块内的演算留白都由 JS 定死（mm）。
    * 向下取到 0.1mm——四舍五入时每块最多多出 0.05mm，一页七八块累计起来
    * 会超出内容区，把页脚顶下去甚至多挤出一张空白页。
    */
@@ -37,17 +38,23 @@
     return mm ? ' style="height:' + (Math.floor(mm * 10) / 10).toFixed(1) + 'mm"' : ''
   }
 
-  /* 题目块：题号 + 题干 + 演算留白 + 底部答句挖空行 */
-  function questionBlockHTML(q, idx, mm) {
+  /*
+   * 题目块：题号 + 题干 + 演算留白 + 答句挖空行 + 收尾留白。
+   * 演算留白高度由装页时算好（workMM）写死，不再 flex 撑满——否则一页题少时
+   * 这道缝隙会被撑到三四厘米，答题线离题干老远；多出来的高度交给块尾的
+   * .aq-tail，落在答题线下方当作题与题之间的呼吸空间。
+   */
+  function questionBlockHTML(q, idx, mm, workMM) {
     var p = P()
     return (
       '<div class="aq"' + heightStyle(mm) + '>' +
       '<div class="aq-stem"><span class="aq-num">' + p.numLabel(idx) + '</span>' +
       stemHTML(q) + '</div>' +
-      '<div class="aq-work"></div>' +
+      '<div class="aq-work"' + heightStyle(workMM) + '></div>' +
       '<div class="aq-ans">' + (q.workLabel || '列式') + '：<span class="blank blank-expr"></span>　' +
       p.esc(q.ansLabel) + ' <span class="blank"></span> ' + p.esc(q.ansSuffix) +
       '</div>' +
+      '<div class="aq-tail"></div>' +
       '</div>'
     )
   }
@@ -194,8 +201,8 @@
 
   /*
    * 装页：每块高度 = 自然高度 + 留白（不低于 minH），贪心装满 capacity 换页；
-   * stretch 时把页内剩余高度平摊给各块（单块不超过 maxH），让整页舒展。
-   * 返回 [{ idx: [题目下标], slots: [块高 mm] }]。
+   * stretch 时把页内剩余高度平摊给各块（单块最多长到内容 + 两处留白上限），让整页舒展。
+   * 返回 [{ idx: [题目下标], slots: [块高 mm], works: [演算留白 mm] }]。
    */
   function slotFor(h, opts) {
     return Math.min(MM.capacity, Math.max(opts.minH || 0, h + opts.pad))
@@ -248,14 +255,25 @@
       var even = tryEven(heights, pages.length, opts)
       if (even) pages = even
     }
+    /*
+     * 摊分页面余量：单块最多长到「内容 + 演算上限 + 收尾上限」，
+     * 题少时宁可页底留白，也不把一道一行的题吹成半页高。
+     */
     if (opts.stretch) {
       pages.forEach(function (pg) {
         var share = (MM.capacity - pg.total) / pg.slots.length
-        pg.slots = pg.slots.map(function (s) {
-          return Math.min(opts.maxH, s + share)
+        pg.slots = pg.slots.map(function (s, j) {
+          var cap = heights[pg.idx[j]] + MM.workMax + MM.tailMax
+          return Math.max(s, Math.min(cap, s + share))
         })
       })
     }
+    /* 演算留白：块高减去内容，但不超过上限；超出的部分由 .aq-tail 吃掉 */
+    pages.forEach(function (pg) {
+      pg.works = pg.slots.map(function (s, j) {
+        return Math.max(0, Math.min(s - heights[pg.idx[j]], opts.workMax || opts.pad))
+      })
+    })
     return pages
   }
 
@@ -286,7 +304,7 @@
     return pages.map(function (pg, p) {
       var blocks = pg.idx
         .map(function (qi, j) {
-          return opts.blockHTML(questions[qi], qi + 1, pg.slots[j])
+          return opts.blockHTML(questions[qi], qi + 1, pg.slots[j], pg.works[j])
         })
         .join('')
       return pageHTML({
@@ -331,8 +349,8 @@
         gridClass: 'aoshu-grid',
         blockHTML: questionBlockHTML,
         pad: MM.workPad,
+        workMax: MM.workMax,
         minH: MM.minQ,
-        maxH: MM.maxQ,
         stretch: true,
         footPrefix: ''
       })
