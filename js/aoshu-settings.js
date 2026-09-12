@@ -11,7 +11,7 @@
   var BASE_DEFAULTS = Object.freeze({
     topic: 'yiduobushao',
     difficulty: 'L1', // L1/L2/L3 → 20/50/100 以内
-    count: 5, // 每页 5 题，默认正好 1 页
+    count: 5, // 总题数；排得下就压在一页，题少时自动排松
     lessonPage: true, // 讲解页：新知识点先看讲解再做题，默认开
     answerPage: true, // 解析是本板块核心，默认开
     review: false, // 综合复习卷：从已学的知识点里混合出题

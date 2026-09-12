@@ -5,7 +5,8 @@
  * 纸张骨架（.sheet / .sheet-head / .sheet-foot）与口算共用类名和 CSS，
  * 页眉「日期 姓名 用时 得分」等零件取自 SumSum.render.parts。
  * 奥数页固定 A4 纵向，单列布局；每页块数不固定：先用隐藏探针实测每块
- * 内容高度，加演算留白后贪心装页——短题多排、带图的长题少排，互不挤压。
+ * 内容高度，按最小留白贪心装页——短题多排、带图的长题少排，互不挤压；
+ * 题量少、一页排得开时再把余量摊回各题，排松一点。
  */
 (function (root) {
   'use strict'
@@ -13,10 +14,10 @@
   /* 动态分页参数（mm）。capacity 与 css/aoshu.css 打印段的 min-height 硬对应 */
   var MM = {
     capacity: 225, // 每页内容区高度
-    workPad: 10, // 每题题干与答题线之间的基础演算留白
+    workMin: 3, // 装页时每题至少留的演算空隙：决定一页最多塞几道题
     workMax: 14, // 演算留白上限：摊分页面余量时，这道缝隙最多撑到这么宽
     tailMax: 14, // 答题线以下的收尾留白上限：余量超出演算上限的部分落在这里
-    minQ: 25, // 题块最小高度：再短的题也留得下一行竖式
+    minQ: 18, // 题块最小高度：再短的题也留得下写一行的地方
     solPad: 3 // 解析块下方的呼吸空间
   }
 
@@ -200,7 +201,8 @@
   }
 
   /*
-   * 装页：每块高度 = 自然高度 + 留白（不低于 minH），贪心装满 capacity 换页；
+   * 装页：先按最小留白算出每块占位（不低于 minH），贪心装满 capacity 换页——
+   * 题量决定的是总题数，一页排得下就压在一页，排不下才多开一页；
    * stretch 时把页内剩余高度平摊给各块（单块最多长到内容 + 两处留白上限），让整页舒展。
    * 返回 [{ idx: [题目下标], slots: [块高 mm], works: [演算留白 mm] }]。
    */
@@ -348,7 +350,7 @@
         title: title,
         gridClass: 'aoshu-grid',
         blockHTML: questionBlockHTML,
-        pad: MM.workPad,
+        pad: MM.workMin,
         workMax: MM.workMax,
         minH: MM.minQ,
         stretch: true,
