@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>识字复习卷生成器</title>
+  <meta name="description" content="纯前端识字复习工具：按学习顺序每周复习一批汉字，只印字不印拼音，孩子读家长听，一键打印 A4 认读考核卷。" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>字</text></svg>" />
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="css/sheet.css" />
+  <link rel="stylesheet" href="css/shizi.css" />
+  <!-- 识字页固定 A4 纵向（字格是方的，横竖都能排，纵向一页装得下 100 字就够了） -->
+  <style>@page { size: A4 portrait; margin: 15mm; }</style>
+</head>
+<body>
+
+<header class="topbar">
+  <nav class="topbar-tabs">
+    <a href="index.html">口算</a>
+    <a href="aoshu.html">奥数</a>
+    <a href="shudu.html">数独</a>
+    <a href="shizi.html" class="active">识字</a>
+  </nav>
+  <span class="topbar-brand">✏️ SumSum 练习纸</span>
+</header>
+
+<div class="layout">
+
+  <!-- ======== 设置面板 ======== -->
+  <aside class="panel" id="panel">
+    <div class="brand">
+      <span class="brand-mark">字</span>
+      <h1 class="brand-name">识字复习卷</h1>
+      <p class="brand-sub">只印字，不印拼音——孩子念，你听</p>
+    </div>
+
+    <section class="group">
+      <h2 class="group-title">复习进度</h2>
+      <p class="week-now" id="week-now">第 1 周</p>
+      <p class="week-sub" id="week-sub"></p>
+      <div class="week-bar"><i id="week-fill" style="width:0"></i></div>
+      <div class="week-nav">
+        <button type="button" id="btn-prev" class="btn btn-ghost">◀ 上一周</button>
+        <button type="button" id="btn-next" class="btn btn-ghost">下一周 ▶</button>
+      </div>
+      <p class="hint" id="week-hint">印完这一张，点「下一周」往前走。进度会记住，下次打开还在这儿。</p>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">范围</h2>
+      <div class="pair">
+        <label class="field"><span>第几周</span>
+          <input type="number" id="f-week" class="input" min="1" step="1" />
+        </label>
+        <label class="field"><span>每周字数</span>
+          <input type="number" id="f-perweek" class="input" min="10" max="200" step="10" />
+        </label>
+      </div>
+      <p class="hint">每周 100 字正好一张 A4，16 周走完一轮。改成别的数，周次会按新的每周字数重算。</p>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">排版</h2>
+      <div class="pair">
+        <label class="field"><span>每页字数</span>
+          <select id="f-perpage" class="input">
+            <option value="0">自动（尽量一页）</option>
+            <option value="25">25 字 / 页</option>
+            <option value="50">50 字 / 页</option>
+            <option value="60">60 字 / 页</option>
+            <option value="100">100 字 / 页</option>
+          </select>
+        </label>
+        <label class="field"><span>字体</span>
+          <select id="f-font" class="input">
+            <option value="kai">楷体（同课本）</option>
+            <option value="hei">黑体</option>
+          </select>
+        </label>
+      </div>
+      <div class="pair">
+        <label class="field"><span>打印份数</span>
+          <select id="f-copies" class="input">
+            <option value="1">1 份</option>
+            <option value="2">2 份</option>
+          </select>
+        </label>
+      </div>
+      <p class="hint" id="pages-hint"></p>
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">练习纸标题（选填）</h2>
+      <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：识字复习 · 第 3 周" />
+    </section>
+
+    <section class="group">
+      <h2 class="group-title">字表</h2>
+      <label class="check">
+        <input type="checkbox" id="f-proof" /><span>整表核对（按原字表 15×12 印全表）</span>
+      </label>
+      <p class="hint" id="proof-hint"></p>
+    </section>
+
+    <p class="hint">这一周的设置都写进了网址：收藏或分享这个链接，打开后就是一模一样的一张卷子。</p>
+
+    <div class="actions">
+      <button type="button" id="btn-print" class="btn btn-primary">🖨 打印复习卷</button>
+    </div>
+  </aside>
+
+  <!-- ======== 练习纸预览（所见即所得） ======== -->
+  <main class="preview" id="preview-wrap">
+    <div class="notice" id="notice" hidden></div>
+    <div id="preview"></div>
+  </main>
+
+</div>
+
+<!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
+<script src="js/render.js"></script>
+<script src="js/shizi-data.js"></script>
+<script src="js/shizi-core.js"></script>
+<script src="js/shizi-settings.js"></script>
+<script src="js/shizi-render.js"></script>
+<script src="js/shizi-main.js"></script>
+</body>
+</html>

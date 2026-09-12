@@ -1,0 +1,123 @@
+/* ============ 识字练习纸 ============
+ * 叠在 css/sheet.css 之上，只定义字格网格本身。
+ * 列宽 / 行高 / 字号都由 js/shizi-render.js 按字数算好后内联给定，这里不写死尺寸。
+ */
+
+.shizi-stage {
+  display: flex;
+  justify-content: center;
+}
+
+/*
+ * 格线用「容器画上边和左边、格子各画右边和下边」拼出来，而不是给每个格子画一圈 ——
+ * 那样相邻格子的线会叠成双线，打印出来一眼看得出粗细不匀。
+ * 全局 box-sizing: border-box（css/app.css），所以线宽是往格子里吃的，
+ * 不会把 grid 撑宽，内联的 mm 尺寸仍然算数。
+ */
+.shizi-grid {
+  display: grid;
+  align-content: start;
+  width: max-content;
+  border-top: 0.15mm solid var(--shizi-rule);
+  border-left: 0.15mm solid var(--shizi-rule);
+}
+
+.shizi-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border-right: 0.15mm solid var(--shizi-rule);
+  border-bottom: 0.15mm solid var(--shizi-rule);
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/*
+ * 格线颜色。比奥数/数独的线浅得多 —— 这张纸的主角是字，格线只是防止家长
+ * 指读到第 37 个字时串行，存在感越低越好。
+ */
+.sheet-shizi {
+  --shizi-rule: #c4c4c4;
+}
+
+/*
+ * 字体。默认楷体：课本和洪恩识字里都是楷体字形，用黑体考认字，
+ * 孩子会在「这个字长得不一样」上卡壳，考的就不是认字了。
+ * .sheet 自带一套无衬线字体栈（css/sheet.css），必须在格子上覆盖掉。
+ */
+.sheet-shizi[data-font='kai'] .shizi-cell {
+  font-family: "Kaiti SC", STKaiti, KaiTi, "楷体", "楷体_GB2312", "Songti SC", serif;
+}
+
+.sheet-shizi[data-font='hei'] .shizi-cell {
+  font-family: "PingFang SC", "Heiti SC", "Microsoft YaHei", sans-serif;
+}
+
+/* 整表核对页上超出本轮复习范围的字：印灰，一眼看出这一轮管到哪儿 */
+.shizi-cell.is-out {
+  color: #b0b0b0;
+}
+
+@media print {
+  /*
+   * 与 css/sheet.css 的 .sheet-grid、css/shudu.css 的 .sudoku-stage、
+   * js/render.js 的 AREA_MM.portrait 是同一个 225mm：打印时 .sheet 不再定高，
+   * 靠这个最小高度把页脚顶到纸的底部。改这里记得同步那几处。
+   */
+  .shizi-stage {
+    min-height: 225mm;
+  }
+}
+
+/* ============ 设置面板里的周次导航 ============
+ * 只在屏幕上出现（打印时 .panel 整块被 css/sheet.css 隐藏）。
+ * 这个板块的主操作不是调参数，而是「这周印哪一批」，所以进度做成面板最上面
+ * 最显眼的一块，而不是藏在一个数字输入框里。
+ */
+
+.week-now {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--blue-deep);
+}
+
+.week-sub {
+  margin: 2px 0 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.week-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(45, 81, 133, 0.12);
+  overflow: hidden;
+}
+
+.week-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--blue);
+  transition: width 0.2s;
+}
+
+.week-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.week-nav .btn {
+  flex: 1;
+  padding: 9px 10px;
+  font-size: 14px;
+}
+
+.week-nav .btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
