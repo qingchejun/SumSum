@@ -54,6 +54,23 @@
   font-family: "PingFang SC", "Heiti SC", "Microsoft YaHei", sans-serif;
 }
 
+/*
+ * 页眉标题允许换行。
+ *
+ * css/sheet.css 给 .sheet-title 设了 white-space: nowrap，而「日期 姓名 用时 得分」
+ * 那一栏（.sheet-meta，同样 nowrap）就占掉 99mm，标题实际只剩 73mm。标题一超出，
+ * 页眉既不截断也不换行，浏览器改为把【整张纸】等比缩小去适配 —— 缩完页眉那条横线
+ * 仍是满宽（width:auto，跟着页框走），从横线上完全看不出问题，露馅的是按 mm 写死的
+ * 字格：整页 88% 缩水，10.6mm 的字变成 9.4mm，右边空出一截。
+ *
+ * 默认标题已经压短了（见 shizi-core 的 titleFor），但用户可以自填 30 字，堵不住。
+ * 所以这里放开换行：宁可页眉占两行，也不能让整页悄悄缩水。
+ * .sheet-meta 保持 nowrap，它是固定的一栏，不该被挤散。
+ */
+.sheet-shizi .sheet-title {
+  white-space: normal;
+}
+
 /* 整表核对页上超出本轮复习范围的字：印灰，一眼看出这一轮管到哪儿 */
 .shizi-cell.is-out {
   color: #b0b0b0;

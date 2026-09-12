@@ -80,10 +80,22 @@
     return clampWeek(Math.floor((from - 1) / to) + 1, to)
   }
 
-  /* 练习纸标题。用户在面板上填了标题就用他的，这里只管默认的那一行。 */
+  /*
+   * 练习纸标题。用户在面板上填了标题就用他的，这里只管默认的那一行。
+   *
+   * 标题【必须短】。页眉是 .sheet-title + .sheet-meta 一行排开，两者都是
+   * white-space: nowrap（css/sheet.css），换不了行；「日期 姓名 用时 得分」
+   * 那一栏就占掉 99mm，标题只剩 73mm 可用（180 - 99 - 8mm 间距）。
+   * 一旦超出，页眉不会截断也不会换行 —— 浏览器会把【整张纸】等比缩到能装下为止。
+   * 缩完页眉那条横线仍然满宽（它是 width:auto，跟着页框走），所以从横线上
+   * 完全看不出来；露馅的是字格：按 mm 写死的尺寸全跟着缩。
+   *
+   * 原先标题是「识字复习 · 第 1 周（第 1–100 字）」，96.8mm，连同页眉信息栏
+   * 合计 204mm，整页被缩到 88%，字从 10.6mm 缩成 9.4mm、字格离右边空出一截。
+   * 字序区间页脚里本来就有（「第 1 周 / 共 16 周 · 第 1–100 字」），标题不必再说一遍。
+   */
   function titleFor(s) {
-    var sl = sliceOf(s.week, s.perWeek)
-    return '识字复习 · 第 ' + sl.week + ' 周（第 ' + sl.from + '–' + sl.to + ' 字）'
+    return '识字复习 · 第 ' + clampWeek(s.week, s.perWeek) + ' 周'
   }
 
   root.SumSum = root.SumSum || {}
