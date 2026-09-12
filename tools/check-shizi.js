@@ -324,7 +324,63 @@ function checkRemap() {
   }
 }
 
-/* ---------- 5. 设置钳位 ---------- */
+/* ---------- 5. 错字集：排序与卷面 ---------- */
+
+/*
+ * 错字集本身（增删、localStorage、点击）在 js/shizi-mark.js 里，那一层依赖 DOM，
+ * node 跑不动，也就测不了 —— 和数独的 shudu-play.js 一样。
+ * 但排序是纯函数、放在 core 里，这里能测；而错字卷的排版走的就是普通字数那一套，
+ * 上面的 checkLayout 已经扫过 10~200 字，这里只补错字集特有的边界。
+ */
+function checkWrongSet() {
+  var pool = Z.pool()
+
+  /* 排序：按字表下标升序 */
+  var shuffled = [pool[500], pool[3], pool[1200], pool[0], pool[77]]
+  var sorted = Z.sortByTable(shuffled)
+  var idx = sorted.map(function (ch) {
+    return D.LIST.indexOf(ch)
+  })
+  for (var i = 1; i < idx.length; i++) {
+    if (idx[i] <= idx[i - 1]) bad('sortByTable 没有按字表顺序排：' + sorted.join(''))
+  }
+
+  /* 去重 */
+  var dup = Z.sortByTable([pool[10], pool[2], pool[10], pool[2], pool[2]])
+  if (dup.length !== 2) bad('sortByTable 应当去重，实际返回 ' + dup.length + ' 个')
+
+  /* 字表外的字要排最后、且一个都不能丢（保持录入顺序） */
+  var mixed = Z.sortByTable(['〇', pool[5], '㐀', pool[1]])
+  if (mixed.length !== 4) bad('sortByTable 把表外的字弄丢了：' + mixed.join(''))
+  if (mixed[0] !== pool[1] || mixed[1] !== pool[5]) bad('sortByTable：表内的字应排在前面')
+  if (mixed[2] !== '〇' || mixed[3] !== '㐀') bad('sortByTable：表外的字应排最后并保持原序')
+
+  /* 空输入不能炸 */
+  ;[[], null, undefined].forEach(function (v) {
+    var out = Z.sortByTable(v)
+    if (!Array.isArray(out) || out.length) bad('sortByTable(' + JSON.stringify(v) + ') 应返回空数组')
+  })
+
+  /* 错字卷的排版。错字数是完全不可控的（家长点几个就是几个），
+     所以从 1 个字扫到 400 个字，每一种都得排得出、不越界。 */
+  for (var n = 1; n <= 400; n++) {
+    var per = R.perPageOf({ perPage: 0 }, n)
+    var lay = R.layout(per)
+    if (!lay) {
+      bad('错字卷 ' + n + ' 字：排不出版面（per=' + per + '）')
+      continue
+    }
+    if (lay.cols * lay.w > FIT_W + 1e-9 || lay.rows * lay.h > FIT_H + 1e-9) {
+      bad('错字卷 ' + n + ' 字：占位超出版心')
+    }
+    if (lay.glyph < GLYPH_MIN - 1e-9 || lay.glyph > CELL_MAX * FONT_RATIO + 1e-9) {
+      bad('错字卷 ' + n + ' 字：字号 ' + lay.glyph + 'mm 越界')
+    }
+    if (Math.ceil(n / per) < 1) bad('错字卷 ' + n + ' 字：页数算成了 0')
+  }
+}
+
+/* ---------- 6. 设置钳位 ---------- */
 
 function checkSettings() {
   var cases = [
@@ -338,6 +394,14 @@ function checkSettings() {
     [{ perWeek: 9999 }, 'perWeek', 200],
     [{ perWeek: '' }, 'perWeek', 100],
     [{ font: 'comic' }, 'font', 'kai'],
+    /* 模式白名单。早先是 ?proof=true 一个复选框，老链接要能翻译过去 */
+    [{}, 'mode', 'week'],
+    [{ mode: 'wrong' }, 'mode', 'wrong'],
+    [{ mode: 'proof' }, 'mode', 'proof'],
+    [{ mode: 'xx' }, 'mode', 'week'],
+    [{ mode: '' }, 'mode', 'week'],
+    [{ proof: 'true' }, 'mode', 'proof'],
+    [{ proof: 'false' }, 'mode', 'week'],
     [{ copies: 9 }, 'copies', 2],
     [{ copies: 0 }, 'copies', 1],
     [{ perPage: -5 }, 'perPage', 0]
@@ -370,6 +434,7 @@ function main() {
     ['排版放得下（10~200 字全扫）', checkLayout],
     ['面板所有设置组合都排得出版面', checkAllCombos],
     ['换每周字数时进度不倒退', checkRemap],
+    ['错字集排序与错字卷排版（1~400 字全扫）', checkWrongSet],
     ['设置钳位', checkSettings]
   ]
   steps.forEach(function (st) {

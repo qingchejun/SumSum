@@ -121,11 +121,19 @@
     return Math.floor(v * 10) / 10 + 'mm'
   }
 
-  /* 一页字格。dim 里的下标（相对 chars）渲染成灰字：整表核对时用来标出没纳入复习的尾巴 */
+  /*
+   * 一页字格。dim 里的下标（相对 chars）渲染成灰字：整表核对时用来标出没纳入复习的尾巴。
+   *
+   * 每格带 data-ch：js/shizi-mark.js 的事件委托靠它认字，不读 textContent ——
+   * 将来格子里多放任何东西（笔画数、小标记）textContent 就不再是那个字了。
+   * 刻意【不加】 role="button" / tabindex：数独那边加了却没配 Space/Enter 处理、
+   * 也没有 :focus-visible 样式，读屏器只会念一串无名 button，比不加更糟；
+   * 而且一页 100 个格子不该占掉 100 个 Tab 停靠点。
+   */
   function gridHTML(chars, lay, dim) {
     var cells = chars.map(function (ch, i) {
       var cls = dim && dim.indexOf(i) >= 0 ? 'shizi-cell is-out' : 'shizi-cell'
-      return '<div class="' + cls + '">' + P().esc(ch) + '</div>'
+      return '<div class="' + cls + '" data-ch="' + P().esc(ch) + '">' + P().esc(ch) + '</div>'
     })
     return (
       '<div class="shizi-grid" style="grid-template-columns:repeat(' + lay.cols + ',' + mm(lay.w) + ')' +
@@ -194,13 +202,55 @@
     return html
   }
 
-  /* 主入口：把当前这一周（或整张字表）渲染成若干张练习纸 */
-  function render(container, s) {
+  /*
+   * 错字集：把攒下来的错字单独印一张。
+   *
+   * chars 由调用方（shizi-main）从 shizi-mark 取、已经过 shizi.sortByTable 排好序。
+   * 渲染层不碰 localStorage，也不认识「错字」这个概念 —— 它只管把一串字排成卷子，
+   * 所以每页字数、分页、字号全部复用每周卷那一套，一行特例都不用写。
+   * 一个字都没有时返回空数组：空卷子没有意义，由 main 显示提示。
+   */
+  function renderWrong(s, chars) {
+    if (!chars || !chars.length) return []
+    /* 标题必须短：页眉留给标题只有 73mm（见 shizi-core 的 titleFor）。
+       「错字复习 · 37 字」约 55mm，安全。 */
+    var title = s.title || '错字复习 · ' + chars.length + ' 字'
+    var per = perPageOf(s, chars.length)
+    var lay = layout(per) || layout(per, Math.ceil(Math.sqrt(per)))
+    var pageTotal = Math.ceil(chars.length / per)
+    var html = []
+    for (var p = 0; p < pageTotal; p++) {
+      var chunk = chars.slice(p * per, (p + 1) * per)
+      var foot =
+        '错字集 · 共 ' + chars.length + ' 字　·　按字表顺序' +
+        (pageTotal > 1 ? '　·　第 ' + (p + 1) + ' 页 / 共 ' + pageTotal + ' 页' : '')
+      for (var c = 1; c <= s.copies; c++) {
+        html.push(
+          sheetHTML(chunk, {
+            title: title,
+            lay: lay,
+            font: s.font,
+            foot: foot + (s.copies > 1 ? '　·　第 ' + c + ' 份' : '')
+          })
+        )
+      }
+    }
+    return html
+  }
+
+  /*
+   * 主入口：按模式渲染成若干张练习纸。
+   * wrongChars 只有 mode === 'wrong' 时才用到，由 main 从 shizi-mark 取好传进来 ——
+   * 渲染层保持不碰 localStorage，node 里才测得动。
+   */
+  function render(container, s, wrongChars) {
     var Z = root.SumSum.shizi
     var html
 
-    if (s.proof) {
+    if (s.mode === 'proof') {
       html = renderProof(s)
+    } else if (s.mode === 'wrong') {
+      html = renderWrong(s, wrongChars)
     } else {
       var sl = Z.sliceOf(s.week, s.perWeek)
       var title = s.title || Z.titleFor(s)
@@ -243,6 +293,7 @@
   root.SumSum = root.SumSum || {}
   root.SumSum.shiziRender = {
     render: render,
+    renderWrong: renderWrong,
     MM: MM,
     layout: layout,
     autoPer: autoPer,

@@ -20,13 +20,20 @@
     perPage: 0,
     font: 'kai', // 'kai' 楷体 | 'hei' 黑体。默认楷体，课本和洪恩里都是楷体字形
     copies: 1,
-    /* 整表核对：一次把全部字按原始截图的 15×12 结构印出来，
-       专门用来和洪恩的字表截图逐屏对照，确认转录没出错。平时不开。 */
-    proof: false,
+    /*
+     * 看哪一张卷子：
+     *   week  本周复习 —— 主场景，按周次印该复习的那一批字
+     *   wrong 错字集   —— 把攒下来的错字单独印一张
+     *   proof 整表核对 —— 按原始截图的 15×12 印全表，和截图逐屏对照用
+     * 三种模式下字格都可以点，点一下就是把那个字加入 / 移出错字集（见 shizi-mark）。
+     */
+    mode: 'week',
     title: ''
   })
 
   var FONTS = ['kai', 'hei']
+
+  var MODES = ['week', 'wrong', 'proof']
 
   /*
    * 每页字数的合法取值，必须与 shizi.html 里 #f-perpage 的 <option> 一一对应。
@@ -55,6 +62,17 @@
     return list.indexOf(v) >= 0 ? v : fallback
   }
 
+  /*
+   * 模式。早先只有「整表核对」一个复选框，链接里是 ?proof=true；
+   * 加了错字集之后换成三选一的 mode，这里把老链接翻译过去，免得收藏的链接打不开该看的东西。
+   * 与 js/shudu-settings.js 把老的 ?level=hard 翻成 clues=5 是同一套做法。
+   */
+  function pickMode(given, merged) {
+    if (given.mode != null && given.mode !== '') return oneOf(String(given.mode), MODES, DEFAULTS.mode)
+    if (toBool(given.proof, false)) return 'proof'
+    return oneOf(merged.mode, MODES, DEFAULTS.mode)
+  }
+
   /* 把任意来源（表单 / localStorage / URL）的原始值清洗成合法设置对象 */
   function sanitize(raw) {
     var s = Object.assign({}, DEFAULTS, raw)
@@ -68,8 +86,8 @@
       week: root.SumSum.shizi.clampWeek(s.week, perWeek),
       perPage: oneOf(clampInt(s.perPage, 0, 200, DEFAULTS.perPage), PER_PAGE, DEFAULTS.perPage),
       font: oneOf(s.font, FONTS, DEFAULTS.font),
+      mode: pickMode(raw || {}, s),
       copies: clampInt(s.copies, 1, 2, DEFAULTS.copies),
-      proof: toBool(s.proof, DEFAULTS.proof),
       title: String(s.title == null ? '' : s.title).slice(0, 30)
     }
   }
@@ -84,7 +102,9 @@
     var hasUrl = false
     try {
       new URLSearchParams(root.location.search).forEach(function (v, k) {
-        if (Object.prototype.hasOwnProperty.call(DEFAULTS, k)) {
+        /* proof 已不在 DEFAULTS 里（换成了 mode），但老链接还带着它，
+           得放行给 sanitize 去翻译 —— 与数独放行老的 level 参数同理 */
+        if (Object.prototype.hasOwnProperty.call(DEFAULTS, k) || k === 'proof') {
           fromUrl[k] = v
           hasUrl = true
         }
@@ -99,8 +119,9 @@
       } catch (e) {
         base = {} // 隐私模式或数据损坏时回退默认值
       }
-      /* 核对模式是个一次性的动作，不该被记住 —— 下次打开应当回到正常印卷子 */
-      delete base.proof
+      /* 看哪张卷子不该被记住：打开页面永远回到「本周复习」这个主场景。
+         想直达错字集或核对页，存一个带 ?mode=wrong / ?mode=proof 的链接即可。 */
+      delete base.mode
     }
     return sanitize(Object.assign({}, base, fromUrl))
   }
@@ -128,6 +149,7 @@
   root.SumSum.shiziSettings = {
     DEFAULTS: DEFAULTS,
     PER_PAGE: PER_PAGE,
+    MODES: MODES,
     sanitize: sanitize,
     load: load,
     save: save

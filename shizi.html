@@ -34,7 +34,14 @@
       <p class="brand-sub">只印字，不印拼音——孩子念，你听</p>
     </div>
 
-    <section class="group">
+    <!-- 看哪一张卷子。三种模式下字格都能点，点一下就是加入/移出错字集 -->
+    <div class="stage-tabs" id="mode-tabs">
+      <button type="button" class="stage-tab" data-mode="week">本周复习</button>
+      <button type="button" class="stage-tab" data-mode="wrong">错字集<span id="wrong-n"></span></button>
+      <button type="button" class="stage-tab" data-mode="proof">整表核对</button>
+    </div>
+
+    <section class="group" id="sec-progress">
       <h2 class="group-title">复习进度</h2>
       <p class="week-now" id="week-now">第 1 周</p>
       <p class="week-sub" id="week-sub"></p>
@@ -46,7 +53,7 @@
       <p class="hint" id="week-hint">印完这一张，点「下一周」往前走。进度会记住，下次打开还在这儿。</p>
     </section>
 
-    <section class="group">
+    <section class="group" id="sec-range">
       <h2 class="group-title">范围</h2>
       <div class="pair">
         <label class="field"><span>第几周</span>
@@ -97,11 +104,12 @@
     </section>
 
     <section class="group">
-      <h2 class="group-title">字表</h2>
-      <label class="check">
-        <input type="checkbox" id="f-proof" /><span>整表核对（按原字表 15×12 印全表）</span>
-      </label>
-      <p class="hint" id="proof-hint"></p>
+      <h2 class="group-title">错字集</h2>
+      <p class="hint" id="mark-hint"></p>
+      <div class="week-nav">
+        <button type="button" id="btn-relayout" class="btn btn-ghost" hidden></button>
+        <button type="button" id="btn-clear-wrong" class="btn btn-ghost">清空错字集</button>
+      </div>
     </section>
 
     <p class="hint">这一周的设置都写进了网址：收藏或分享这个链接，打开后就是一模一样的一张卷子。</p>
@@ -125,6 +133,7 @@
 <script src="js/shizi-core.js"></script>
 <script src="js/shizi-settings.js"></script>
 <script src="js/shizi-render.js"></script>
+<script src="js/shizi-mark.js"></script>
 <script src="js/shizi-main.js"></script>
 </body>
 </html>

@@ -3,8 +3,18 @@
  * 列宽 / 行高 / 字号都由 js/shizi-render.js 按字数算好后内联给定，这里不写死尺寸。
  */
 
+/*
+ * 字格在版心里【横竖都居中】。
+ *
+ * flex:1 让它吃掉页眉页脚之外的全部高度，align-items:center 再把字格摆在正中。
+ * 每周卷 100 字时字格正好 222mm、撑满整块，居不居中看不出区别；
+ * 但错字卷可能只有十几个字（格子被 cellMax 封在 30mm），不居中就会全挤在纸的上三分之一、
+ * 下面空一大片，像是排版没排完。
+ */
 .shizi-stage {
   display: flex;
+  flex: 1;
+  align-items: center;
   justify-content: center;
 }
 
@@ -27,6 +37,11 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  /* 去掉双击缩放与 300ms 点击延迟：家长会对着纸连点十几个格子，
+     格子又挨得近，双击缩放误触是必然的。数独的格子上用的是同一条。 */
+  touch-action: manipulation;
   border-right: 0.15mm solid var(--shizi-rule);
   border-bottom: 0.15mm solid var(--shizi-rule);
   break-inside: avoid;
@@ -71,12 +86,33 @@
   white-space: normal;
 }
 
-/* 整表核对页上超出本轮复习范围的字：印灰，一眼看出这一轮管到哪儿 */
+/* 整表核对页上超出本轮复习范围的字：印灰，一眼看出这一轮管到哪儿。
+   这是【印在纸上的信息】，不是交互态，打印段不要还原它。 */
 .shizi-cell.is-out {
   color: #b0b0b0;
 }
 
+/*
+ * 红底 = 这个字在错字集里。三种模式下含义一致，见 js/shizi-mark.js 的说明。
+ *
+ * 只改 background、不碰 color：上面的 .is-out 改的就是 color（特异性同为 0,2,0），
+ * 两个状态可能同时出现在一个格子上（在整表核对页标一个超范围的字），
+ * 都改 color 就会互相盖掉、谁在后面谁赢。数独在 css/shudu.css:170-187 明文定过
+ * 这条规矩：叠加的状态只改 background。
+ */
+.shizi-cell.is-wrong {
+  background: rgba(200, 70, 29, 0.16);
+}
+
 @media print {
+  /*
+   * 错字标记一律不印。每周卷是【认读考核卷】，把不认识的字标在纸上等于给孩子划重点；
+   * 错字卷本来整张都是错字，标了也没有信息量。标记只活在屏幕上。
+   */
+  .shizi-cell.is-wrong {
+    background: none;
+  }
+
   /*
    * 与 css/sheet.css 的 .sheet-grid、css/shudu.css 的 .sudoku-stage、
    * js/render.js 的 AREA_MM.portrait 是同一个 225mm：打印时 .sheet 不再定高，

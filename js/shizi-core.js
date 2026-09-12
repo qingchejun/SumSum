@@ -81,6 +81,44 @@
   }
 
   /*
+   * 把一批字按【字表顺序】排好，顺带去重。
+   *
+   * 错字集是家长一个一个点出来的，顺序是点击的先后，印成卷子会显得杂乱。
+   * 按字表下标排之后，同一课、同一屏的字自然聚在一起，孩子读起来是有上下文的。
+   * 字表里没有的字（理论上不会有，但别让它凭空消失）排到最后，保持原相对顺序。
+   *
+   * 纯函数放在 core 而不是 shizi-mark，是为了 tools/check-shizi.js 够得着 ——
+   * mark 那一层依赖 DOM 和 localStorage，node 里跑不了。与 remapWeek 同一个理由。
+   */
+  function sortByTable(chars) {
+    if (!chars || !chars.length) return []
+    var all = list()
+    var rank = {}
+    for (var i = 0; i < all.length; i++) {
+      /* 同一个字在表里只应出现一次；万一重复，以第一次出现的位置为准 */
+      if (rank[all[i]] == null) rank[all[i]] = i
+    }
+    var seen = {}
+    var out = []
+    chars.forEach(function (ch) {
+      if (seen[ch]) return
+      seen[ch] = true
+      out.push(ch)
+    })
+    return out
+      .map(function (ch, i) {
+        /* 表外的字给一个比表长还大的名次，并用录入顺序 i 做次级键，排在最后且保持原序 */
+        return { ch: ch, r: rank[ch] == null ? all.length + i : rank[ch] }
+      })
+      .sort(function (a, b) {
+        return a.r - b.r
+      })
+      .map(function (e) {
+        return e.ch
+      })
+  }
+
+  /*
    * 练习纸标题。用户在面板上填了标题就用他的，这里只管默认的那一行。
    *
    * 标题【必须短】。页眉是 .sheet-title + .sheet-meta 一行排开，两者都是
@@ -106,6 +144,7 @@
     totalWeeks: totalWeeks,
     clampWeek: clampWeek,
     remapWeek: remapWeek,
+    sortByTable: sortByTable,
     sliceOf: sliceOf,
     titleFor: titleFor
   }
