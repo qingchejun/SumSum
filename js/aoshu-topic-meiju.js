@@ -18,7 +18,7 @@
     } else {
       var R5 = { L1: [6, 12], L2: [8, 15], L3: [11, 18] }[s.difficulty] || [6, 12]
       n = U.randInt(R5[0], R5[1])
-      if (n % 5 === 0 && Math.random() < 0.5) n += 1 // 别总是整凑
+      if (n % 5 === 0 && U.rand() < 0.5) n += 1 // 别总是整凑
     }
     var kmax = Math.floor(n / c)
     if (kmax < 1) return null
@@ -49,7 +49,7 @@
 
   /* 变式②摆两位数：三张互不相同的数字卡片，0 不能放十位 */
   function genDigit(s) {
-    var withZero = Math.random() < 0.35
+    var withZero = U.rand() < 0.35
     var ds = []
     var pool = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     var take = withZero ? 2 : 3
@@ -151,16 +151,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '用 2 元和 1 元的硬币凑出 5 元，有几种不同的凑法？',
-            solution: [
-              { tag: '想一想', text: '按 2 元硬币的个数，从最多开始一行一行往下列。' },
-              { tag: '列一列', text: '2 元 2 个 + 1 元 1 个；2 元 1 个 + 1 元 3 个；2 元 0 个 + 1 元 5 个。' },
-              { tag: '数一数', text: '一共列了 3 行，就是 3 种。' },
-              { tag: '验一验', text: '2 元的个数从 2 个数到 0 个，每种都列到了，不重不漏 ✓' },
-              { tag: '答', text: '一共有 3 种不同的凑法。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '定好顺序列一列，不重不漏数一数。' }
       ]

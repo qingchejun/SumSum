@@ -112,7 +112,7 @@
     var c = conf(s)
     var k = U.randInt(Math.max(2, c.k[0]), c.k[1])
     var b = U.randInt(2, 9)
-    var useSum = Math.random() < 0.5
+    var useSum = U.rand() < 0.5
     var sc = U.pick(SCENES)
     var big = b * k
     if (big > 81) return null
@@ -179,16 +179,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '果园里苹果树的数量是梨树的 3 倍，两种树一共有 12 棵。梨树有几棵？',
-            solution: [
-              { tag: '画一画', text: '梨树画一段，苹果树是 3 倍，画 3 段一样长的。' },
-              { tag: '想一想', text: '合起来一共 3 + 1 = 4 段，12 棵正好分给 4 段。' },
-              { tag: '列算式', text: '12 ÷ 4 = 3（棵）。' },
-              { tag: '验一验', text: '苹果树 3 × 3 = 9（棵），9 + 3 = 12 ✓' },
-              { tag: '答', text: '梨树有 3 棵。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '一倍画一段，几倍画几段；数清有几段，除法算一段。' }
       ]

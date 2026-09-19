@@ -228,7 +228,7 @@
    */
   function genRect(s) {
     var n = range(s, 'rect')
-    var rows = Math.random() < 0.5 ? 1 : 2
+    var rows = U.rand() < 0.5 ? 1 : 2
     /* 独立枚举：所有「连续列区间 × 连续行区间」的组合 */
     var count = 0
     for (var i = 0; i < n; i++) {
@@ -303,17 +303,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '直线上有 A、B、C、D 这 4 个点，一共能数出几条线段？',
-            stemHTML: '直线上有 A、B、C、D 这 4 个点，一共能数出几条线段？<div>' + lineSVG(4) + '</div>',
-            solution: [
-              { tag: '想一想', text: '按「左端点」分类，一类一类数，不重不漏。' },
-              { tag: '列一列', text: '以 A 为左端点：AB、AC、AD（3 条）；以 B 为左端点：BC、BD（2 条）；以 C 为左端点：CD（1 条）。' },
-              { tag: '列算式', text: '3 + 2 + 1 = 6（条）。' },
-              { tag: '验一验', text: '每条线段都数了一次，也只数了一次 ✓' },
-              { tag: '答', text: '一共能数出 6 条线段。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '分类来数图，从小数到大；每类记个数，最后加一加。' }
       ]

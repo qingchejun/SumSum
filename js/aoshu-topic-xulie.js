@@ -27,7 +27,7 @@
   function genDengcha(s) {
     var cap = U.diff(s).numMax
     var step = U.randInt(1, stepMax(s))
-    var up = Math.random() < 0.7 // 递增为主，递减少量出现
+    var up = U.rand() < 0.7 // 递增为主，递减少量出现
     if (cap - step * 5 < 1) return null
     var a0 = up ? U.randInt(1, cap - step * 5) : U.randInt(step * 5 + 1, cap)
     var d = up ? step : -step
@@ -205,16 +205,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '找规律，填一填：2、5、8、11、（　）、17',
-            solution: [
-              { tag: '想一想', text: '把相邻的两个数比一比，看每次变化多少。' },
-              { tag: '找规律', text: '5 − 2 = 3，8 − 5 = 3，11 − 8 = 3——每个数都比前一个加 3。' },
-              { tag: '算一算', text: '括号前面的数是 11：11 + 3 = 14。' },
-              { tag: '验一验', text: '14 + 3 = 17，和后面的数正好接上 ✓' },
-              { tag: '答', text: '括号里填 14。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '相邻比一比，隔项看一看；找准变化数，填完再验算。' }
       ]

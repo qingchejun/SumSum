@@ -40,7 +40,7 @@
   function genNum(s) {
     var cap = U.diff(s).numMax
     var a = U.randInt(1, cap)
-    var b = Math.random() < 0.15 ? a : U.randInt(1, cap)
+    var b = U.rand() < 0.15 ? a : U.randInt(1, cap)
     var sym = symOf(a, b)
     var check =
       sym === '='
@@ -68,7 +68,7 @@
   /* 变式②算式与数比：先算左边再比 */
   function genExpr(s) {
     var cap = U.diff(s).numMax
-    var plus = Math.random() < 0.5
+    var plus = U.rand() < 0.5
     var x, y, left
     if (plus) {
       x = U.randInt(1, cap - 1)
@@ -80,11 +80,11 @@
       left = x - y
     }
     var r
-    if (Math.random() < 0.15) {
+    if (U.rand() < 0.15) {
       r = left
     } else {
       var delta = U.randInt(1, 5)
-      r = Math.random() < 0.5 ? left + delta : left - delta
+      r = U.rand() < 0.5 ? left + delta : left - delta
       if (r < 1) r = left + delta
       if (r > cap) r = left - delta
       if (r === left || r < 1) return null
@@ -198,15 +198,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '在 ○ 里填上「>」「<」或「=」：15 + 8 ○ 15 + 6',
-            solution: [
-              { tag: '想一想', text: '两边都有 15，把 15 盖住，只比 8 和 6——不用算出来！' },
-              { tag: '比一比', text: '两边都是 15 加一个数，加得多的大：8 比 6 大，所以左边大。' },
-              { tag: '验一验', text: '真算一遍：15 + 8 = 23，15 + 6 = 21，23 > 21 ✓' },
-              { tag: '答', text: '15 + 8 > 15 + 6，○ 里填「>」。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '位数多的大，同位从头比；两边有相同，盖住比不同。' }
       ]

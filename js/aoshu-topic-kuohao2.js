@@ -14,7 +14,7 @@
     var c = U.randInt(1, 8)
     var b = U.randInt(c + 1, Math.min(cap - 1, c + 9)) // b > c，差为正
     var d = b - c
-    if (Math.random() < 0.7) {
+    if (U.rand() < 0.7) {
       /* 减去一个差（重点形态） */
       if (b + 1 > cap) return null
       var a = U.randInt(b, cap) // a ≥ b，右边先减 b 不出负数
@@ -62,7 +62,7 @@
   function genSimp(s) {
     var cap = U.diff(s).numMax
     if (cap < 20) return null
-    if (Math.random() < 0.5) {
+    if (U.rand() < 0.5) {
       /* 形态 A：45 − 18 + 8 = 45 − (18 − 8) */
       var round = 10 * U.randInt(1, Math.max(1, Math.floor(cap / 10) - 1))
       var c = U.randInt(1, 9)
@@ -167,15 +167,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '20 − (8 − 3) = 20 − 8 ○ 3。○ 里应该填「+」还是「−」？',
-            solution: [
-              { tag: '想一想', text: '该减的只是 8 − 3 = 5；可右边把整个 8 都减掉了，减多了 3。' },
-              { tag: '找规则', text: '多减的 3 要加回来——○ 里是「+」。' },
-              { tag: '验一验', text: '左边：20 − 5 = 15；右边：20 − 8 + 3 = 12 + 3 = 15。相等 ✓' },
-              { tag: '答', text: '○ 里填「+」。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '袋里是减要当心：减去差，加回小；加上差，减回小；拆完两边验一验。' }
       ]

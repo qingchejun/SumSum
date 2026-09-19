@@ -34,7 +34,7 @@
 
   /* 一组图案：周期 2~4；周期 ≥3 时偶尔用「两同一异」形（如 ●●△） */
   function makePattern(p) {
-    if (p >= 3 && Math.random() < 0.3) {
+    if (p >= 3 && U.rand() < 0.3) {
       var two = pickGlyphs(2)
       var arr = []
       for (var i = 0; i < p - 1; i++) arr.push(two[0])
@@ -213,16 +213,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '找规律，接着画：●△●△●△（　）',
-            solution: [
-              { tag: '想一想', text: '先看看是不是几个一组在重复，把一组一组圈出来。' },
-              { tag: '找规律', text: '圈一圈：●△｜●△｜●△——「●△」两个一组，一遍一遍重复。' },
-              { tag: '算一算', text: '（　）前面正好圈完 3 组，新一组从头开始：第 1 个是 ●。' },
-              { tag: '验一验', text: '把（　）填上再圈：●△｜●△｜●△｜●，顺序都对 ✓' },
-              { tag: '答', text: '（　）里画 ●。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '几个一组圈一圈，圈到最后看零头。' }
       ]

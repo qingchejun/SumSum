@@ -42,7 +42,7 @@
     var c = cap(s)
     var a = U.randInt(c.aMin, c.aMax)
     var n = U.randInt(c.nMin, c.nMax)
-    var up = Math.random() < 0.5
+    var up = U.rand() < 0.5
     var b = up ? a + 1 : a - 1
     if (b < 2) return null
     var ans = a * (n + 1) + (up ? 1 : -1)
@@ -147,16 +147,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '巧算：7 + 7 + 7 + 8',
-            solution: [
-              { tag: '想一想', text: '数一数：3 个 7，还有一个 8——把 8 看成「7 + 1」，加数就整齐了。' },
-              { tag: '化加为乘', text: '一共 4 个 7，再多 1：7 × 4 + 1。' },
-              { tag: '列算式', text: '7 × 4 = 28，28 + 1 = 29。' },
-              { tag: '验一验', text: '老老实实连加：7 + 7 = 14，再加 7 是 21，再加 8 是 29 ✓' },
-              { tag: '答', text: '得数是 29。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '加数长得像，先把它变齐；几个几相加，乘法一口气。' }
       ]

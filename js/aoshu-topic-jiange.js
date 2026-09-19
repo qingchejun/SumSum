@@ -25,7 +25,7 @@
   /* 变式①锯木头：随机出「锯成 n 段要几次」或「锯 k 次成几段」 */
   function genSaw(s) {
     var c = cap(s)
-    if (Math.random() < 0.5) {
+    if (U.rand() < 0.5) {
       var n = U.randInt(3, c)
       return {
         topic: 'jiange',
@@ -136,15 +136,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '一根木头要锯成 6 段，需要锯几次？',
-            solution: [
-              { tag: '想一想', text: '锯 1 次变成 2 段，锯 2 次变成 3 段——锯的次数总比段数少 1。' },
-              { tag: '列算式', text: '6 − 1 = 5（次）。' },
-              { tag: '验一验', text: '画一画：▂|▂|▂|▂|▂|▂，5 个锯口正好分出 6 段 ✓' },
-              { tag: '答', text: '需要锯 5 次。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '段数次数差个一，画个小图就清晰。' }
       ]

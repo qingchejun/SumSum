@@ -87,7 +87,7 @@
   /* 变式③和的变化：两人分别得到（或一得一用），总数跟着变多少 */
   function genChange(s0) {
     var d0 = U.diff(s0)
-    var both = Math.random() < 0.5
+    var both = U.rand() < 0.5
     var who = U.pickTwoNames()
     var it = U.pick(U.ITEMS)
     var A = who[0]
@@ -187,15 +187,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '小明和小红一共有 12 颗糖。小明给了小红 3 颗，现在两人一共有几颗糖？',
-            solution: [
-              { tag: '想一想', text: '糖只是从小明手里到了小红手里，一颗也没多、一颗也没少。' },
-              { tag: '小心陷阱', text: '看到「给了 3 颗」别急着减！总数不变。' },
-              { tag: '验一验', text: '假设小明有 7 颗、小红有 5 颗（合起来 12）；给完后是 4 颗和 8 颗，4 + 8 = 12，果然没变 ✓' },
-              { tag: '答', text: '现在两人一共还是有 12 颗糖。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '给来又给去，总数不变心里记；一起多一起少，相差不变不用急。' }
       ]

@@ -44,7 +44,7 @@
 
   /* 条件的题面说法：随机用「t 比 s 高」或「s 比 t 矮」（只随机一次，题面与验算共用同一句） */
   function condText(cond, at) {
-    return Math.random() < 0.5
+    return U.rand() < 0.5
       ? cond.t + '比' + cond.s + at.more
       : cond.s + '比' + cond.t + at.less
   }
@@ -319,15 +319,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '小明、小红、小华比身高。小明比小红高，小华比小明高。三人中谁最高？',
-            solution: [
-              { tag: '想一想', text: '把两句话读成「谁在前、谁在后」，再拼起来。' },
-              { tag: '推一推', text: '小华比小明高，小明又比小红高——串成一串：小华 → 小明 → 小红。' },
-              { tag: '验一验', text: '小明比小红高 ✓，小华比小明高 ✓，两句话都符合。' },
-              { tag: '答', text: '最高的是小华。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '一句一句读，前后排排队；谁都压不过，那就是第一。' }
       ]

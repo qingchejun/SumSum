@@ -216,10 +216,31 @@
   line-height: 1.85;
 }
 
+/* 一个例题一块；多个例题相邻时靠 .lesson-sec 的 margin-bottom 隔开 */
 .lesson-example {
   padding: 2.5mm 3.5mm;
   border: 1px solid #999;
   border-radius: 2mm;
+}
+
+/*
+ * 例题上方的题型名。一页上可能并排三四个例题（勾了几种题型就有几个），
+ * 不标名字家长分不清哪个例题对应面板上的哪一项。
+ */
+.lesson-vtag {
+  display: inline-block;
+  margin-bottom: 1.5mm;
+  padding: 0.2mm 1.8mm;
+  font-size: 11.5px;
+  font-weight: 700;
+  /*
+   * 【不能靠背景色】：浏览器打印默认丢掉背景，深底白字会直接印成一片空白。
+   * 这里跟 .sol-topic 用同一套「深字 + 细框」，屏幕和纸上都清楚。
+   */
+  color: #222;
+  background: none;
+  border: 1px solid #888;
+  border-radius: 1mm;
 }
 
 .lesson-stem {

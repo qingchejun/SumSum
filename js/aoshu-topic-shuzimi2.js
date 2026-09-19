@@ -44,7 +44,7 @@
     var dc = digitsOf(C)
     var carry = da.o + db.o >= 10
     /* 入门档以不进位为主，少量进位题保留（完全没有也失真） */
-    if (s.difficulty === 'L1' && carry && Math.random() < 0.7) return null
+    if (s.difficulty === 'L1' && carry && U.rand() < 0.7) return null
     var maskA = U.pick(['t', 'o'])
     var maskB = maskA === 't' ? 'o' : 't'
     if (countSolutions(da, db, C, maskA, maskB, false) !== 1) return null
@@ -119,7 +119,7 @@
     var db = digitsOf(B)
     var dc = digitsOf(C)
     var borrow = da.o < db.o
-    if (s.difficulty === 'L1' && borrow && Math.random() < 0.7) return null
+    if (s.difficulty === 'L1' && borrow && U.rand() < 0.7) return null
     var maskA = U.pick(['t', 'o'])
     var maskB = maskA === 't' ? 'o' : 't'
     if (countSolutions(da, db, C, maskA, maskB, true) !== 1) return null
@@ -190,16 +190,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '每个 □ 是一个数字：□4 + 2□ = 71。两个 □ 各是几？',
-            solution: [
-              { tag: '想一想', text: '把个位和十位分开看，先从个位下手。' },
-              { tag: '第 1 步', text: '个位：4 + □ 要得 1？可 4 已经比 1 大——说明满十进 1 了：4 + □ = 11，□ = 7，向十位进 1。' },
-              { tag: '第 2 步', text: '十位：□ + 2 + 进上来的 1 = 7，□ = 4。' },
-              { tag: '验一验', text: '44 + 27 = 71 ✓' },
-              { tag: '答', text: '两个 □ 从左到右分别是 4 和 7（44 + 27 = 71）。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '数位分开看，个位打头阵；满十要进一，借一要还一。' }
       ]

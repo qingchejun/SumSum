@@ -14,7 +14,7 @@
     var cap = U.diff(s).numMax
     var b = U.randInt(1, 9)
     var c = U.randInt(1, 9)
-    if (Math.random() < 0.6) {
+    if (U.rand() < 0.6) {
       /* 减去一个和 */
       if (b + c + 1 > cap) return null
       var a = U.randInt(b + c + 1, cap)
@@ -137,15 +137,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '用简便方法算：15 − (5 + 3)',
-            solution: [
-              { tag: '想一想', text: '减去「5 和 3 的和」，就是把 5 和 3 都减掉：15 − 5 − 3。' },
-              { tag: '巧算', text: '先减 5 正好凑成整十：15 − 5 = 10，再 10 − 3 = 7。' },
-              { tag: '验一验', text: '按括号先算：5 + 3 = 8，15 − 8 = 7，一样 ✓' },
-              { tag: '答', text: '15 − (5 + 3) = 7。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '减去和，连着减；加上和，连着加；谁能凑整装袋里，又快又对人人夸。' }
       ]

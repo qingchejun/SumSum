@@ -22,8 +22,53 @@
 (function (root) {
   'use strict'
 
+  /*
+   * 随机源。默认就是 Math.random，出题时跟以前完全一样。
+   *
+   * 之所以要能换掉它：讲解页的例题是【从题型自己的生成器里现取的】——
+   * 同一套代码产出的例题，绝不会教出一套卷子上不考的方法（讲解和出题脱节，
+   * 正是这个板块此前最大的一个毛病：三种题型只讲第一种）。
+   * 但例题必须【钉死】：点一次「重新生成一批」讲解页就换一道例题，
+   * 孩子刚看懂的那道题没了，卷子也不再是同一张。所以取例题时用 withSeed
+   * 换成定死的伪随机序列，出题时再换回来。
+   *
+   * 【所有知识点都必须走这个口子】：js/aoshu-topic-*.js 里一律用 U.rand()，
+   * 不许再直接写 Math.random() —— 漏一处，那一处的例题就会每次都变。
+   * tools/check-aoshu-lesson.js 里有一条专门盯着这件事。
+   */
+  var rnd = Math.random
+
+  function rand() {
+    return rnd()
+  }
+
+  /* mulberry32：与口算 js/generator.js 里用的是同一个，种子相同结果相同 */
+  function makeRandom(seed) {
+    var a = seed >>> 0
+    return function () {
+      a = (a + 0x6d2b79f5) | 0
+      var t = Math.imul(a ^ (a >>> 15), 1 | a)
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+  }
+
+  /*
+   * 用定死的种子跑一段代码，跑完【无论如何】都换回原来的随机源。
+   * 生成器里到处是 return null 的拒绝采样，try/finally 不能省。
+   */
+  function withSeed(seed, fn) {
+    var prev = rnd
+    rnd = makeRandom(seed)
+    try {
+      return fn()
+    } finally {
+      rnd = prev
+    }
+  }
+
   function randInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min
+    return Math.floor(rnd() * (max - min + 1)) + min
   }
 
   function pick(arr) {
@@ -76,18 +121,87 @@
   var DIFF_LABEL = { L1: '入门', L2: '提高', L3: '挑战' }
 
   /*
+   * 讲解页例题：从题型【自己的生成器】里取一道当范例。
+   *
+   * 不手写例题，是因为手写的那一份会和生成器悄悄走散 —— 生成器改了措辞或口径，
+   * 讲解页还停在老版本，孩子照着做就是错的。同一套代码产出，这种事不可能发生。
+   *
+   * 挑法：先用一批固定种子各取一道，再挑出【数字最典型】的那一道 ——
+   * 取的是这些候选里「最大数字」的中位数，不是最小的那个。
+   *
+   * 【刻意不挑最小】：挑最小会得到 4 和 2 这种退化的例子（差 2、移 1），
+   * 孩子看完并不知道方法长什么样，一上卷子就懵。例题要的是「典型」，
+   * 既不是这一档里最难的，也不能是送分的。同样大小时挑题干短的。
+   *
+   * 种子固定 ⇒ 例题固定：点「重新生成一批」换的是卷子上的题，讲解页不跟着变，
+   * 孩子刚看懂的那道范例不会在下一次打印时消失。
+   *
+   * 逐个试而不是只试一个，是因为不少生成器用拒绝采样，单个种子常常返回 null
+   *（实测 357 组里有 18 组在种子 7 上取不出题）。
+   */
+  var LESSON_SEEDS = 24
+
+  /* 题干里最大的那个数：衡量这道题「有多大」最省事也最贴近孩子的感受 */
+  function stemMax(q) {
+    var max = 0
+    ;(String(q.stem).match(/\d+/g) || []).forEach(function (t) {
+      max = Math.max(max, Number(t))
+    })
+    return max
+  }
+
+  function lessonExample(variant, s) {
+    var cand = []
+    for (var seed = 1; seed <= LESSON_SEEDS; seed++) {
+      var q = null
+      try {
+        q = withSeed(seed, function () {
+          return variant.gen(s)
+        })
+      } catch (e) {
+        q = null // 个别生成器在极端参数下会抛，跳过这个种子即可
+      }
+      if (q) cand.push(q)
+    }
+    if (!cand.length) return null
+    var mid = cand
+      .map(stemMax)
+      .sort(function (a, b) {
+        return a - b
+      })[Math.floor(cand.length / 2)]
+    var best = null
+    var bestScore = Infinity
+    cand.forEach(function (q) {
+      /* 离中位数越近越好；一样近时取题干短的 */
+      var sc = Math.abs(stemMax(q) - mid) * 1000 + String(q.stem).length
+      if (sc < bestScore) {
+        bestScore = sc
+        best = q
+      }
+    })
+    return best
+  }
+
+  /*
    * 通用生成循环：按设置过滤勾选的变式 → 拒绝采样 + key 去重。
    * 所有知识点的 generate 都是它的薄封装。
    */
+  /*
+   * 勾选了哪几种题型。出题和讲解页【必须走同一个函数】——
+   * 两边各写一份 filter，迟早出现「卷子上考了第三种、讲解页没讲第三种」，
+   * 而这正是这个板块修过的那个毛病本身。
+   */
+  function selectedVariants(variants, s) {
+    var on = variants.filter(function (v) {
+      return s[v.setting]
+    })
+    return on.length ? on : [variants[0]] // sanitize 已兜底，这里再防御一层
+  }
+
   function generateFrom(variants, s) {
-    var gens = variants
-      .filter(function (v) {
-        return s[v.setting]
-      })
-      .map(function (v) {
-        return v.gen
-      })
-    if (gens.length === 0) gens = [variants[0].gen] // sanitize 已兜底，这里再防御一层
+    var gens = selectedVariants(variants, s).map(function (v) {
+      return v.gen
+    })
     var seen = new Set()
     var questions = []
     var maxAttempts = s.count * 300
@@ -254,16 +368,7 @@
       },
       {
         heading: '例题示范',
-        example: {
-          stem: '小明有 10 颗糖，小红有 6 颗糖。小明给小红几颗糖，两人的糖就一样多？',
-          solution: [
-            { tag: '想一想', text: '要让两人一样多，就要把小明「多出来的部分」分一半给小红。' },
-            { tag: '第 1 步', text: '先算多多少：10 − 6 = 4（颗），小明比小红多 4 颗糖。' },
-            { tag: '第 2 步', text: '多的分一半：4 = 2 + 2，把多出的 4 颗平分成两份，给小红一份，就是 2 颗。' },
-            { tag: '验一验', text: '小明 10 − 2 = 8（颗），小红 6 + 2 = 8（颗），两人都是 8 颗，一样多 ✓' },
-            { tag: '答', text: '小明给小红 2 颗糖。' }
-          ]
-        }
+        perVariant: true
       },
       {
         heading: '记住口诀',
@@ -346,6 +451,10 @@
   /* 公共工具，供各知识点文件（js/aoshu-topic-*.js）复用 */
   root.SumSum.aoshu.util = {
     randInt: randInt,
+    rand: rand,
+    withSeed: withSeed,
+    lessonExample: lessonExample,
+    selectedVariants: selectedVariants,
     pick: pick,
     pickTwoNames: pickTwoNames,
     pron: pron,

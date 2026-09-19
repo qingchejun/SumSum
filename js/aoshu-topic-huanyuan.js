@@ -109,7 +109,7 @@
   function gen3Step(s) {
     var cap = U.diff(s).numMax
     var x = U.randInt(1, Math.max(4, Math.floor(cap / 2)))
-    var useMul = Math.random() < 0.6
+    var useMul = U.rand() < 0.6
     var mulAt = U.randInt(0, 2)
     var ops = []
     var vals = [x]
@@ -117,7 +117,7 @@
       var v = vals[i]
       var op
       if (useMul && i === mulAt) {
-        if (v >= 2 && v % 2 === 0 && Math.random() < 0.5) op = { t: 'div' }
+        if (v >= 2 && v % 2 === 0 && U.rand() < 0.5) op = { t: 'div' }
         else if (v * 2 <= cap) op = { t: 'mul' }
         else if (v >= 2 && v % 2 === 0) op = { t: 'div' }
         else return null
@@ -204,16 +204,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '一个数加上 5，再减去 3，结果是 12。这个数是几？',
-            solution: [
-              { tag: '想一想', text: '从结果 12 倒着走，每一步反过来。' },
-              { tag: '第 1 步', text: '最后一步是减去 3，倒回去要加：12 + 3 = 15。' },
-              { tag: '第 2 步', text: '前一步是加上 5，倒回去要减：15 − 5 = 10。' },
-              { tag: '验一验', text: '正着走一遍：10 + 5 = 15，15 − 3 = 12 ✓' },
-              { tag: '答', text: '这个数是 10。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '结果往回走，加减要对调；一步退一步，回到最开头。' }
       ]

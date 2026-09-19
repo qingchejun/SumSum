@@ -58,7 +58,7 @@
   /* 变式②「不用算比大小」：同因数比另一个因数 / 乘法对加法 */
   function genCompare(s) {
     var r = range(s)
-    if (Math.random() < 0.55) {
+    if (U.rand() < 0.55) {
       /* 形态 a：a×b1 ○ a×b2，同因数只比另一个 */
       var a = U.randInt(r.fMin, r.fMax)
       var b1 = U.randInt(r.fMin, r.fMax)
@@ -90,14 +90,14 @@
      * （实测占到七成）。这里先定答案再造数：带 1 的乘法反而更小，是最能
      * 检验「乘法到底是几个几」的一档，(2,2) 则是唯一相等的情形。
      */
-    var want = Math.random()
+    var want = U.rand()
     var x, y
     if (want < 0.1) {
       x = 2
       y = 2 // 2 × 2 = 2 + 2，唯一相等的一组
     } else if (want < 0.5) {
       /* 一个因数取 1：1 个 y 就是 y，而 1 + y 还多 1，左边反而小 */
-      if (Math.random() < 0.5) {
+      if (U.rand() < 0.5) {
         x = 1
         y = U.randInt(Math.max(2, r.fMin), r.fMax)
       } else {
@@ -188,15 +188,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '把 5 + 5 + 5 改写成乘法算式，算一算结果是多少？',
-            solution: [
-              { tag: '想一想', text: '加数都是 5，一共 3 个 5 相加。' },
-              { tag: '列算式', text: '3 个 5，写成乘法就是 5 × 3 = 15。' },
-              { tag: '验一验', text: '连加检查：5 + 5 = 10，10 + 5 = 15，一样 ✓' },
-              { tag: '答', text: '5 + 5 + 5 = 5 × 3 = 15。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '相同加数数一数，几个几就几乘几。' }
       ]

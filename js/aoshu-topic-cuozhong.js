@@ -14,7 +14,7 @@
     var cap = U.diff(s).numMax
     var form = U.pick(['add', 'subsub', 'submin'])
     var delta = U.randInt(1, 5)
-    var up = Math.random() < 0.5
+    var up = U.rand() < 0.5
 
     if (form === 'add') {
       /* 真算式 a + b = t；把 b 看成 bp，错果 w = a + bp */
@@ -115,7 +115,7 @@
   function genWrongOp(s) {
     var cap = U.diff(s).numMax
     var d = U.randInt(2, Math.floor(cap / 3))
-    var shouldAdd = Math.random() < 0.5
+    var shouldAdd = U.rand() < 0.5
 
     if (shouldAdd) {
       /* 真算式 x + d；错算 x − d = w */
@@ -217,16 +217,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '小马虎算加法时，把加数 6 看成了 9，算出的结果是 25。正确的结果应该是几？',
-            solution: [
-              { tag: '想一想', text: '把 6 看成了 9，多加了 3，结果就大了 3。' },
-              { tag: '第 1 步', text: '先用错的结果找回另一个加数：25 − 9 = 16。' },
-              { tag: '第 2 步', text: '用对的数再算：16 + 6 = 22。' },
-              { tag: '验一验', text: '16 + 9 = 25，正好是小马虎的错结果 ✓' },
-              { tag: '答', text: '正确的结果是 22。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '错果不白错，真数找回来；换上对的数，一算就明白。' }
       ]

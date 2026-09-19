@@ -215,7 +215,7 @@
     var noPool = TPLS.filter(function (t) {
       return oddPoints(t).length > 2
     })
-    var can = Math.random() < 0.5
+    var can = U.rand() < 0.5
     var tpl = U.pick(can ? canPool : noPool)
     var odd = oddPoints(tpl)
     var oddDesc = odd.length === 0 ? '一个奇点也没有' : '奇点有 ' + odd.length + ' 个：' + letterList(odd)
@@ -303,15 +303,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '「日」字形能一笔画成吗？如果能，从哪里开始画？',
-            solution: [
-              { tag: '数一数', text: 'A 连 2 条、B 连 2 条、C 连 3 条、D 连 3 条、E 连 2 条、F 连 2 条——奇点是 C 和 D，正好 2 个。' },
-              { tag: '判一判', text: '奇点正好 2 个，能一笔画成，但要从 C 或 D 下笔。' },
-              { tag: '验一验', text: '从 C 出发：C→A→B→D→C→E→F→D，7 条线一条不落，停在 D ✓' },
-              { tag: '答', text: '能一笔画成，从 C 或 D 开始画。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '每点数线条，单数叫奇点；奇点零或二，一笔画得成。' }
       ]

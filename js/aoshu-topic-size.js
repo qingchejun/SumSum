@@ -25,7 +25,7 @@
     var b = U.randInt(r.fMin, r.fMax)
     var c = U.randInt(r.fMin, r.fMax)
     var p = b * c
-    if (Math.random() < 0.5) {
+    if (U.rand() < 0.5) {
       /* 加法形态 */
       if (r.cap - p < 2) return null
       var a = U.randInt(2, r.cap - p)
@@ -78,7 +78,7 @@
   function genParen(s) {
     var r = range(s)
     var c = U.randInt(r.fMin, r.fMax)
-    if (Math.random() < 0.5) {
+    if (U.rand() < 0.5) {
       var a = U.randInt(1, 8)
       var b = U.randInt(1, 9 - a) // a + b ≤ 9，乘法仍在口诀表内
       var sum = a + b
@@ -143,7 +143,7 @@
     if (plain === paren) return null // 理论上不会发生（a ≥ 1、c ≥ 2），防御一层
     var plainText = a + ' + ' + b + ' × ' + c
     var parenText = '(' + a + ' + ' + b + ') × ' + c
-    var parenLeft = Math.random() < 0.5
+    var parenLeft = U.rand() < 0.5
     var lText = parenLeft ? parenText : plainText
     var rText = parenLeft ? plainText : parenText
     var lVal = parenLeft ? paren : plain
@@ -190,16 +190,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '算一算：2 + 3 × 4',
-            solution: [
-              { tag: '想一想', text: '有加有乘，先算乘法 3 × 4。' },
-              { tag: '第 1 步', text: '3 × 4 = 12。' },
-              { tag: '第 2 步', text: '2 + 12 = 14。' },
-              { tag: '小心陷阱', text: '从左往右算 2 + 3 = 5、5 × 4 = 20 就错了——乘法要先算。' },
-              { tag: '答', text: '2 + 3 × 4 = 14。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '括号最优先，乘除排第二，加减最后算。' }
       ]

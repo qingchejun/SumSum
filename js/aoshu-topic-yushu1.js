@@ -29,7 +29,7 @@
     var t = k * g + r
     if (t > c.t) return null
     var it = U.pick(U.ITEMS)
-    var askBags = Math.random() < 0.5
+    var askBags = U.rand() < 0.5
     var base = t + ' ' + it.u + it.n + '，每 ' + k + ' ' + it.u + '装一袋，'
     return {
       topic: 'yushu1',
@@ -164,16 +164,7 @@
         },
         {
           heading: '例题示范',
-          example: {
-            stem: '按 红、黄、蓝、红、黄、蓝……的顺序一直排下去，第 14 个是什么颜色？',
-            solution: [
-              { tag: '想一想', text: '红、黄、蓝 3 个一组，一组一组重复。' },
-              { tag: '列算式', text: '14 ÷ 3 = 4（组）……2（个）。' },
-              { tag: '找位置', text: '余 2，第 14 个就是新一组里的第 2 个：黄。' },
-              { tag: '验一验', text: '4 组用了 12 个，第 13 个是红、第 14 个是黄 ✓' },
-              { tag: '答', text: '第 14 个是黄色。' }
-            ]
-          }
+          perVariant: true
         },
         { heading: '记住口诀', chant: '周期问题看余数，余几就是第几个；要是正好没余数，就是一组最后一个。' }
       ]
