@@ -159,6 +159,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '减去一个差：直接减 8 就减多了，多减的 3 要加回来，所以 20 − (8 − 3) = 20 − 8 + 3。',
             '加上一个差：先加 8 就加多了，多加的 3 要减回去，所以 20 + (8 − 3) = 20 + 8 − 3。',
@@ -173,9 +174,28 @@
       ]
     },
     variants: [
-      { id: 'fill', setting: 'vKh2Fill', label: '减去一个差，填符号', gen: genFill },
-      { id: 'simp', setting: 'vKh2Simp', label: '添去括号巧算', gen: genSimp },
-      { id: 'mist', setting: 'vKh2Mistake', label: '小马虎错题', def: false, gen: genMistake }
+      {
+        id: 'fill',
+        setting: 'vKh2Fill',
+        label: '减去一个差，填符号',
+        idea: '去掉括号时，括号里前一个数照原样加或减，就加多了或减多了 —— 后一个数要用相反的符号补回来。',
+        gen: genFill
+      },
+      {
+        id: 'simp',
+        setting: 'vKh2Simp',
+        label: '添去括号巧算',
+        idea: '先找哪两个数能凑成整十 —— 减了又加的，添括号并成一个差一起减；加上一个差的，去掉括号先加、凑整了再减。',
+        gen: genSimp
+      },
+      {
+        id: 'mist',
+        setting: 'vKh2Mistake',
+        label: '小马虎错题',
+        idea: '把减去一个差当成了连着减：该加回来的那个数没加，反倒又多减了一次 —— 结果一定偏小，正好少两个那个数。',
+        def: false,
+        gen: genMistake
+      }
     ],
     generate: function (s) {
       return U.generateFrom(KUOHAO2.variants, s)

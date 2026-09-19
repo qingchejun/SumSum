@@ -157,6 +157,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '先用除法算出「几组……余几」：总数 ÷ 每组几个 = 几组……余几个。',
             '真正决定答案的往往是余数：余几，第 N 个就是新一组里的第几个；余 0，正好是一组的最后一个。'
@@ -170,9 +171,28 @@
       ]
     },
     variants: [
-      { id: 'divide', setting: 'vYs1Divide', label: '带余分组（几袋、剩几个）', gen: genDivide },
-      { id: 'cycle', setting: 'vYs1Cycle', label: '周期问题（第 N 个是什么）', gen: genCycle },
-      { id: 'week', setting: 'vYs1Week', label: '星期问题（再过 n 天）', def: false, gen: genWeek }
+      {
+        id: 'divide',
+        setting: 'vYs1Divide',
+        label: '带余分组（几袋、剩几个）',
+        idea: '用总数 ÷ 每袋装几个，算出几袋余几个 —— 问能装满几袋就看商，问还剩几个就看余数，别把两个看混了。',
+        gen: genDivide
+      },
+      {
+        id: 'cycle',
+        setting: 'vYs1Cycle',
+        label: '周期问题（第 N 个是什么）',
+        idea: '先看清几个一组重复，再用序号 ÷ 一组的个数：余几就是新一组里的第几个，正好没余数就是一组的最后一个。',
+        gen: genCycle
+      },
+      {
+        id: 'week',
+        setting: 'vYs1Week',
+        label: '星期问题（再过 n 天）',
+        idea: '一个星期 7 天转一圈，所以用天数 ÷ 7 —— 整周过完还是今天这个星期几，再从今天往后数余下的几天就是答案。',
+        def: false,
+        gen: genWeek
+      }
     ],
     generate: function (s) {
       return U.generateFrom(YUSHU1.variants, s)

@@ -131,6 +131,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: ['一轮一轮老老实实地数：每轮先算「能换几瓶」，再数清手里的空瓶（没换掉的旧瓶 + 刚喝完的新瓶），直到不够换为止。']
         },
         {
@@ -141,8 +142,20 @@
       ]
     },
     variants: [
-      { id: 'drink', setting: 'vKpDrink', label: '有 k 个空瓶，最多喝几瓶', gen: genDrink },
-      { id: 'buy', setting: 'vKpBuy', label: '买 m 瓶，连喝带换共几瓶', gen: genBuy }
+      {
+        id: 'drink',
+        setting: 'vKpDrink',
+        label: '有 k 个空瓶，最多喝几瓶',
+        idea: '换来的汽水喝完又是空瓶，还能接着换 —— 一轮一轮算：换几瓶、手里还剩几个空瓶，把每轮换到的瓶数加起来。',
+        gen: genDrink
+      },
+      {
+        id: 'buy',
+        setting: 'vKpBuy',
+        label: '买 m 瓶，连喝带换共几瓶',
+        idea: '买来的先喝掉，瓶子就变成空瓶，再一轮一轮地换 —— 最后别忘了把买的那几瓶也算进总数里。',
+        gen: genBuy
+      }
     ],
     generate: function (s) {
       return U.generateFrom(KONGPING.variants, s)

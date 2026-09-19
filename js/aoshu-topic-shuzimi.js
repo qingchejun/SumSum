@@ -136,6 +136,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '第一招：想加算减。○ + 3 = 10，就想「几加 3 得 10」，用 10 − 3 = 7 算出来。',
             '第二招：先解数字最全的那条算式，求出一个符号，再带着它去解下一条。最后一定把答案代回原式验一验。'
@@ -149,9 +150,28 @@
       ]
     },
     variants: [
-      { id: 'same', setting: 'vSmSame', label: '相同的数（□+□=？）', gen: genSame },
-      { id: 'chain', setting: 'vSmChain', label: '连环求解（先求○再求△）', gen: genChain },
-      { id: 'pair', setting: 'vSmPair', label: '和与差（从小试数对）', def: false, gen: genPair }
+      {
+        id: 'same',
+        setting: 'vSmSame',
+        label: '相同的数（□+□=？）',
+        idea: '几个一样的数加起来得这个和：两个就把和平分成一样多的两半，三个就从小往大一个一个试，试到正好。',
+        gen: genSame
+      },
+      {
+        id: 'chain',
+        setting: 'vSmChain',
+        label: '连环求解（先求○再求△）',
+        idea: '两条算式里同一个符号藏的是同一个数，先解数字最全的那条求出它，再把它带进另一条算剩下的。',
+        gen: genChain
+      },
+      {
+        id: 'pair',
+        setting: 'vSmPair',
+        label: '和与差（从小试数对）',
+        def: false,
+        idea: '差说明大数比小数大多少，就把相差这么多的两个数从小往大一对一对试，哪一对加起来正好是和就对了。',
+        gen: genPair
+      }
     ],
     generate: function (s) {
       return U.generateFrom(SHUZIMI.variants, s)

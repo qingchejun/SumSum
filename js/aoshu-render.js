@@ -166,6 +166,27 @@
       }
       if (sc.diagramHTML) body += sc.diagramHTML
       if (sc.diagram) body += diagramHTML(sc.diagram)
+      /*
+       * 「怎么想」也要按题型逐条给。上面那几段讲的是这个知识点的总思路，
+       * 但每种题型的想法往往不是一回事（03：一种是「差÷2」、一种是「2n」、
+       * 一种是「原差−2n」）。口诀是助记，可以只覆盖头一种；思路不行 ——
+       * 思路就是方法本身，漏掉哪种题型，那种题型就等于没讲。
+       *
+       * 每条一句话，写在题型定义旁边（variant.idea），和生成器同处一地，
+       * 改了出题口径能顺手改到它，不至于像原先的手写例题那样悄悄走散。
+       */
+      if (sc.perVariantIdea) {
+        var ideas = root.SumSum.aoshu.util.selectedVariants(topic.variants, s)
+          .filter(function (v) { return v.idea })
+          .map(function (v) {
+            return (
+              '<li><span class="lesson-vtag">' + p.esc(v.label) + '</span>' +
+              p.esc(v.idea) + '</li>'
+            )
+          })
+          .join('')
+        if (ideas) body += '<ul class="lesson-ideas">' + ideas + '</ul>'
+      }
       if (sc.chant) body += '<div class="lesson-chant">' + p.esc(sc.chant) + '</div>'
       blocks.push(sec(sc.heading, body))
     })

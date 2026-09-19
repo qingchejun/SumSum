@@ -206,6 +206,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '第一招：把重复的一组圈出来——先问自己「几个一组？」，再一组一组地圈。',
             '第二招：如果不是重复，就数一数每组的个数，看看是不是每组都多几个。'
@@ -219,9 +220,28 @@
       ]
     },
     variants: [
-      { id: 'repeat', setting: 'vTxRepeat', label: '周期重复（接着画）', gen: genRepeat },
-      { id: 'grow', setting: 'vTxGrow', label: '数量递增（下一组几个）', gen: genGrow },
-      { id: 'nth', setting: 'vTxNth', label: '第 N 个是什么', def: false, gen: genNth }
+      {
+        id: 'repeat',
+        setting: 'vTxRepeat',
+        label: '周期重复（接着画）',
+        idea: '先圈一圈看几个一组，再数最后一组已经画了几个 —— 接着画组里的下一个；要是正好圈满，就从头画第一个。',
+        gen: genRepeat
+      },
+      {
+        id: 'grow',
+        setting: 'vTxGrow',
+        label: '数量递增（下一组几个）',
+        idea: '先数出每组各有几个，再看每组比前一组多几 —— 多的个数一直不变，用上一组的个数加它就是下一组。',
+        gen: genGrow
+      },
+      {
+        id: 'nth',
+        setting: 'vTxNth',
+        label: '第 N 个是什么',
+        idea: '先看几个一组，再用第几个去除以一组的个数 —— 余几就是组里的第几个，没有余数就是一组里的最后一个。',
+        def: false,
+        gen: genNth
+      }
     ],
     generate: function (s) {
       return U.generateFrom(TUXING.variants, s)

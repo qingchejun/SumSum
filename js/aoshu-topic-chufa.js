@@ -112,6 +112,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '① 平均分：12 个苹果平均分给 3 人，每人几个？——知道份数，求每份。',
             '② 包含分：12 个苹果每 3 个装一袋，能装几袋？——知道每份，求份数。',
@@ -126,9 +127,28 @@
       ]
     },
     variants: [
-      { id: 'share', setting: 'vChShare', label: '平均分（求每份）', gen: genShare },
-      { id: 'group', setting: 'vChGroup', label: '包含分（求份数）', gen: genGroup },
-      { id: 'times', setting: 'vChTimes', label: '倍数关系（求一倍数）', def: false, gen: genTimes }
+      {
+        id: 'share',
+        setting: 'vChShare',
+        label: '平均分（求每份）',
+        idea: '知道一共多少、要分成几份，求一份是多少，就把总数平均分开 —— 总数 ÷ 份数。',
+        gen: genShare
+      },
+      {
+        id: 'group',
+        setting: 'vChGroup',
+        label: '包含分（求份数）',
+        idea: '这回知道的是每份装几个，求能装几份，就是数总数里面装得下几个这样的一份 —— 总数 ÷ 每份。',
+        gen: genGroup
+      },
+      {
+        id: 'times',
+        setting: 'vChTimes',
+        label: '倍数关系（求一倍数）',
+        def: false,
+        idea: '大数是小数的几倍，就是大数里正好有几个小数；把大数平均分成这么多份，一份就是要求的小数。',
+        gen: genTimes
+      }
     ],
     generate: function (s) {
       return U.generateFrom(CHUFA.variants, s)

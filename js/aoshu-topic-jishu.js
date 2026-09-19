@@ -296,6 +296,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '乱数一定会漏。诀窍是「分类数」：数线段就按左端点分类——先数以第一个点开头的，再数以第二个点开头的……',
             '每类的个数会越来越少（3 条、2 条、1 条……），最后把每类加起来。'
@@ -309,10 +310,35 @@
       ]
     },
     variants: [
-      { id: 'segment', setting: 'vJsSegment', label: '数线段', gen: genSegment },
-      { id: 'angle', setting: 'vJsAngle', label: '数角', gen: genAngle },
-      { id: 'triangle', setting: 'vJsTriangle', label: '数三角形', gen: genTriangle },
-      { id: 'rect', setting: 'vJsRect', label: '数长方形', def: false, gen: genRect }
+      {
+        id: 'segment',
+        setting: 'vJsSegment',
+        label: '数线段',
+        idea: '按左端点分类数才不重不漏：每个点只跟它右边的点连线，从最左边起条数一路少 1，全加起来。',
+        gen: genSegment
+      },
+      {
+        id: 'angle',
+        setting: 'vJsAngle',
+        label: '数角',
+        idea: '两条射线夹出一个角，还是分类数：每条线只跟它后面的线配对，个数一路少 1，加起来就不重不漏。',
+        gen: genAngle
+      },
+      {
+        id: 'triangle',
+        setting: 'vJsTriangle',
+        label: '数三角形',
+        idea: '三角形的尖都在顶点 A，底边上随便取两个点就夹出一个 —— 底边上能连出几条线段，就有几个三角形。',
+        gen: genTriangle
+      },
+      {
+        id: 'rect',
+        setting: 'vJsRect',
+        label: '数长方形',
+        idea: '几个小格连在一起也是长方形：一排的按「由几个小格拼成」分类数；两排的先分成占上排、占下排、上下都占三类，再各数一遍。',
+        def: false,
+        gen: genRect
+      }
     ],
     generate: function (s) {
       return U.generateFrom(JISHU.variants, s)

@@ -136,6 +136,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: ['动手圈一圈最直观：每几个圈一个圈，看能圈几个圈；圈到剩下的不够一圈，就停下来。'],
           diagram: {
             rows: [
@@ -160,9 +161,27 @@
       ]
     },
     variants: [
-      { id: 'equal', setting: 'vFzEqual', label: '正好分组', gen: genEqual },
-      { id: 'remain', setting: 'vFzRemain', label: '分组有剩余', gen: genRemain },
-      { id: 'pair', setting: 'vFzPair', label: '配对分组', gen: genPair }
+      {
+        id: 'equal',
+        setting: 'vFzEqual',
+        label: '正好分组',
+        idea: '就是看总数里面有几个「每份几个」：几个几个地圈，正好圈完，圈了几次就是几份，也就是总数 ÷ 每份。',
+        gen: genEqual
+      },
+      {
+        id: 'remain',
+        setting: 'vFzRemain',
+        label: '分组有剩余',
+        idea: '一份一份地圈，圈到剩下的不够一份就停 —— 圈了几次就是几份，圈不进去的那些就是剩下的。',
+        gen: genRemain
+      },
+      {
+        id: 'pair',
+        setting: 'vFzPair',
+        label: '配对分组',
+        idea: '每组要两样各一个，配一组就各用掉一个 —— 少的那样先用完，能配几组就看少的那样有几个。',
+        gen: genPair
+      }
     ],
     generate: function (s) {
       return U.generateFrom(FENZU.variants, s)

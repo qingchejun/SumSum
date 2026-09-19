@@ -236,6 +236,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: ['窍门只有一句话：先找「只缺一个数」的那条线。用这条线的和减去已知的两个数，空里的数就出来了；填完一个，下一条线又变成只缺一个，一条一条全解开。'],
           diagramHTML: crossHTML({ T: '3', L: '2', C: '1', R: '5', B: '4' }) + '<div style="font-size:12px;color:#666">填好的十字数阵：横行 2+1+5=8，竖行 3+1+4=8</div>'
         },
@@ -247,8 +248,21 @@
       ]
     },
     variants: [
-      { id: 'cross', setting: 'vZhenCross', label: '十字数阵', gen: genCross },
-      { id: 'tri', setting: 'vZhenTri', label: '三角数阵', def: false, gen: genTri }
+      {
+        id: 'cross',
+        setting: 'vZhenCross',
+        label: '十字数阵',
+        idea: '横行竖行都要等于同一个和，先挑 ？ 所在、只缺它一个数的那条线，用和减去线上已知的两个数。',
+        gen: genCross
+      },
+      {
+        id: 'tri',
+        setting: 'vZhenTri',
+        label: '三角数阵',
+        def: false,
+        idea: '三条边的和都一样，先找 ？ 在上面、另外两个圈都填好的那条边，用边的和减掉这两个数。',
+        gen: genTri
+      }
     ],
     generate: function (s) {
       return U.generateFrom(SHUZHEN.variants, s)

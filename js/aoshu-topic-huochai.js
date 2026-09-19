@@ -187,6 +187,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: ['第一个三角形要 3 根。再摆第二个时，它靠着第一个、共用了一根，所以只要添 2 根；后面每一个都只添 2 根。正方形也一样：第一个 4 根，后面每个添 3 根。'],
           diagramHTML: '<div style="margin:1.5mm 0">' + sticksSVG(triangleSticks(3), false) + '<span style="font-size:12px;color:#666">　3 个连排三角形：3 + 2 + 2 = 7 根</span></div>'
         },
@@ -198,9 +199,28 @@
       ]
     },
     variants: [
-      { id: 'tri', setting: 'vHcTriangle', label: '连排三角形', gen: genTriangle },
-      { id: 'squ', setting: 'vHcSquare', label: '连排正方形', gen: genSquare },
-      { id: 'compare', setting: 'vHcCompare', label: '分开摆多用几根', def: false, gen: genCompare }
+      {
+        id: 'tri',
+        setting: 'vHcTriangle',
+        label: '连排三角形',
+        idea: '第一个三角形要 3 根，后面每个靠着前一个共用一根，只添 2 根 —— 先写 3，后面有几个就加几次 2。',
+        gen: genTriangle
+      },
+      {
+        id: 'squ',
+        setting: 'vHcSquare',
+        label: '连排正方形',
+        idea: '第一个正方形要 4 根，后面每个靠着前一个共用一根，只添 3 根 —— 先写 4，后面有几个就加几次 3。',
+        gen: genSquare
+      },
+      {
+        id: 'compare',
+        setting: 'vHcCompare',
+        label: '分开摆多用几根',
+        idea: '分开摆多用的，就是连排时省下的共用根：两个挨着就共用 1 根，相邻处正是图形个数减 1。',
+        def: false,
+        gen: genCompare
+      }
     ],
     generate: function (s) {
       return U.generateFrom(HUOCHAI.variants, s)

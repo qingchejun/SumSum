@@ -135,6 +135,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '抓住关键的一句话：「1 个大的能换几个小的」。要求几个大的，就把它们一个一个都换成小的，再数总数。',
             '遇到两层关系（猫换兔、兔换鸡），别急，一层一层换，先换成中间的，再换成最小的。'
@@ -148,9 +149,27 @@
       ]
     },
     variants: [
-      { id: 'one', setting: 'vDlOne', label: '一步代换（大的换小的）', gen: genOne },
-      { id: 'two', setting: 'vDlTwo', label: '两步代换（一层一层换）', gen: genTwo },
-      { id: 'symbol', setting: 'vDlSymbol', label: '符号代换（○△ 求值）', gen: genSymbol }
+      {
+        id: 'one',
+        setting: 'vDlOne',
+        label: '一步代换（大的换小的）',
+        idea: '先看清 1 个大的能换几个小的，有几个大的就照这个数换几回，把换出来的小的全加起来。',
+        gen: genOne
+      },
+      {
+        id: 'two',
+        setting: 'vDlTwo',
+        label: '两步代换（一层一层换）',
+        idea: '中间那样东西是座桥：先把大的换成中间的，再把每个中间的换成最小的，最后数最小的一共几个。',
+        gen: genTwo
+      },
+      {
+        id: 'symbol',
+        setting: 'vDlSymbol',
+        label: '符号代换（○△ 求值）',
+        idea: '先挑只有一种符号的那条算式，把这个符号是几求出来，再换进另一条，剩下那个符号就问出来了。',
+        gen: genSymbol
+      }
     ],
     generate: function (s) {
       return U.generateFrom(DENGLIANG.variants, s)

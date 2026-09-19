@@ -183,6 +183,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '规则只有两条：有括号，先算括号里的；没有括号，先乘除、后加减。',
             '动笔前先圈出要先算的那一步，算完把结果抄下来，再算第二步——一步一步来，不跳步。'
@@ -196,9 +197,28 @@
       ]
     },
     variants: [
-      { id: 'order', setting: 'vSzOrder', label: '先乘除后加减', gen: genOrder },
-      { id: 'paren', setting: 'vSzParen', label: '括号优先', gen: genParen },
-      { id: 'compare', setting: 'vSzCompare', label: '同数不同序比大小', def: false, gen: genCompare }
+      {
+        id: 'order',
+        setting: 'vSzOrder',
+        label: '先乘除后加减',
+        idea: '没有括号的算式，先把乘法那一步单独算出来，再拿这个得数去加或者减 —— 别从左往右顺着算。',
+        gen: genOrder
+      },
+      {
+        id: 'paren',
+        setting: 'vSzParen',
+        label: '括号优先',
+        idea: '有括号先算括号里那一步 —— 不管里面是加还是减，把算出的得数当成一个数，再和外面的数相乘。',
+        gen: genParen
+      },
+      {
+        id: 'compare',
+        setting: 'vSzCompare',
+        label: '同数不同序比大小',
+        def: false,
+        idea: '两边数字一模一样，只差一个括号 —— 别用眼睛猜，各自按顺序算出得数再比；括号在哪边，哪边就更大。',
+        gen: genCompare
+      }
     ],
     generate: function (s) {
       return U.generateFrom(SIZE.variants, s)

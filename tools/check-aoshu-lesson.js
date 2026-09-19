@@ -51,6 +51,10 @@ function checkShape() {
     if (!l || !Array.isArray(l.sections)) { bad(t.no + ' 没有讲解页'); return }
     var pv = l.sections.filter(function (s) { return s.perVariant })
     if (pv.length !== 1) bad(t.no + ' ' + t.name + '：perVariant 段有 ' + pv.length + ' 个，应当恰好 1 个')
+    var pvi = l.sections.filter(function (s) { return s.perVariantIdea })
+    if (pvi.length !== 1) {
+      bad(t.no + ' ' + t.name + '：perVariantIdea 段有 ' + pvi.length + ' 个，应当恰好 1 个（「怎么想」那一段）')
+    }
     l.sections.forEach(function (s, i) {
       /* 手写例题已全部撤掉，留着会和生成器悄悄走散 —— 这正是本次要修的病根 */
       if (s.example) bad(t.no + ' #' + i + ' 还留着手写 example')
@@ -61,7 +65,35 @@ function checkShape() {
   })
 }
 
-/* ---------- 2. 例题取得到、认得对、钉得住 ---------- */
+/* ---------- 2. 每种题型都得有「思路」 ---------- */
+
+/*
+ * 口诀只覆盖第一种题型是可以的 —— 它是助记。
+ * 但【思路就是方法本身】，漏掉哪种题型，那种题型在讲解页上就等于没讲。
+ * 所以每个 variant 都必须带 idea，且不能是凑数的一句空话。
+ */
+function checkIdeas() {
+  eachTopic(function (t) {
+    t.variants.forEach(function (v) {
+      var idea = v.idea
+      if (!idea || typeof idea !== 'string') {
+        bad(t.no + ' ' + t.name + ' / ' + v.id + '：没有 idea（这种题型的思路没人讲）')
+        return
+      }
+      /* 太短必然是废话（「用乘法算」这种）；太长就不是一句话了，念不动 */
+      if (idea.length < 18) bad(t.no + ' ' + v.id + '：idea 只有 ' + idea.length + ' 字，太短')
+      if (idea.length > 80) bad(t.no + ' ' + v.id + '：idea 有 ' + idea.length + ' 字，太长')
+      /* 同一个知识点里两种题型的思路一模一样 = 等于没分开讲 */
+      t.variants.forEach(function (o) {
+        if (o !== v && o.idea === idea) {
+          bad(t.no + '：' + v.id + ' 和 ' + o.id + ' 的 idea 一字不差')
+        }
+      })
+    })
+  })
+}
+
+/* ---------- 3. 例题取得到、认得对、钉得住 ---------- */
 
 function checkExamples() {
   eachTopic(function (t) {
@@ -98,7 +130,7 @@ function checkExamples() {
   })
 }
 
-/* ---------- 3. 讲解 == 出题（本脚本的主角） ---------- */
+/* ---------- 4. 讲解 == 出题（本脚本的主角） ---------- */
 
 /* variants 的所有非空子集，最多取 8 个，够覆盖又不至于跑爆 */
 function subsets(variants) {
@@ -142,7 +174,7 @@ function checkSameSet() {
   })
 }
 
-/* ---------- 4. 随机源必须统一走 U.rand ---------- */
+/* ---------- 5. 随机源必须统一走 U.rand ---------- */
 
 /*
  * 漏一处 Math.random()，那一处的例题就会每次都变（checkExamples 的稳定性一条
@@ -168,6 +200,7 @@ function main() {
   console.log('已实现知识点：' + A.topicList.length + ' 个')
   var steps = [
     ['讲解页数据形状（perVariant 恰好一段、无遗留手写例题）', checkShape],
+    ['每种题型都有「思路」且各不相同', checkIdeas],
     ['例题取得到 / 认得对 / 出题后不变（知识点 × 题型 × 3 难度）', checkExamples],
     ['讲解讲的 == 卷子考的（题型子集全扫）', checkSameSet],
     ['随机源统一走 U.rand()', checkRandomSource]

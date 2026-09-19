@@ -198,6 +198,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '第一招：把相邻的两个数比一比，看每次多几、少几。',
             '第二招：要是挨着比看不出来，就隔一个看——第 1、3、5 个一组，第 2、4、6 个一组，常常各有各的规律。'
@@ -211,9 +212,28 @@
       ]
     },
     variants: [
-      { id: 'dengcha', setting: 'vXlDengcha', label: '等差数列（每次加/减固定数）', gen: genDengcha },
-      { id: 'jiaoti', setting: 'vXlJiaoti', label: '交替数列（隔项找规律）', gen: genJiaoti },
-      { id: 'dizeng', setting: 'vXlDizeng', label: '步长递增（加的数每次多 1）', def: false, gen: genDizeng }
+      {
+        id: 'dengcha',
+        setting: 'vXlDengcha',
+        label: '等差数列（每次加/减固定数）',
+        idea: '先把相邻两个数减一减，每次变化一样多就是规律 —— 从括号前面那个数起，往大排就加这个数，往小排就减这个数。',
+        gen: genDengcha
+      },
+      {
+        id: 'jiaoti',
+        setting: 'vXlJiaoti',
+        label: '交替数列（隔项找规律）',
+        idea: '挨着比看不出规律就隔一个看：第 1、3、5 个一组、第 2、4、6 个一组，括号在哪组就照那组的规律算，那组也可能一直不变。',
+        gen: genJiaoti
+      },
+      {
+        id: 'dizeng',
+        setting: 'vXlDizeng',
+        label: '步长递增（加的数每次多 1）',
+        idea: '要是每次加的数都不一样，就把每次加了多少写下来 —— 这串数常常每次多 1，照它推出下一步该加几，再加到括号前面的数上。',
+        def: false,
+        gen: genDizeng
+      }
     ],
     generate: function (s) {
       return U.generateFrom(XULIE.variants, s)

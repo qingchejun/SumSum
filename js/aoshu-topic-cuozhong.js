@@ -210,6 +210,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '第一步：弄清楚错在哪、错了多少（看错的数差几？该加的算成减差几？）。',
             '第二步：用错结果把「没看错的那个数」先找回来，再用对的数重新算一遍。算完把找回的数代回错算式——对得上，才放心。'
@@ -223,9 +224,28 @@
       ]
     },
     variants: [
-      { id: 'wrongnum', setting: 'vCzWrongNum', label: '看错数字', gen: genWrongNum },
-      { id: 'wrongop', setting: 'vCzWrongOp', label: '看错运算符号', gen: genWrongOp },
-      { id: 'swap', setting: 'vCzSwap', label: '抄反数位（两位数）', def: false, gen: genSwap }
+      {
+        id: 'wrongnum',
+        setting: 'vCzWrongNum',
+        label: '看错数字',
+        idea: '不管看错的是加数、减数还是被减数，都先用错结果和那个看错的数，倒着把没看错的数找回来，再换上对的数重算。',
+        gen: genWrongNum
+      },
+      {
+        id: 'wrongop',
+        setting: 'vCzWrongOp',
+        label: '看错运算符号',
+        idea: '照着错用的那个符号倒着算一步，把原来的数先找回来，再用本该用的符号重算一遍。',
+        gen: genWrongOp
+      },
+      {
+        id: 'swap',
+        setting: 'vCzSwap',
+        label: '抄反数位（两位数）',
+        def: false,
+        idea: '先用错结果减去抄反的那个数，把没抄错的加数找回来，再和正确的数相加 —— 抄反只是两个数位调了个儿。',
+        gen: genSwap
+      }
     ],
     generate: function (s) {
       return U.generateFrom(CUOZHONG.variants, s)

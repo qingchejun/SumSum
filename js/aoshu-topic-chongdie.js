@@ -134,6 +134,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: ['先把两组直接加起来，再停下来想一想：有没有人（或有没有一段）被加了两次？有的话，把多加的那一次减掉。'],
           diagram: {
             rows: [
@@ -151,9 +152,28 @@
       ]
     },
     variants: [
-      { id: 'both', setting: 'vCdBoth', label: '两样都参加，求总人数', gen: genBoth },
-      { id: 'paper', setting: 'vCdPaper', label: '纸条重叠，求总长', gen: genPaper },
-      { id: 'find', setting: 'vCdFind', label: '反求重叠人数', def: false, gen: genFind }
+      {
+        id: 'both',
+        setting: 'vCdBoth',
+        label: '两样都参加，求总人数',
+        idea: '把两组人数先直接加起来，两样都占的那些人被数了两次，减掉一次才是真正的总数。',
+        gen: genBoth
+      },
+      {
+        id: 'paper',
+        setting: 'vCdPaper',
+        label: '纸条重叠，求总长',
+        idea: '两根的长度先加起来，中间重叠的那一段被量了两回，再减掉一段重叠，才是粘好的总长。',
+        gen: genPaper
+      },
+      {
+        id: 'find',
+        setting: 'vCdFind',
+        label: '反求重叠人数',
+        def: false,
+        idea: '两组直接加出来的数，一定比实际总数多，多出来的就是被数了两次的那部分 —— 两数和减总数。',
+        gen: genFind
+      }
     ],
     generate: function (s) {
       return U.generateFrom(CHONGDIE.variants, s)

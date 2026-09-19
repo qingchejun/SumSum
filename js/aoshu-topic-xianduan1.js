@@ -160,6 +160,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: ['少的画一段，多的画同样的一段再接一小截「多出来的」。把多出来的截掉，剩下的就是两段一样长——平分它，就求出了少的那个。'],
           diagramHTML:
             '<div class="seg-diagram">' +
@@ -176,9 +177,28 @@
       ]
     },
     variants: [
-      { id: 'big', setting: 'vXd1Big', label: '和差求大数', gen: genBig },
-      { id: 'small', setting: 'vXd1Small', label: '和差求小数', gen: genSmall },
-      { id: 'move', setting: 'vXd1Move', label: '移多补少综合', def: false, gen: genMove }
+      {
+        id: 'big',
+        setting: 'vXd1Big',
+        label: '和差求大数',
+        idea: '画两段线段，把多出来的那截先拿掉 —— 和减差再平分是少的那个，给它添回差才是多的那个。',
+        gen: genBig
+      },
+      {
+        id: 'small',
+        setting: 'vXd1Small',
+        label: '和差求小数',
+        idea: '画成两段线段，把多出来的那截去掉，剩下正好两段一样长 —— 和减差再平分，一份就是少的那个。',
+        gen: genSmall
+      },
+      {
+        id: 'move',
+        setting: 'vXd1Move',
+        label: '移多补少综合',
+        idea: '给出几个正好补平，说明原来多的是这个数的两倍 —— 先算出差，再按和差问题求多的那个。',
+        def: false,
+        gen: genMove
+      }
     ],
     generate: function (s) {
       return U.generateFrom(XIANDUAN1.variants, s)

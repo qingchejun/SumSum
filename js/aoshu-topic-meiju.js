@@ -144,6 +144,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '先定一个顺序再动手列：比如按 2 元硬币的个数从多到少、按十位从小到大。',
             '列完一行再列下一行，列到头就停；最后数一数一共几行，就是几种。'
@@ -157,9 +158,28 @@
       ]
     },
     variants: [
-      { id: 'pay', setting: 'vMjPay', label: '凑钱（几种凑法）', gen: genPay },
-      { id: 'digit', setting: 'vMjDigit', label: '摆两位数（能摆几个）', gen: genDigit },
-      { id: 'shake', setting: 'vMjShake', label: '握手问题', def: false, gen: genShake }
+      {
+        id: 'pay',
+        setting: 'vMjPay',
+        label: '凑钱（几种凑法）',
+        idea: '按大面值硬币的个数，从最多一直列到 0 个，每行配上够数的 1 元 —— 一行一种，数数列了几行就是几种。',
+        gen: genPay
+      },
+      {
+        id: 'digit',
+        setting: 'vMjDigit',
+        label: '摆两位数（能摆几个）',
+        idea: '按十位上放哪张卡片分组，从小到大一组组列，剩下的卡片轮流放个位 —— 有 0 的话，0 不能放十位。',
+        gen: genDigit
+      },
+      {
+        id: 'shake',
+        setting: 'vMjShake',
+        label: '握手问题',
+        idea: '每人只跟排在他后面的人握一次，就不会重复：第一个人握得最多，往后一个比一个少 1，全加起来。',
+        def: false,
+        gen: genShake
+      }
     ],
     generate: function (s) {
       return U.generateFrom(MEIJU.variants, s)

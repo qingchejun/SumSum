@@ -121,6 +121,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: ['画圈圈最靠谱：别人画 ○，自己画 ●，一个一个点着数，一眼就清楚。'],
           diagram: {
             rows: [
@@ -144,9 +145,27 @@
       ]
     },
     variants: [
-      { id: 'both', setting: 'vPdBoth', label: '前 a 人后 b 人，求总数', gen: genBoth },
-      { id: 'fromboth', setting: 'vPdFromBoth', label: '从前第 m、从后第 n，求总数', gen: genFromBoth },
-      { id: 'behind', setting: 'vPdBehind', label: '已知总数，求后面几人', gen: genBehind }
+      {
+        id: 'both',
+        setting: 'vPdBoth',
+        label: '前 a 人后 b 人，求总数',
+        idea: '前面几个、后面几个说的都是别人，自己没算在里面，两头加完再添上自己 —— 前 + 后 + 1。',
+        gen: genBoth
+      },
+      {
+        id: 'fromboth',
+        setting: 'vPdFromBoth',
+        label: '从前第 m、从后第 n，求总数',
+        idea: '「第几个」是从一头数到自己，两个「第几」一加，自己就被数了两回，得减掉多算的 1。',
+        gen: genFromBoth
+      },
+      {
+        id: 'behind',
+        setting: 'vPdBehind',
+        label: '已知总数，求后面几人',
+        idea: '从前数是第几个，就说明他和前面的人合起来正好这么多，总人数减掉它，剩下的全在他后面。',
+        gen: genBehind
+      }
     ],
     generate: function (s) {
       return U.generateFrom(PAIDUI.variants, s)

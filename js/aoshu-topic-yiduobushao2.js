@@ -150,6 +150,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: ['牢牢记住两条：① 每移 1 个，差距缩小 2 个；② 不管怎么移，两人的总数永远不变。所有提高题都从这两条出发。'],
           diagram: gapDiagram('小明', '小红', 6, 4, '差 4 颗：移 2 颗正好补平；要是移 3 颗，就反超 2 颗')
         },
@@ -161,9 +162,28 @@
       ]
     },
     variants: [
-      { id: 'over', setting: 'vYd2Over', label: '移过头了，谁反超几个', gen: genOver },
-      { id: 'target', setting: 'vYd2Target', label: '还想多 r 个，移几个', gen: genTarget },
-      { id: 'total', setting: 'vYd2Total', label: '知总数，倒推原来各有几个', def: false, gen: genTotal }
+      {
+        id: 'over',
+        setting: 'vYd2Over',
+        label: '移过头了，谁反超几个',
+        idea: '每给出 1 个，差距就缩小 2 个；把给的个数加两次，要是比原来的差还大，就换成对方多了 —— 多出来的部分就是反超的个数。',
+        gen: genOver
+      },
+      {
+        id: 'target',
+        setting: 'vYd2Target',
+        label: '还想多 r 个，移几个',
+        idea: '差距每移 1 个缩小 2 个，所以先算差要缩小多少 —— 原来的差减掉还想留的差，再把它分成两半，移一半就行。',
+        gen: genTarget
+      },
+      {
+        id: 'total',
+        setting: 'vYd2Total',
+        label: '知总数，倒推原来各有几个',
+        idea: '不管怎么给，两人加起来的总数不变 —— 先把总数分成相等的两半，那是后来每人有的数，给出的一方加回给掉的，收的一方减掉。',
+        def: false,
+        gen: genTotal
+      }
     ],
     generate: function (s) {
       return U.generateFrom(YIDUOBUSHAO2.variants, s)

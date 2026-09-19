@@ -124,6 +124,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '第一招：看个位。个位是 0、2、4、6、8 → 偶数；个位是 1、3、5、7、9 → 奇数。',
             '第二招：想配对。奇数 + 奇数 = 偶数（两个单个凑成一对）；偶数 + 偶数 = 偶数；奇数 + 偶数 = 奇数（那个单个还孤零零的）。'
@@ -137,9 +138,28 @@
       ]
     },
     variants: [
-      { id: 'judge', setting: 'vJoJudge', label: '认奇偶（看个位）', gen: genJudge },
-      { id: 'sum', setting: 'vJoSum', label: '和的奇偶（不用算）', gen: genSum },
-      { id: 'flip', setting: 'vJoFlip', label: '翻杯子（奇偶应用）', def: false, gen: genFlip }
+      {
+        id: 'judge',
+        setting: 'vJoJudge',
+        label: '认奇偶（看个位）',
+        idea: '偶数能两两配成对，奇数配完总会多出一个；不用真去配 —— 看个位是双数还是单数，就能判出来。',
+        gen: genJudge
+      },
+      {
+        id: 'sum',
+        setting: 'vJoSum',
+        label: '和的奇偶（不用算）',
+        idea: '不用算得数 —— 看两个数各自配完对多没多出一个：都多或都不多，和是偶数；只有一边多，和就是奇数。',
+        gen: genSum
+      },
+      {
+        id: 'flip',
+        setting: 'vJoFlip',
+        label: '翻杯子（奇偶应用）',
+        idea: '翻两次就回到原样 —— 所以只看翻的次数是单数还是双数：双数次跟没翻一样，单数次就是反过来的那面。',
+        def: false,
+        gen: genFlip
+      }
     ],
     generate: function (s) {
       return U.generateFrom(JIOU.variants, s)

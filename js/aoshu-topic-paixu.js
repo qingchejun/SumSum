@@ -312,6 +312,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '把每句话读成「谁在前、谁在后」。先找那个谁都压不过的人——没有一句话说他输，他就是第一。',
             '把第一名拿走，在剩下的人里再找「没人压得过」的，就是第二……一个一个排下去。'
@@ -325,9 +326,28 @@
       ]
     },
     variants: [
-      { id: 'tall', setting: 'vPxTall', label: '三人两句话，找最高', gen: genTall },
-      { id: 'order', setting: 'vPxOrder', label: '四人三句话，排顺序', gen: genOrder },
-      { id: 'race', setting: 'vPxRace', label: '赛跑名次（含「不是」条件）', def: false, gen: genRace }
+      {
+        id: 'tall',
+        setting: 'vPxTall',
+        label: '三人两句话，找最高',
+        idea: '把每句话读成谁前谁后：两句里都占上风的排头一个，两句里都吃亏的排最后；串成一条链的，就顺着链从头排到尾。',
+        gen: genTall
+      },
+      {
+        id: 'order',
+        setting: 'vPxOrder',
+        label: '四人三句话，排顺序',
+        idea: '先找没有一句话说他输的那个人，排第一；把他拿走再找一次，四个人排成一串，问第几就数第几。',
+        gen: genOrder
+      },
+      {
+        id: 'race',
+        setting: 'vPxRace',
+        label: '赛跑名次（含「不是」条件）',
+        def: false,
+        idea: '先把说死的「是第几名」填进名次表，再用「不是」和谁快谁慢一格一格排除，最后空着的那格归剩下的人。',
+        gen: genRace
+      }
     ],
     generate: function (s) {
       return U.generateFrom(PAIXU.variants, s)

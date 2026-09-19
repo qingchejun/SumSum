@@ -197,6 +197,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '就像走迷宫走到了终点，要回到入口，只要原路返回。',
             '倒着走时，每一步都要「反着做」：加过 5 的就减 5，减过 3 的就加 3，乘过 2 的就除以 2。最后做的那一步，要最先倒回去。'
@@ -210,9 +211,28 @@
       ]
     },
     variants: [
-      { id: '2step', setting: 'vHy2Step', label: '两步还原（算式版）', gen: gen2Step },
-      { id: 'story', setting: 'vHyStory', label: '情景还原（故事版）', gen: genStory },
-      { id: '3step', setting: 'vHy3Step', label: '三步还原（含乘除）', def: false, gen: gen3Step }
+      {
+        id: '2step',
+        setting: 'vHy2Step',
+        label: '两步还原（算式版）',
+        idea: '不知道开头的数，就从结果往回倒着走，每一步都反过来做：原来加的就减回去，原来减的就加回来。',
+        gen: gen2Step
+      },
+      {
+        id: 'story',
+        setting: 'vHyStory',
+        label: '情景还原（故事版）',
+        idea: '从「现在有几个」倒着往回想：得到、买来的要减掉，给出去、用掉的要补回来，一步一步退到原来。',
+        gen: genStory
+      },
+      {
+        id: '3step',
+        setting: 'vHy3Step',
+        label: '三步还原（含乘除）',
+        idea: '倒着退三次，最后做的那一步最先退，每一步都反着来：加减对调、乘除对调，一直退回最开始的数。',
+        def: false,
+        gen: gen3Step
+      }
     ],
     generate: function (s) {
       return U.generateFrom(HUANYUAN.variants, s)

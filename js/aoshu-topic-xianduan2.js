@@ -169,6 +169,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: ['关键就一句：先找到「一倍数」是谁，把它画成一段。另一个量是它的几倍就画几段。然后数一数：总和占几段？相差占几段？用除法把一段（一倍数）求出来。'],
           diagramHTML:
             '<div class="seg-diagram">' +
@@ -185,9 +186,28 @@
       ]
     },
     variants: [
-      { id: 'sumtimes', setting: 'vXd2SumTimes', label: '和倍问题', gen: genSumTimes },
-      { id: 'difftimes', setting: 'vXd2DiffTimes', label: '差倍问题', gen: genDiffTimes },
-      { id: 'both', setting: 'vXd2Both', label: '求几倍的那个数', def: false, gen: genBoth }
+      {
+        id: 'sumtimes',
+        setting: 'vXd2SumTimes',
+        label: '和倍问题',
+        idea: '把一倍的那个画成一段，几倍就画几段 —— 合起来一共倍数加 1 段，总数除以这个段数就是一段。',
+        gen: genSumTimes
+      },
+      {
+        id: 'difftimes',
+        setting: 'vXd2DiffTimes',
+        label: '差倍问题',
+        idea: '一倍画一段，几倍画几段 —— 多出来的正好是倍数减 1 段，相差数除以这个段数就是一段。',
+        gen: genDiffTimes
+      },
+      {
+        id: 'both',
+        setting: 'vXd2Both',
+        label: '求几倍的那个数',
+        idea: '先求一段是多少：给总数就除以倍数加 1，给相差就除以倍数减 1 —— 再乘倍数，才是问的那一个。',
+        def: false,
+        gen: genBoth
+      }
     ],
     generate: function (s) {
       return U.generateFrom(XIANDUAN2.variants, s)

@@ -102,6 +102,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '动笔前先停一秒，问自己两个问题：题目问的到底是什么？题里有没有哪个数是来捣乱的？',
             '把题目再读一遍，比急着列算式更重要。读懂了，这些题一点都不难。'
@@ -115,9 +116,27 @@
       ]
     },
     variants: [
-      { id: 'age', setting: 'vXjAge', label: '年龄差不变', gen: genAge },
-      { id: 'candle', setting: 'vXjCandle', label: '蜡烛陷阱', gen: genCandle },
-      { id: 'share', setting: 'vXjShare', label: '分东西别忘了自己', gen: genShare }
+      {
+        id: 'age',
+        setting: 'vXjAge',
+        label: '年龄差不变',
+        idea: '两个人一起长大，每年各长 1 岁，差永远不变 —— 不管问几年以后，都用今年的大岁数减小岁数。',
+        gen: genAge
+      },
+      {
+        id: 'candle',
+        setting: 'vXjCandle',
+        label: '蜡烛陷阱',
+        idea: '点着的会一直烧到没，吹灭的反倒留了下来 —— 问早上还剩几支，答的就是被吹灭的那几支。',
+        gen: genCandle
+      },
+      {
+        id: 'share',
+        setting: 'vXjShare',
+        label: '分东西别忘了自己',
+        idea: '先数清一共几个人分，说话的自己也得算进去 —— 人数定了，再想几个几加起来正好是总数。',
+        gen: genShare
+      }
     ],
     generate: function (s) {
       return U.generateFrom(XIANJING.variants, s)

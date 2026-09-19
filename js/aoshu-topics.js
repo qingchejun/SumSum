@@ -361,6 +361,7 @@
       },
       {
         heading: '怎么想？',
+        perVariantIdea: true,
         paras: [
           '关键在「差的一半」：每移过去 1 个，多的人少 1 个、少的人同时多 1 个，差距一下子缩小 2 个。所以只要先算出两人相差多少，再把差分成两半，移走一半，正好补平。'
         ],
@@ -384,9 +385,28 @@
     name: '移多补少（基础篇）',
     lesson: YIDUOBUSHAO_LESSON,
     variants: [
-      { id: 'move', setting: 'vMove', label: '移几个才一样多', gen: genMove },
-      { id: 'origDiff', setting: 'vOrigDiff', label: '移 n 个后一样多，求原差', gen: genOrigDiff },
-      { id: 'afterDiff', setting: 'vAfterDiff', label: '移了几个后，还多几个', def: false, gen: genAfterDiff }
+      {
+        id: 'move',
+        setting: 'vMove',
+        label: '移几个才一样多',
+        idea: '先算出两人相差多少，再把这个差分成两半，移走一半就补平了 —— 差 ÷ 2。',
+        gen: genMove
+      },
+      {
+        id: 'origDiff',
+        setting: 'vOrigDiff',
+        label: '移 n 个后一样多，求原差',
+        idea: '倒过来想：移走的那 n 个是「差的一半」，所以原来的差是两个 n —— n + n。',
+        gen: genOrigDiff
+      },
+      {
+        id: 'afterDiff',
+        setting: 'vAfterDiff',
+        label: '移了几个后，还多几个',
+        idea: '没移平，只是拉近了。移 n 个会让差缩小 2 个 n，剩下的差 = 原来的差 − n − n。',
+        def: false,
+        gen: genAfterDiff
+      }
     ],
     generate: function (s) {
       return generateFrom(YIDUOBUSHAO.variants, s)

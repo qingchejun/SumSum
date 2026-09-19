@@ -157,6 +157,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '进一法：坐船、装箱这类「人人都要有位置」的问题，剩下的也要占一份，商要加 1。',
             '去尾法：买东西、剪绳子这类「不够一份就作罢」的问题，剩下的凑不成一份，舍去不算。'
@@ -170,9 +171,28 @@
       ]
     },
     variants: [
-      { id: 'ceil', setting: 'vYs2Ceil', label: '至少要几个（进一法）', gen: genCeil },
-      { id: 'floor', setting: 'vYs2Floor', label: '最多能几个（去尾法）', gen: genFloor },
-      { id: 'find', setting: 'vYs2Find', label: '求被除数（倒着算）', def: false, gen: genFind }
+      {
+        id: 'ceil',
+        setting: 'vYs2Ceil',
+        label: '至少要几个（进一法）',
+        idea: '先算总数里有几个整份、还剩几 —— 剩下的人或东西也得有地方放，所以要在商上再添 1 份，不能把零头丢下。',
+        gen: genCeil
+      },
+      {
+        id: 'floor',
+        setting: 'vYs2Floor',
+        label: '最多能几个（去尾法）',
+        idea: '先算总数里有几个整份、还剩几 —— 剩下的零头不够再凑一份，只能不算，商是几答案就是几，千万别加 1。',
+        gen: genFloor
+      },
+      {
+        id: 'find',
+        setting: 'vYs2Find',
+        label: '求被除数（倒着算）',
+        idea: '倒着想：这个数被分成了商那么多份、每份是除数那么多，还多出余数 —— 所以除数 × 商，再加上余数。',
+        def: false,
+        gen: genFind
+      }
     ],
     generate: function (s) {
       return U.generateFrom(YUSHU2.variants, s)

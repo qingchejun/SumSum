@@ -183,6 +183,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '把个位和十位分开看，先从个位下手；个位对不上时，想想是不是「满十进一」或「借一当十」了。',
             '两个条件的符号谜，就把两条算式比一比：多了哪个符号，和就多了多少。'
@@ -196,9 +197,28 @@
       ]
     },
     variants: [
-      { id: 'digit', setting: 'vSm2Digit', label: '加法数位谜（□5 + 3□）', gen: genDigit },
-      { id: 'three', setting: 'vSm2Three', label: '双条件符号谜（比一比）', gen: genThree },
-      { id: 'sub', setting: 'vSm2Sub', label: '减法数位谜（含退位）', def: false, gen: genSub }
+      {
+        id: 'digit',
+        setting: 'vSm2Digit',
+        label: '加法数位谜（□5 + 3□）',
+        idea: '把两位数按个位、十位分成两列，先补个位那一列；个位满十要向十位进 1，算十位时别漏掉这个 1。',
+        gen: genDigit
+      },
+      {
+        id: 'three',
+        setting: 'vSm2Three',
+        label: '双条件符号谜（比一比）',
+        idea: '两条算式比一比：多出来的那个 ○ 让和多了多少，○ 就是多少；求出 ○ 再带回去算另一个符号。',
+        gen: genThree
+      },
+      {
+        id: 'sub',
+        setting: 'vSm2Sub',
+        label: '减法数位谜（含退位）',
+        def: false,
+        idea: '减法也按个位、十位分两列，先看个位；个位不够减就向十位借 1 当 10，算十位时被借走的那 1 要还掉。',
+        gen: genSub
+      }
     ],
     generate: function (s) {
       return U.generateFrom(SHUZIMI2.variants, s)

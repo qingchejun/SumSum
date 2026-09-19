@@ -295,6 +295,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '数一数每个点连出几条线：连奇数条线的点叫「奇点」。',
             '一个奇点也没有：从任何点出发都能画成，最后回到起点；正好 2 个奇点：能画成，但必须从一个奇点出发、停在另一个奇点；奇点超过 2 个：怎么画都画不成。'
@@ -309,8 +310,20 @@
       ]
     },
     variants: [
-      { id: 'can', setting: 'vYbCan', label: '能不能一笔画成', gen: genCan },
-      { id: 'start', setting: 'vYbStart', label: '从哪个点开始画', gen: genStart }
+      {
+        id: 'can',
+        setting: 'vYbCan',
+        label: '能不能一笔画成',
+        idea: '先数每个点连出几条线，连单数条的叫奇点 —— 数一数有几个奇点，0 个或 2 个就画得成，超过 2 个怎么画都画不成。',
+        gen: genCan
+      },
+      {
+        id: 'start',
+        setting: 'vYbStart',
+        label: '从哪个点开始画',
+        idea: '先找出奇点 —— 连单数条线的点；正好 2 个奇点时，必须从其中一个下笔、画完停在另一个，从别的点起笔一定卡住。',
+        gen: genStart
+      }
     ],
     generate: function (s) {
       return U.generateFrom(YIBIHUA.variants, s)

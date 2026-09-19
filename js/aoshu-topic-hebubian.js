@@ -179,6 +179,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '给来给去（你给我、我给你）：东西只是换了地方，总数不变。',
             '一起增加（或一起减少）同样多：你追我也跑，两人的差不变。',
@@ -193,9 +194,28 @@
       ]
     },
     variants: [
-      { id: 'sum', setting: 'vHbSum', label: '和不变（给来给去）', gen: genSum },
-      { id: 'diff', setting: 'vHbDiff', label: '差不变（一起增加）', gen: genDiff },
-      { id: 'change', setting: 'vHbChange', label: '和的变化（一多一少）', def: false, gen: genChange }
+      {
+        id: 'sum',
+        setting: 'vHbSum',
+        label: '和不变（给来给去）',
+        idea: '东西只是从一个人手里挪到另一个人手里，没多也没少 —— 不用加也不用减，总数还是原来那么多。',
+        gen: genSum
+      },
+      {
+        id: 'diff',
+        setting: 'vHbDiff',
+        label: '差不变（一起增加）',
+        idea: '两人一起增加（或一起减少）同样多，你追我也跑 —— 差一点没变，直接把原来相差的数写上去。',
+        gen: genDiff
+      },
+      {
+        id: 'change',
+        setting: 'vHbChange',
+        label: '和的变化（一多一少）',
+        idea: '先数清一共多了几个、少了几个：都在多就把两份合起来加上去；一多一少就相减，多的赢就加、少的赢就减。',
+        def: false,
+        gen: genChange
+      }
     ],
     generate: function (s) {
       return U.generateFrom(HEBUBIAN.variants, s)

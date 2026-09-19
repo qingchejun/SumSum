@@ -139,6 +139,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '第一招：只有一个不一样？把它看成「差 1 补 1」，如 7、7、7、8 里的 8 就是 7 + 1。',
             '第二招：都是 9 或 8？看成 10 − 1、10 − 2，先按整十算再把多算的减掉。',
@@ -153,9 +154,28 @@
       ]
     },
     variants: [
-      { id: 'near', setting: 'vHjNear', label: '差一个的连加', gen: genNear },
-      { id: 'nine', setting: 'vHjNine', label: '接近整十巧算（9 看成 10−1）', gen: genNine },
-      { id: 'even', setting: 'vHjEven', label: '匀一匀变相同（移多补少）', def: false, gen: genEven }
+      {
+        id: 'near',
+        setting: 'vHjNear',
+        label: '差一个的连加',
+        idea: '一串加数里只有一个不一样，就把它看成「跟大家一样，再多 1 或少 1」，先算几个几，最后把这 1 加回去或减掉。',
+        gen: genNear
+      },
+      {
+        id: 'nine',
+        setting: 'vHjNine',
+        label: '接近整十巧算（9 看成 10−1）',
+        idea: '每个加数都差一点点就到 10，先全按 10 算，再看每个多算了几，有几个加数就把这些多算的一起减掉。',
+        gen: genNine
+      },
+      {
+        id: 'even',
+        setting: 'vHjEven',
+        label: '匀一匀变相同（移多补少）',
+        idea: '加数大多一样，只有一个多、一个少：把多出来的补给少的那个，全都匀成一样，就是几个几，用乘法。',
+        def: false,
+        gen: genEven
+      }
     ],
     generate: function (s) {
       return U.generateFrom(HUAJIA.variants, s)

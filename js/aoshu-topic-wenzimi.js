@@ -143,6 +143,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '先找突破口：只有一种字的算式最好下手——两个相同的数相加，平分就能求出来。',
             '解出一个字，就把它的值代进别的算式里，像开锁一样，一环一环往下解。'
@@ -156,9 +157,28 @@
       ]
     },
     variants: [
-      { id: 'same', setting: 'vWzSame', label: '同字谜（相同的字）', gen: genSame },
-      { id: 'pair', setting: 'vWzPair', label: '和差谜（两条算式）', gen: genPair },
-      { id: 'chain', setting: 'vWzChain', label: '三字连环（三条算式）', def: false, gen: genChain }
+      {
+        id: 'same',
+        setting: 'vWzSame',
+        label: '同字谜（相同的字）',
+        idea: '相同的字就是相同的数 —— 有几个这样的字相加，就把和平均分成几份，一份就是这个字。',
+        gen: genSame
+      },
+      {
+        id: 'pair',
+        setting: 'vWzPair',
+        label: '和差谜（两条算式）',
+        idea: '和加上差，小的那个就被补成了大的 —— 得到两个大数，平分出大数，再用和减它得小数。',
+        gen: genPair
+      },
+      {
+        id: 'chain',
+        setting: 'vWzChain',
+        label: '三字连环（三条算式）',
+        idea: '把三条算式全加起来，每个字都出现了两次 —— 平分得三个字的和，再减掉不含它的那条。',
+        def: false,
+        gen: genChain
+      }
     ],
     generate: function (s) {
       return U.generateFrom(WENZIMI.variants, s)

@@ -206,6 +206,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '第一步：找出「需要干等」的步骤，把别的小事塞进等待的时间里，让两件事同时进行。',
             '第二步：看看有没有「一次能做两份」的地方（锅、桌子、机器），别让它空着。'
@@ -219,9 +220,28 @@
       ]
     },
     variants: [
-      { id: 'tea', setting: 'vTcTea', label: '沏茶问题（等水时做小事）', gen: genTea },
-      { id: 'queue', setting: 'vTcQueue', label: '排队接水（快的先接）', gen: genQueue },
-      { id: 'pan', setting: 'vTcPan', label: '烙饼问题（锅不空着）', def: false, gen: genPan }
+      {
+        id: 'tea',
+        setting: 'vTcTea',
+        label: '沏茶问题（等水时做小事）',
+        idea: '找出最费时间的那件事，等它的时候把小事都顺手做完 —— 总时间只算必须单独做的那几件。',
+        gen: genTea
+      },
+      {
+        id: 'queue',
+        setting: 'vTcQueue',
+        label: '排队接水（快的先接）',
+        idea: '谁接得快谁先接 —— 排在前面的时间后面每个人都要等一遍，把各人等的时间加起来就是总数。',
+        gen: genQueue
+      },
+      {
+        id: 'pan',
+        setting: 'vTcPan',
+        label: '烙饼问题（锅不空着）',
+        idea: '先数一共有多少个面，锅每次烙 2 个面 —— 每锅都放满不空着，锅数就是面数的一半，再乘一面的时间。',
+        def: false,
+        gen: genPan
+      }
     ],
     generate: function (s) {
       return U.generateFrom(TONGCHOU.variants, s)

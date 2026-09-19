@@ -181,6 +181,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '看到连加先数一数：加数是不是都一样？一共有几个？「几个几」数清楚，乘法算式就出来了。',
             '比较两个乘法算式时，先看有没有相同的因数——有相同的，只比另一个数就行，根本不用算出来。'
@@ -194,9 +195,28 @@
       ]
     },
     variants: [
-      { id: 'mean', setting: 'vCfMean', label: '加法改乘法', gen: genMean },
-      { id: 'compare', setting: 'vCfCompare', label: '不用算比大小', gen: genCompare },
-      { id: 'split', setting: 'vCfSplit', label: '拆数巧算（几个几分开算）', def: false, gen: genSplit }
+      {
+        id: 'mean',
+        setting: 'vCfMean',
+        label: '加法改乘法',
+        idea: '几个相同的数连加，先看清加数是几、一共有几个，再写成几乘几，答案和一个一个加出来的一样。',
+        gen: genMean
+      },
+      {
+        id: 'compare',
+        setting: 'vCfCompare',
+        label: '不用算比大小',
+        idea: '两边有相同的那个数就盖住，只比另一个；一边乘一边加，就把乘法读成几个几，再看谁攒得多。',
+        gen: genCompare
+      },
+      {
+        id: 'split',
+        setting: 'vCfSplit',
+        label: '拆数巧算（几个几分开算）',
+        def: false,
+        idea: '左右两边是同一个数的「几个几」，左边一共几个，右边已经拿走几个，剩下的个数就填进□ —— 相减。',
+        gen: genSplit
+      }
     ],
     generate: function (s) {
       return U.generateFrom(CHENGFA.variants, s)

@@ -181,6 +181,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '先看结果比开头的数大还是小：变大要用加，变小要用减。',
             '拿不准就从左往右一个一个试：算出来不对就换一个符号，直到等式成立。填完一定要完整地再算一遍。'
@@ -194,9 +195,28 @@
       ]
     },
     variants: [
-      { id: 'one', setting: 'vTfOne', label: '填一个算符', gen: genOne },
-      { id: 'two', setting: 'vTfTwo', label: '填两个算符', gen: genTwo },
-      { id: 'three', setting: 'vTfThree', label: '填三个算符', def: false, gen: genThree }
+      {
+        id: 'one',
+        setting: 'vTfOne',
+        label: '填一个算符',
+        idea: '先拿结果和前面那个数比一比：结果变大就填加号，变小就填减号，填完再完整算一遍。',
+        gen: genOne
+      },
+      {
+        id: 'two',
+        setting: 'vTfTwo',
+        label: '填两个算符',
+        idea: '两个 ○ 加减搭配一共四种，从全填加号开始挨个试，得数不对就换个符号再算，直到等式正好成立。',
+        gen: genTwo
+      },
+      {
+        id: 'three',
+        setting: 'vTfThree',
+        label: '填三个算符',
+        def: false,
+        idea: '三个 ○ 一共八种填法，别乱跳着猜：先全填加号，再从头一个一个改成减号，每改一次就从左往右算完整。',
+        gen: genThree
+      }
     ],
     generate: function (s) {
       return U.generateFrom(TIANFU.variants, s)

@@ -217,6 +217,27 @@
 }
 
 /* 一个例题一块；多个例题相邻时靠 .lesson-sec 的 margin-bottom 隔开 */
+/*
+ * 「怎么想」里按题型逐条列的思路。每条一句话，前面挂题型名的标签。
+ * 用 list-style:none + 标签本身当项目符号，比圆点更清楚「这条属于哪种题型」。
+ */
+.lesson-ideas {
+  margin: 2mm 0 0;
+  padding: 0;
+}
+
+.lesson-ideas li {
+  list-style: none;
+  margin-bottom: 1.2mm;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.lesson-ideas .lesson-vtag {
+  margin: 0 1.5mm 0 0;
+  vertical-align: 1px;
+}
+
 .lesson-example {
   padding: 2.5mm 3.5mm;
   border: 1px solid #999;

@@ -230,6 +230,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '画一张表：行写人，列写东西。确定「是」就打 √，并把同一行、同一列的其他格子都打 ✗；线索说「不是」的也打 ✗。',
             '哪一行攒够两个 ✗，剩下的那格就是 √——一格一格填，答案自己冒出来。'
@@ -243,9 +244,28 @@
       ]
     },
     variants: [
-      { id: 'three', setting: 'vLbThree', label: '一条「是」+ 一条「不是」', gen: genThree },
-      { id: 'neg', setting: 'vLbNeg', label: '全是「不是」，连环排除', gen: genNeg },
-      { id: 'hat', setting: 'vLbHat', label: '猜帽子颜色（看别人想自己）', def: false, gen: genHat }
+      {
+        id: 'three',
+        setting: 'vLbThree',
+        label: '一条「是」+ 一条「不是」',
+        idea: '心里画个小表，行是人、列是东西：先把「是」的那条打 √，同行同列都划掉，再用「不是」的排除，三人全定完再看问谁。',
+        gen: genThree
+      },
+      {
+        id: 'neg',
+        setting: 'vLbNeg',
+        label: '全是「不是」，连环排除',
+        idea: '线索全是「不是」也能定：谁那一行被划掉两样，剩下的那样就是他的；定下一个再排除下一个，直到三人都定完。',
+        gen: genNeg
+      },
+      {
+        id: 'hat',
+        setting: 'vLbHat',
+        label: '猜帽子颜色（看别人想自己）',
+        idea: '「我看到的」说的是别人，不是自己 —— 先把别人排除掉，反而定出说话人自己的帽子，再接着排完另外两顶。',
+        def: false,
+        gen: genHat
+      }
     ],
     generate: function (s) {
       return U.generateFrom(LIEBIAO.variants, s)

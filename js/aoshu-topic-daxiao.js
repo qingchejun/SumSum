@@ -191,6 +191,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '比两个数：先看位数，位数多的大；位数一样，从十位比起，十位一样再比个位。',
             '比算式：一般先算再比；但两边藏着相同的数时，把相同的盖住，只比不同的那个数——又快又不容易错。'
@@ -204,9 +205,27 @@
       ]
     },
     variants: [
-      { id: 'num', setting: 'vDxNum', label: '两数比大小', gen: genNum },
-      { id: 'expr', setting: 'vDxExpr', label: '算式与数比（先算再比）', gen: genExpr },
-      { id: 'smart', setting: 'vDxSmart', label: '不用算的巧比', gen: genSmart }
+      {
+        id: 'num',
+        setting: 'vDxNum',
+        label: '两数比大小',
+        idea: '先数位数，位数多的就大；位数一样就从最高位比起，这一位相同再比下一位，每一位都相同就一样大。',
+        gen: genNum
+      },
+      {
+        id: 'expr',
+        setting: 'vDxExpr',
+        label: '算式与数比（先算再比）',
+        idea: '一边是算式就先把它算成一个数，再拿这个得数去和另一边比 —— 别抓着算式里的数直接比。',
+        gen: genExpr
+      },
+      {
+        id: 'smart',
+        setting: 'vDxSmart',
+        label: '不用算的巧比',
+        idea: '两边相同的那个数盖住不算，只比不同的：加得多的大，被减的数大的也大，但减得多的反而小。',
+        gen: genSmart
+      }
     ],
     generate: function (s) {
       return U.generateFrom(DAXIAO.variants, s)

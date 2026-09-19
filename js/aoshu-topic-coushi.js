@@ -148,6 +148,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '10 的好朋友：合起来是 10 的两个数（' + PAIR_TEXT + '）。把好朋友记熟，凑十、破十都会变快。',
             '凑十法（进位加）：9 + 6 → 9 差 1 到 10，把 6 分成 1 和 5：9 + 1 = 10，10 + 5 = 15。',
@@ -163,10 +164,34 @@
       ]
     },
     variants: [
-      { id: 'friend', setting: 'vCsFriend', label: '10 的好朋友（凑十基本功）', gen: genFriend },
-      { id: 'cou', setting: 'vCsCou', label: '凑十法（进位加）', gen: genCou },
-      { id: 'po', setting: 'vCsPo', label: '破十法（退位减）', gen: genPo },
-      { id: 'ping', setting: 'vCsPing', label: '平十法（连减凑整）', gen: genPing }
+      {
+        id: 'friend',
+        setting: 'vCsFriend',
+        label: '10 的好朋友（凑十基本功）',
+        idea: '不管空格在等号哪一边，都只问一件事：给出的这个数还差几就到 10 —— 想不起来就用 10 减它。',
+        gen: genFriend
+      },
+      {
+        id: 'cou',
+        setting: 'vCsCou',
+        label: '凑十法（进位加）',
+        idea: '先看前面的数还差几就能凑成整十，把后面要加的数拆成这么多和剩下的，凑整以后再加剩下的。',
+        gen: genCou
+      },
+      {
+        id: 'po',
+        setting: 'vCsPo',
+        label: '破十法（退位减）',
+        idea: '个位不够减，就从被减数里拿出一个 10 来减，减出来的差再和剩下的那部分合起来。',
+        gen: genPo
+      },
+      {
+        id: 'ping',
+        setting: 'vCsPing',
+        label: '平十法（连减凑整）',
+        idea: '个位不够减，就把要减的数拆成两块：先减掉个位那么多退到整十，再从整十里减掉剩下的一块。',
+        gen: genPing
+      }
     ],
     generate: function (s) {
       return U.generateFrom(COUSHI.variants, s)

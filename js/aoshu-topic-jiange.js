@@ -129,6 +129,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '别急着列算式，先画个小小的图。比如：▂▂|▂▂|▂▂ ——3 段木头，只需要 2 个锯口。',
             '数一数就会发现：两头的东西总比中间的间隔多 1 个。锯木头是「次数 = 段数 − 1」，爬楼梯是「层数 = 楼层 − 1」。'
@@ -142,9 +143,27 @@
       ]
     },
     variants: [
-      { id: 'saw', setting: 'vJgSaw', label: '锯木头（段数与次数）', gen: genSaw },
-      { id: 'stairs', setting: 'vJgStairs', label: '爬楼梯（楼层与层数）', gen: genStairs },
-      { id: 'row', setting: 'vJgRow', label: '排一排（人数与间隔）', gen: genRow }
+      {
+        id: 'saw',
+        setting: 'vJgSaw',
+        label: '锯木头（段数与次数）',
+        idea: '段数总比锯的次数多 1：题目给段数，就减 1 算出锯几次；题目给次数，就加 1 算出有几段。',
+        gen: genSaw
+      },
+      {
+        id: 'stairs',
+        setting: 'vJgStairs',
+        label: '爬楼梯（楼层与层数）',
+        idea: '从 1 楼开始爬，到 2 楼才走 1 层 —— 走的层数总比楼层数少 1，到几楼就拿几减 1，别把楼层当层数。',
+        gen: genStairs
+      },
+      {
+        id: 'row',
+        setting: 'vJgRow',
+        label: '排一排（人数与间隔）',
+        idea: '花摆在两个人中间，两头站的都是人 —— 人总比花多 1，几个人就摆人数减 1 盆花。',
+        gen: genRow
+      }
     ],
     generate: function (s) {
       return U.generateFrom(JIANGE.variants, s)

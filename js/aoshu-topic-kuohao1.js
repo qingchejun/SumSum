@@ -130,6 +130,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '袋子里是「加法」时，拆开袋子符号不变：减去一个和 = 连着减；加上一个和 = 连着加。',
             '添去括号的本事是用来「凑整十」的：哪两个数凑在一起是整十，就让它们进一个袋子，先算它们。'
@@ -143,9 +144,28 @@
       ]
     },
     variants: [
-      { id: 'fill', setting: 'vKh1Fill', label: '去括号，填符号', gen: genFill },
-      { id: 'simp', setting: 'vKh1Simp', label: '去括号巧算', gen: genSimp },
-      { id: 'addp', setting: 'vKh1AddParen', label: '添括号巧算', def: false, gen: genAddParen }
+      {
+        id: 'fill',
+        setting: 'vKh1Fill',
+        label: '去括号，填符号',
+        idea: '括号里两个数相加，去掉括号就要一个一个地算：前面是加号就连着加，前面是减号就连着减 —— 符号不翻身。',
+        gen: genFill
+      },
+      {
+        id: 'simp',
+        setting: 'vKh1Simp',
+        label: '去括号巧算',
+        idea: '先把括号去掉变成连着减，再挑能凑成整十的那个数先减 —— 凑到整十，再减另一个就好算了。',
+        gen: genSimp
+      },
+      {
+        id: 'addp',
+        setting: 'vKh1AddParen',
+        label: '添括号巧算',
+        idea: '连着减两个数，先看这两个数能不能凑成整十 —— 能凑就添上括号一起减，一次减掉整十最好算。',
+        def: false,
+        gen: genAddParen
+      }
     ],
     generate: function (s) {
       return U.generateFrom(KUOHAO1.variants, s)

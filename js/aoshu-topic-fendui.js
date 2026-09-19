@@ -128,6 +128,7 @@
         },
         {
           heading: '怎么想？',
+          perVariantIdea: true,
           paras: [
             '从最小的一堆想起，一行一行往下列：1 和几、2 和几……',
             '最要紧的规矩：「3 和 4」与「4 和 3」只是换了个位置，算同一种——列到一半就该停，再列就重复了。'
@@ -141,9 +142,28 @@
       ]
     },
     variants: [
-      { id: 'two', setting: 'vFdTwo', label: '分两堆（几种分法）', gen: genTwo },
-      { id: 'differ', setting: 'vFdDiffer', label: '两堆不一样多', gen: genDiffer },
-      { id: 'three', setting: 'vFdThree', label: '分三堆', def: false, gen: genThree }
+      {
+        id: 'two',
+        setting: 'vFdTwo',
+        label: '分两堆（几种分法）',
+        idea: '小的那堆从 1 开始，一行一行往下列，列到小堆比大堆还多就该停了 —— 那些都是换了位置的重复；有几行就是几种。',
+        gen: genTwo
+      },
+      {
+        id: 'differ',
+        setting: 'vFdDiffer',
+        label: '两堆不一样多',
+        idea: '还是小堆从 1 往下列，只多守一条规矩：两堆一样多的那行不算，划掉它；总数是单数时本来就没有这一行。',
+        gen: genDiffer
+      },
+      {
+        id: 'three',
+        setting: 'vFdThree',
+        label: '分三堆',
+        idea: '三堆先说好从小到大排：第一堆从 1 试起，第二堆不能比第一堆小，剩下的就是第三堆 —— 换位置的就不会重复。',
+        def: false,
+        gen: genThree
+      }
     ],
     generate: function (s) {
       return U.generateFrom(FENDUI.variants, s)
