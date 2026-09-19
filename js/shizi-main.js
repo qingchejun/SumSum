@@ -22,6 +22,7 @@
     perPage: $('f-perpage'),
     font: $('f-font'),
     copies: $('f-copies'),
+    withWrong: $('f-withwrong'),
     title: $('f-title')
   }
 
@@ -30,6 +31,46 @@
   /* 错字集卷面渲染时用的那一份快照。渲染之后用户还会继续点，
      集合和卷面就会对不上 —— 用它判断要不要提示「重新排版」。 */
   var renderedWrong = []
+
+  /* 本周卷后面那张错字附页最多印几个字。多了就不是「顺带复习」而是另一张卷子了，
+     那种需求有专门的「错字集」模式。 */
+  var APPEND_MAX = 20
+
+  /*
+   * 附页当前这一批字，以及它是给第几周挑的。
+   *
+   * 【必须缓存，不能每次渲染现抽】：refresh() 会被改字体、改份数、改每页字数
+   * 这类跟错字毫无关系的动作触发，每次现抽的话，屏幕上看到的那 20 个字
+   * 和按下打印时印出来的可能是两批 —— 这是最不该发生的事。
+   * 所以只在三种情况下重抽：第一次勾上、换了周次、手动点「换一批」。
+   */
+  var appendPick = []
+  var pickedForWeek = null
+
+  /* 重抽一批。exclude 本周卷上已经有的字：同一沓纸里同一个字不印两遍 */
+  function repick() {
+    appendPick = S.shizi.sampleWrong(
+      S.shiziMark.all(),
+      S.shizi.sliceOf(settings.week, settings.perWeek).chars,
+      APPEND_MAX
+    )
+    pickedForWeek = settings.week
+  }
+
+  /*
+   * 这次渲染该附哪些字。
+   * 缓存里的字可能已经被移出错字集（在附页上点掉的），先滤掉；
+   * 但【不补新的】—— 错字集里加了字也不动这一批，理由同「重新排版」按钮：
+   * 卷面不该在手指底下变。想换就自己点「换一批」。
+   */
+  function appendChars() {
+    if (settings.mode !== 'week' || !settings.withWrong) return []
+    appendPick = appendPick.filter(function (ch) {
+      return S.shiziMark.has(ch)
+    })
+    if (!appendPick.length || pickedForWeek !== settings.week) repick()
+    return appendPick
+  }
 
   /* 当前卷面是不是已经和错字集对不上了（只在错字集模式下有意义） */
   function isStale() {
@@ -66,6 +107,7 @@
     els.perPage.value = String(s.perPage)
     els.font.value = s.font
     els.copies.value = String(s.copies)
+    els.withWrong.checked = s.withWrong
     els.title.value = s.title
   }
 
@@ -76,6 +118,7 @@
       perPage: els.perPage.value,
       font: els.font.value,
       copies: els.copies.value,
+      withWrong: els.withWrong.checked,
       mode: settings.mode, // 模式不是表单项，由页签管
       title: els.title.value.trim()
     })
@@ -103,7 +146,7 @@
    * 字的毫米数是这个板块最该说清楚的一件事 —— 一年级课本的生字大约 10mm，
    * 家长有这个参照才知道 7.8mm 是「有点小但能认」还是「太小了」。
    */
-  function pagesHint(s, count) {
+  function pagesHint(s, count, append) {
     if (s.mode === 'proof') {
       /* 核对模式不受「每页字数 / 份数」影响，页数是字表屏数定死的。
          不说一句的话，面板上那两个控件点了没反应，像是坏了。 */
@@ -115,10 +158,15 @@
     var lay = S.shiziRender.layout(per)
     if (!lay) return '' // 与 shizi-render 同一条兜底：目前不可达，但别让面板先炸
     var sheets = Math.ceil(count / per)
-    var text = '一共 ' + sheets * s.copies + ' 张纸：' + count + ' 个字'
+    /* 附页跟着同一套排版参数走，所以张数得照 perPageOf 再算一遍（20 个字通常就一页） */
+    var addSheets = append && append.length
+      ? Math.ceil(append.length / S.shiziRender.perPageOf(s, append.length))
+      : 0
+    var text = '一共 ' + (sheets + addSheets) * s.copies + ' 张纸：' + count + ' 个字'
     if (sheets > 1) text += ' · 每页 ' + per + ' 个 = ' + sheets + ' 页'
-    if (s.copies > 1) text += ' × ' + s.copies + ' 份'
-    return text + '。排成 ' + lay.cols + ' 列 × ' + lay.rows + ' 行，每个字约 ' +
+    if (addSheets) text += ' + 错字附页 ' + append.length + ' 字'
+    if (s.copies > 1) text += '，× ' + s.copies + ' 份'
+    return text + '。本周卷排成 ' + lay.cols + ' 列 × ' + lay.rows + ' 行，每个字约 ' +
       (Math.floor(lay.glyph * 10) / 10) + 'mm（课本生字约 10mm）。'
   }
 
@@ -144,8 +192,14 @@
     if (s.mode === 'proof') {
       return head + '这一页也能点：看到孩子肯定不会的字，顺手点一下就收进错字集。'
     }
-    return head + '孩子念不出来的字，在右边卷面上点一下就变红底，收进错字集。' +
+    var tail = head + '孩子念不出来的字，在右边卷面上点一下就变红底，收进错字集。' +
       '可以边念边点，也可以先在纸上圈、事后对着纸点一遍。<b>纸上不会印出任何标记。</b>'
+    if (s.withWrong && appendPick.length) {
+      tail += '<br>本周卷后面附了 <b>' + appendPick.length + '</b> 个旧错字' +
+        (n > appendPick.length ? '（从 ' + n + ' 个里随机抽的，本周卷上已有的不重复印）' : '') +
+        '。附页上的字都是红底 —— 孩子这次认出来了就点掉，下次不再抽到它。'
+    }
+    return tail
   }
 
   /* 按钮文案随模式走：印的是哪张卷子，按钮上就写哪张 */
@@ -161,7 +215,8 @@
     /* 错字集模式下，渲染用的是【进入时的快照】；之后用户再点就只改 class，
        不动卷面结构，直到他自己点「重新排版」或切走再切回来。 */
     renderedWrong = settings.mode === 'wrong' ? S.shiziMark.all() : []
-    S.shiziRender.render($('preview'), settings, renderedWrong)
+    var append = appendChars()
+    S.shiziRender.render($('preview'), settings, renderedWrong, append)
     /* 渲染之后立刻把集合投影到新 DOM 上 —— 位置对应数独 render() 紧跟 attach() 的那两行 */
     S.shiziMark.paint()
     fitPreview()
@@ -169,7 +224,7 @@
     var count = settings.mode === 'wrong'
       ? renderedWrong.length
       : S.shizi.sliceOf(settings.week, settings.perWeek).chars.length
-    $('pages-hint').textContent = pagesHint(settings, count)
+    $('pages-hint').textContent = pagesHint(settings, count, append)
     $('btn-print').textContent = PRINT_LABEL[settings.mode]
     $('btn-print').disabled = settings.mode === 'wrong' && !renderedWrong.length
     refreshMarkPanel()
@@ -191,6 +246,17 @@
   function refreshMarkPanel() {
     fillTabs(settings)
     $('mark-hint').innerHTML = markHint(settings)
+
+    /* 附页开关只在「本周复习」下露面；错字集空的时候留着但点不动，
+       比整个藏起来好 —— 至少看得见有这么个东西，攒够字自己会亮。 */
+    var n = S.shiziMark.size()
+    $('sec-append').hidden = settings.mode !== 'week'
+    els.withWrong.disabled = !n
+    /* 挑够了 APPEND_MAX 才说明是「抽」出来的，才有得换；
+       不够这个数意味着符合条件的字全在纸上了，换一批换不出别的东西。 */
+    $('btn-repick').hidden =
+      settings.mode !== 'week' || !settings.withWrong || appendPick.length < APPEND_MAX
+
     var stale = isStale()
     var relayout = $('btn-relayout')
     relayout.hidden = !stale
@@ -281,6 +347,12 @@
 
   /* 用户自己决定什么时候把点掉的字从卷面上清掉 */
   $('btn-relayout').addEventListener('click', refresh)
+
+  /* 附页这一批不合意（比如刚好全是简单字），换一批。这是唯一会主动重抽的入口 */
+  $('btn-repick').addEventListener('click', function () {
+    repick()
+    refresh()
+  })
 
   $('btn-clear-wrong').addEventListener('click', function () {
     var n = S.shiziMark.size()

@@ -380,7 +380,116 @@ function checkWrongSet() {
   }
 }
 
-/* ---------- 6. 设置钳位 ---------- */
+/* ---------- 6. 本周卷附页抽字（sampleWrong） ---------- */
+
+/*
+ * 附页那批字是随机抽的，所以这里【不是】挑一次看看对不对 ——
+ * 随机的东西抽一次永远是对的。三件事必须成立，且要经得起反复抽：
+ *   ① 边界：不越界、不重复、不把本周卷上的字再印一遍
+ *   ② 顺序：不管怎么抽，印出来都按字表顺序
+ *   ③ 均匀：每个字被抽中的概率应当一样，不能因为 Fisher–Yates 只洗前 max 个就偏了
+ * ③ 是最容易写错又最看不出来的（洗牌少洗一位、边界差一格，结果依然「看起来很随机」），
+ * 所以用一个定死的伪随机序列跑 20000 次，统计每个字的中签率。
+ */
+function checkSample() {
+  var pool = Z.pool()
+  var MAX = 20
+
+  /* ① 边界 */
+  var cases = [
+    [[], [], '空错字集'],
+    [null, [], '错字集是 null'],
+    [pool.slice(0, 1), [], '只有 1 个字'],
+    [pool.slice(0, MAX), [], '正好 20 个字'],
+    [pool.slice(0, MAX + 1), [], '21 个字'],
+    [pool.slice(0, 100), [], '100 个字']
+  ]
+  cases.forEach(function (c) {
+    var out = Z.sampleWrong(c[0], c[1], MAX)
+    var want = Math.min((c[0] || []).length, MAX)
+    if (out.length !== want) {
+      bad('sampleWrong（' + c[2] + '）应返回 ' + want + ' 个，实际 ' + out.length)
+    }
+    var uniq = new Set(out)
+    if (uniq.size !== out.length) bad('sampleWrong（' + c[2] + '）返回了重复的字')
+    out.forEach(function (ch) {
+      if ((c[0] || []).indexOf(ch) < 0) bad('sampleWrong（' + c[2] + '）凭空多出一个字：' + ch)
+    })
+  })
+
+  /* 本周卷上的字一个都不能出现在附页上 */
+  var week = pool.slice(0, 100)
+  for (var t = 0; t < 200; t++) {
+    var got = Z.sampleWrong(pool.slice(0, 150), week, MAX)
+    got.forEach(function (ch) {
+      if (week.indexOf(ch) >= 0) bad('sampleWrong 把本周卷上的字又抽了一遍：' + ch)
+    })
+    if (got.length !== MAX) bad('sampleWrong 剔除本周字后应仍有 20 个，实际 ' + got.length)
+  }
+
+  /* 全被本周卷盖住时应当返回空，而不是硬凑数 */
+  if (Z.sampleWrong(pool.slice(0, 50), pool.slice(0, 50), MAX).length) {
+    bad('sampleWrong：错字全在本周卷上时应返回空')
+  }
+  /* max 非正数不能炸 */
+  ;[0, -1, null, undefined].forEach(function (m) {
+    var out = Z.sampleWrong(pool.slice(0, 50), [], m)
+    if (!Array.isArray(out) || out.length) bad('sampleWrong(max=' + m + ') 应返回空数组')
+  })
+
+  /* ② 顺序：随机抽 200 次，每次结果都必须按字表下标升序 */
+  for (var k = 0; k < 200; k++) {
+    var s = Z.sampleWrong(pool.slice(0, 300), [], MAX)
+    for (var i = 1; i < s.length; i++) {
+      if (D.LIST.indexOf(s[i]) <= D.LIST.indexOf(s[i - 1])) {
+        bad('sampleWrong 返回的顺序不是字表顺序：' + s.join(''))
+        break
+      }
+    }
+  }
+
+  /*
+   * ③ 均匀性。注入一个定死的 mulberry32（与 js/generator.js 里口算用的同一个），
+   * 脚本每次跑结果一致，不会偶发红。
+   * 60 个字里抽 20，跑 N 轮，理论中签率 1/3；允许 ±20% 的浮动。
+   */
+  var seed = 20260919
+  function rnd() {
+    seed |= 0
+    seed = (seed + 0x6d2b79f5) | 0
+    var x = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296
+  }
+  var cand = pool.slice(0, 60)
+  var hits = {}
+  cand.forEach(function (ch) {
+    hits[ch] = 0
+  })
+  var ROUNDS = 20000
+  for (var r = 0; r < ROUNDS; r++) {
+    Z.sampleWrong(cand, [], MAX, rnd).forEach(function (ch) {
+      hits[ch]++
+    })
+  }
+  var expect = (ROUNDS * MAX) / cand.length
+  var lo = expect * 0.8
+  var hi = expect * 1.2
+  var worst = null
+  cand.forEach(function (ch) {
+    if (hits[ch] < lo || hits[ch] > hi) {
+      if (!worst || Math.abs(hits[ch] - expect) > Math.abs(hits[worst] - expect)) worst = ch
+    }
+  })
+  if (worst) {
+    bad(
+      'sampleWrong 抽得不均匀：「' + worst + '」' + ROUNDS + ' 轮中签 ' + hits[worst] +
+      ' 次，期望约 ' + Math.round(expect) + ' 次'
+    )
+  }
+}
+
+/* ---------- 7. 设置钳位 ---------- */
 
 function checkSettings() {
   var cases = [
@@ -435,6 +544,7 @@ function main() {
     ['面板所有设置组合都排得出版面', checkAllCombos],
     ['换每周字数时进度不倒退', checkRemap],
     ['错字集排序与错字卷排版（1~400 字全扫）', checkWrongSet],
+    ['附页抽字：边界 / 顺序 / 均匀性（2 万轮）', checkSample],
     ['设置钳位', checkSettings]
   ]
   steps.forEach(function (st) {

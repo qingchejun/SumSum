@@ -119,6 +119,46 @@
   }
 
   /*
+   * 从错字集里挑一批，附在本周复习卷后面。
+   *
+   *   pool     错字集里全部的字（顺序无所谓）
+   *   exclude  本周卷上已经印了的字。同一沓纸里同一个字印两遍是浪费 ——
+   *            孩子刚念完一遍，翻一页又是它，附页的格子该留给早几周的旧账。
+   *   max      最多挑几个。少于这个数就全给，这是调用方定的策略，这里只执行。
+   *   rnd      取随机数的函数，默认 Math.random。注入是为了 tools/check-shizi.js
+   *            能喂一串定死的数，把「挑出来的是不是真的均匀」算清楚。
+   *
+   * 【挑是随机的，印出来是有序的】：返回值过一遍 sortByTable。
+   * 理由同错字卷 —— 同一课的字聚在一起，孩子读的时候是有上下文的；
+   * 而且卷面顺序固定，家长核对起来不用来回找。
+   */
+  function sampleWrong(pool, exclude, max, rnd) {
+    if (!pool || !pool.length || !(max > 0)) return []
+    var skip = {}
+    ;(exclude || []).forEach(function (ch) {
+      skip[ch] = true
+    })
+    var cand = []
+    var seen = {}
+    pool.forEach(function (ch) {
+      if (!ch || skip[ch] || seen[ch]) return
+      seen[ch] = true
+      cand.push(ch)
+    })
+    if (cand.length <= max) return sortByTable(cand)
+    /* Fisher–Yates 只洗前 max 个就够：每一轮从剩下的里等概率换一个到前面来，
+       洗满 max 次即可停，不必把几百个字整个打乱。 */
+    var r = rnd || Math.random
+    for (var i = 0; i < max; i++) {
+      var j = i + Math.floor(r() * (cand.length - i))
+      var t = cand[i]
+      cand[i] = cand[j]
+      cand[j] = t
+    }
+    return sortByTable(cand.slice(0, max))
+  }
+
+  /*
    * 练习纸标题。用户在面板上填了标题就用他的，这里只管默认的那一行。
    *
    * 标题【必须短】。页眉是 .sheet-title + .sheet-meta 一行排开，两者都是
@@ -145,6 +185,7 @@
     clampWeek: clampWeek,
     remapWeek: remapWeek,
     sortByTable: sortByTable,
+    sampleWrong: sampleWrong,
     sliceOf: sliceOf,
     titleFor: titleFor
   }

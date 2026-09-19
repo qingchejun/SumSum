@@ -106,7 +106,12 @@
     <section class="group">
       <h2 class="group-title">错字集</h2>
       <p class="hint" id="mark-hint"></p>
+      <!-- 只在「本周复习」模式下有意义：错字集模式整张卷子就是错字，核对模式不是给孩子做的 -->
+      <label class="check" id="sec-append">
+        <input type="checkbox" id="f-withwrong" /><span>复习卷后面附一页错字（随机抽 20 个）</span>
+      </label>
       <div class="week-nav">
+        <button type="button" id="btn-repick" class="btn btn-ghost" hidden>↻ 换一批错字</button>
         <button type="button" id="btn-relayout" class="btn btn-ghost" hidden></button>
         <button type="button" id="btn-clear-wrong" class="btn btn-ghost">清空错字集</button>
       </div>

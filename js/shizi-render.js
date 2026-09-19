@@ -209,12 +209,17 @@
    * 渲染层不碰 localStorage，也不认识「错字」这个概念 —— 它只管把一串字排成卷子，
    * 所以每页字数、分页、字号全部复用每周卷那一套，一行特例都不用写。
    * 一个字都没有时返回空数组：空卷子没有意义，由 main 显示提示。
+   *
+   * opts 是给「附在本周卷后面的那一页」用的（见 render 的 appendChars）：
+   * 那时 s.title 是本周卷的标题，套到附页上就成了两张同名的纸，必须另给一个。
    */
-  function renderWrong(s, chars) {
+  function renderWrong(s, chars, opts) {
     if (!chars || !chars.length) return []
+    opts = opts || {}
     /* 标题必须短：页眉留给标题只有 73mm（见 shizi-core 的 titleFor）。
        「错字复习 · 37 字」约 55mm，安全。 */
-    var title = s.title || '错字复习 · ' + chars.length + ' 字'
+    var title = opts.title || s.title || '错字复习 · ' + chars.length + ' 字'
+    var footHead = opts.foot || '错字集 · 共 ' + chars.length + ' 字　·　按字表顺序'
     var per = perPageOf(s, chars.length)
     var lay = layout(per) || layout(per, Math.ceil(Math.sqrt(per)))
     var pageTotal = Math.ceil(chars.length / per)
@@ -222,7 +227,7 @@
     for (var p = 0; p < pageTotal; p++) {
       var chunk = chars.slice(p * per, (p + 1) * per)
       var foot =
-        '错字集 · 共 ' + chars.length + ' 字　·　按字表顺序' +
+        footHead +
         (pageTotal > 1 ? '　·　第 ' + (p + 1) + ' 页 / 共 ' + pageTotal + ' 页' : '')
       for (var c = 1; c <= s.copies; c++) {
         html.push(
@@ -242,8 +247,12 @@
    * 主入口：按模式渲染成若干张练习纸。
    * wrongChars 只有 mode === 'wrong' 时才用到，由 main 从 shizi-mark 取好传进来 ——
    * 渲染层保持不碰 localStorage，node 里才测得动。
+   *
+   * appendChars 只有 mode === 'week' 时才用到：勾了「附一页错字」之后接在本周卷后面的
+   * 那一批字。挑哪些、什么时候重挑，全是 main 的事（见那边的 repick）——
+   * 这一层拿到什么就印什么，一个随机数都不取，不然预览和打印可能印出两批不同的字。
    */
-  function render(container, s, wrongChars) {
+  function render(container, s, wrongChars, appendChars) {
     var Z = root.SumSum.shizi
     var html
 
@@ -282,6 +291,20 @@
             })
           )
         }
+      }
+
+      /*
+       * 附页排在最后 —— 本周卷的所有页（含双份）印完，才是错字页。
+       * 不夹在中间是因为那一沓纸是按顺序做的：先考这周新学的，再翻旧账。
+       */
+      if (appendChars && appendChars.length) {
+        Array.prototype.push.apply(
+          html,
+          renderWrong(s, appendChars, {
+            title: '错字复习 · 附页',
+            foot: '错字集附页 · ' + appendChars.length + ' 字　·　从错字集里随机挑，按字表顺序印'
+          })
+        )
       }
     }
 

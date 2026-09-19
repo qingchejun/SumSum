@@ -28,8 +28,26 @@
      * 三种模式下字格都可以点，点一下就是把那个字加入 / 移出错字集（见 shizi-mark）。
      */
     mode: 'week',
+    /*
+     * 本周复习卷后面要不要再附一页错字。见 LOCAL_ONLY —— 这一项不进网址。
+     */
+    withWrong: false,
     title: ''
   })
+
+  /*
+   * 【只存本机、绝不进网址】的设置项。
+   *
+   * 错字集本身从来只在 localStorage 里（见 js/shizi-mark.js 的 KEY），
+   * 是孩子的个人进度，不是卷子的参数。withWrong 是它的开关，跟着它走：
+   * 网址是拿来分享的，别人点开这个站应该是干净的默认状态，而不是
+   * 「开关打开了、但他自己的错字集是空的，附页凭空消失」这种对不上的状态。
+   *
+   * 注意它在 load() 里要【特殊处理】：网址带参数时本来是完全忽略 localStorage 的，
+   * 但本机私有项必须留下来 —— 否则用户自己的网址上只要有个 ?week=3，
+   * 每次刷新这个开关就被抹回 false。
+   */
+  var LOCAL_ONLY = ['withWrong']
 
   var FONTS = ['kai', 'hei']
 
@@ -87,6 +105,7 @@
       perPage: oneOf(clampInt(s.perPage, 0, 200, DEFAULTS.perPage), PER_PAGE, DEFAULTS.perPage),
       font: oneOf(s.font, FONTS, DEFAULTS.font),
       mode: pickMode(raw || {}, s),
+      withWrong: toBool(s.withWrong, DEFAULTS.withWrong),
       copies: clampInt(s.copies, 1, 2, DEFAULTS.copies),
       title: String(s.title == null ? '' : s.title).slice(0, 30)
     }
@@ -103,7 +122,9 @@
     try {
       new URLSearchParams(root.location.search).forEach(function (v, k) {
         /* proof 已不在 DEFAULTS 里（换成了 mode），但老链接还带着它，
-           得放行给 sanitize 去翻译 —— 与数独放行老的 level 参数同理 */
+           得放行给 sanitize 去翻译 —— 与数独放行老的 level 参数同理。
+           LOCAL_ONLY 的项 save() 不会写进网址，手敲进来的也不认。 */
+        if (LOCAL_ONLY.indexOf(k) >= 0) return
         if (Object.prototype.hasOwnProperty.call(DEFAULTS, k) || k === 'proof') {
           fromUrl[k] = v
           hasUrl = true
@@ -113,12 +134,21 @@
       fromUrl = {}
     }
     var base = {}
-    if (!hasUrl) {
-      try {
-        base = JSON.parse(root.localStorage.getItem(KEY)) || {}
-      } catch (e) {
-        base = {} // 隐私模式或数据损坏时回退默认值
-      }
+    try {
+      base = JSON.parse(root.localStorage.getItem(KEY)) || {}
+    } catch (e) {
+      base = {} // 隐私模式或数据损坏时回退默认值
+    }
+    if (hasUrl) {
+      /* 网址带参数 = 这是一张「指定的卷子」，卷子的参数全听网址的，
+         本地存的那一份一概不叠加。但本机私有项（错字集开关）不属于卷子参数，
+         留下来 —— 否则自己的 ?week=3 一刷新就把开关抹了。 */
+      var keep = {}
+      LOCAL_ONLY.forEach(function (k) {
+        if (base[k] != null) keep[k] = base[k]
+      })
+      base = keep
+    } else {
       /* 看哪张卷子不该被记住：打开页面永远回到「本周复习」这个主场景。
          想直达错字集或核对页，存一个带 ?mode=wrong / ?mode=proof 的链接即可。 */
       delete base.mode
@@ -136,6 +166,7 @@
     try {
       var params = new URLSearchParams()
       Object.keys(DEFAULTS).forEach(function (k) {
+        if (LOCAL_ONLY.indexOf(k) >= 0) return
         if (s[k] !== DEFAULTS[k]) params.set(k, String(s[k]))
       })
       var qs = params.toString()
@@ -150,6 +181,7 @@
     DEFAULTS: DEFAULTS,
     PER_PAGE: PER_PAGE,
     MODES: MODES,
+    LOCAL_ONLY: LOCAL_ONLY,
     sanitize: sanitize,
     load: load,
     save: save
