@@ -29,7 +29,7 @@
     title: ''
   })
 
-  var MODES = ['add', 'sub', 'addsub', 'mul', 'div', 'muldiv', 'mixed']
+  var MODES = ['add', 'sub', 'addsub', 'mul', 'div', 'muldiv', 'addsubmul', 'mixed']
   var CARRY = ['random', 'carrymore', 'nocarry', 'carryonly']
   var BLANK = ['end', 'random']
   var PAPER = ['portrait', 'landscape']
@@ -87,7 +87,7 @@
     if (out.mulMax < out.mulMin) out.mulMax = out.mulMin
     /* 含加法的模式要求 2×min ≤ max，否则「两个加数 ≥ min 且和 ≤ max」无解，
        加法会永远生成失败（加减混合还会悄悄变成纯减法卷）—— 提前把 min 钳回可行域 */
-    if ((out.mode === 'add' || out.mode === 'addsub' || out.mode === 'mixed') && out.min * 2 > out.max) {
+    if ((out.mode === 'add' || out.mode === 'addsub' || out.mode === 'addsubmul' || out.mode === 'mixed') && out.min * 2 > out.max) {
       out.min = Math.floor(out.max / 2)
     }
     return out

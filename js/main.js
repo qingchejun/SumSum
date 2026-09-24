@@ -65,7 +65,7 @@
   var lastTouched = '' // 'min' / 'max'：用户刚改的那个值优先保住，调另一个
 
   function hasAdd(mode) {
-    return mode === 'add' || mode === 'addsub' || mode === 'mixed'
+    return mode === 'add' || mode === 'addsub' || mode === 'addsubmul' || mode === 'mixed'
   }
 
   /* 含加法的模式要求 2×min ≤ max，其余只要求 max > min */

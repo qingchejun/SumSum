@@ -46,11 +46,12 @@
         <option value="mul">乘法</option>
         <option value="div">除法</option>
         <option value="muldiv">乘除法混合</option>
+        <option value="addsubmul">加减法 + 少量乘法（乘法约占两成）</option>
         <option value="mixed">四则运算（2～3 步）</option>
       </select>
     </section>
 
-    <section class="group" data-show="add sub addsub mixed">
+    <section class="group" data-show="add sub addsub addsubmul mixed">
       <h2 class="group-title">数值范围（算式里的数，加法的和也不超过最大值）</h2>
       <div class="pair">
         <label class="field"><span>最小值</span>
@@ -62,7 +63,7 @@
       </div>
     </section>
 
-    <section class="group" data-show="mul div muldiv mixed">
+    <section class="group" data-show="mul div muldiv addsubmul mixed">
       <h2 class="group-title">乘除数范围（默认九九表 1～9）</h2>
       <div class="pair">
         <label class="field"><span>最小</span>
@@ -74,7 +75,7 @@
       </div>
     </section>
 
-    <section class="group" data-show="add sub addsub">
+    <section class="group" data-show="add sub addsub addsubmul">
       <h2 class="group-title">进位 / 退位</h2>
       <select id="f-carry" class="input">
         <option value="random">随机（不限制）</option>
@@ -100,7 +101,7 @@
       </div>
       <div class="pair">
         <!-- 四则模式不显示：多步算式只挖结果，随机挖空不适用 -->
-        <label class="field" data-show-inline="add sub addsub mul div muldiv"><span>填空位置</span>
+        <label class="field" data-show-inline="add sub addsub mul div muldiv addsubmul"><span>填空位置</span>
           <select id="f-blank" class="input">
             <option value="end">答案在末尾</option>
             <option value="random">随机挖空</option>
@@ -117,7 +118,7 @@
 
     <section class="group">
       <h2 class="group-title">选项</h2>
-      <label class="check" data-show-inline="sub addsub mixed">
+      <label class="check" data-show-inline="sub addsub addsubmul mixed">
         <input type="checkbox" id="f-nonneg" /><span>减法不出负数</span>
       </label>
       <!-- 四则模式不显示：多步算式内的除法必然整除，无法表示余数 -->
@@ -136,7 +137,7 @@
       <label class="check">
         <input type="checkbox" id="f-anspage" /><span>打印时附答案页</span>
       </label>
-      <label class="check" data-show-inline="add sub addsub">
+      <label class="check" data-show-inline="add sub addsub addsubmul">
         <input type="checkbox" id="f-stephint" /><span>答案页附凑十 / 破十提示（供家长讲解）</span>
       </label>
     </section>

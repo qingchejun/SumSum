@@ -143,6 +143,45 @@
   }
 
   /*
+   * 加减乘混合里的乘法：刚学会乘法，重在巩固，不求难。
+   * 每个因数按权重抽：≤ 6 的权重 4、7～9 及以上权重 1——
+   * 默认 1～9 时约七成的题两个因数都在 6 以内，7、8、9 偶尔出现。
+   */
+  function softFactor(s) {
+    var total = 0
+    for (var v = s.mulMin; v <= s.mulMax; v++) total += v <= 6 ? 4 : 1
+    var r = rnd() * total
+    for (var n = s.mulMin; n <= s.mulMax; n++) {
+      r -= n <= 6 ? 4 : 1
+      if (r < 0) return n
+    }
+    return s.mulMax
+  }
+
+  function genMulSoft(s) {
+    var a = softFactor(s)
+    var b = softFactor(s)
+    return makeQuestion([a, '×', b], a * b)
+  }
+
+  /*
+   * 加减乘混合：乘法只占两成（20 题出 4 道），其余是加减。
+   * 不按概率抽，而是先定好乘法落在第几题——概率抽的话 20 题里偶尔会冒出
+   * 七八道乘法，超出「以加减为主、顺带巩固乘法」的本意。
+   * 把卷子等分成若干段、每段随机放一道，乘法不会扎堆在同一片。
+   */
+  function mulSlots(count) {
+    var quota = Math.floor(count * 0.2)
+    var slots = new Set()
+    for (var k = 0; k < quota; k++) {
+      var from = Math.floor((k * count) / quota)
+      var to = Math.floor(((k + 1) * count) / quota) - 1
+      slots.add(randInt(from, to))
+    }
+    return slots
+  }
+
+  /*
    * 除法：反向构造，保证可控。先取除数 d、商 q ∈ [mulMin, mulMax]：
    *  - 整除模式：被除数 = d × q
    *  - 带余数模式：再取余数 r ∈ [0, d-1]，被除数 = d × q + r，答案显示「q……r」
@@ -283,6 +322,7 @@
     mul: [genMul],
     div: [genDiv],
     muldiv: [genMul, genDiv],
+    addsubmul: [genAdd, genSub], // 乘法题另按 mulSlots 定点插入
     mixed: [genMixed]
   }
 
@@ -303,9 +343,10 @@
     var seen = new Set()
     var questions = []
     var maxAttempts = s.count * 300
+    var mulAt = s.mode === 'addsubmul' ? mulSlots(s.count) : null
 
     for (var i = 0; i < maxAttempts && questions.length < s.count; i++) {
-      var raw = pick(gens)(s)
+      var raw = mulAt && mulAt.has(questions.length) ? genMulSoft(s) : pick(gens)(s)
       if (!raw) continue
       if (s.skipTrivial && isTrivial(raw.tokens)) continue
       var q = applyBlank(raw, s)
@@ -326,6 +367,7 @@
       mul: '乘法',
       div: '除法',
       muldiv: '乘除法',
+      addsubmul: '加减乘混合',
       mixed: '四则混合运算'
     }
     if (s.mode === 'mul' && s.mulMin >= 1 && s.mulMax <= 9) return '乘法口诀练习'
