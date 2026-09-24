@@ -21,7 +21,7 @@
     <a href="shudu.html">数独</a>
     <a href="shizi.html">识字</a>
   </nav>
-  <span class="topbar-brand">✏️ SumSum 练习纸</span>
+  <span class="topbar-brand">SumSum <small>练习纸</small></span>
 </header>
 
 <div class="layout">
@@ -29,7 +29,7 @@
   <!-- ======== 设置面板 ======== -->
   <aside class="panel" id="panel">
     <div class="brand">
-      <span class="brand-mark">🧠</span>
+      <span class="brand-mark">奥</span>
       <h1 class="brand-name">奥数练习纸</h1>
       <p class="brand-sub">一天两页，把一个知识点讲透</p>
     </div>
@@ -55,7 +55,7 @@
     </section>
 
     <section class="group" id="group-variants">
-      <h2 class="group-title">题型（至少选一种）</h2>
+      <h2 class="group-title">题型<span class="sub">至少选一种</span></h2>
       <div id="variant-list"></div>
     </section>
 
@@ -69,7 +69,7 @@
     </section>
 
     <section class="group">
-      <h2 class="group-title">题量（排得下就一页）</h2>
+      <h2 class="group-title">题量<span class="sub">排得下就一页</span></h2>
       <input type="number" id="f-count" class="input" min="2" max="30" step="1" />
     </section>
 
@@ -84,15 +84,15 @@
     </section>
 
     <section class="group">
-      <h2 class="group-title">练习纸标题（选填）</h2>
+      <h2 class="group-title">练习纸标题<span class="sub">选填</span></h2>
       <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：移多补少练习 · 20以内" />
     </section>
 
     <p class="hint">设置会自动保存，也已写入网址 —— 收藏本页链接即可固定「每日题型」。</p>
 
     <div class="actions">
-      <button type="button" id="btn-regen" class="btn btn-ghost">↻ 重新生成一批</button>
-      <button type="button" id="btn-print" class="btn btn-primary">🖨 打印练习纸</button>
+      <button type="button" id="btn-regen" class="btn btn-ghost">↻ 重新生成</button>
+      <button type="button" id="btn-print" class="btn btn-primary">打印练习纸</button>
     </div>
   </aside>
 

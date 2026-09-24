@@ -203,7 +203,7 @@
   }
 
   /* 按钮文案随模式走：印的是哪张卷子，按钮上就写哪张 */
-  var PRINT_LABEL = { week: '🖨 打印复习卷', wrong: '🖨 打印错字卷', proof: '🖨 打印全表' }
+  var PRINT_LABEL = { week: '打印复习卷', wrong: '打印错字卷', proof: '打印全表' }
 
   /* 主流程：保存设置 → 同步表单 → 渲染 → 把错字标记投影回新 DOM */
   function refresh() {

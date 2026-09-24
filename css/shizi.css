@@ -101,7 +101,7 @@
  * 这条规矩：叠加的状态只改 background。
  */
 .shizi-cell.is-wrong {
-  background: rgba(200, 70, 29, 0.16);
+  background: rgba(217, 58, 43, 0.16);
 }
 
 @media print {
@@ -134,7 +134,7 @@
   font-size: 26px;
   font-weight: 700;
   line-height: 1.2;
-  color: var(--blue-deep);
+  color: var(--ink);
 }
 
 .week-sub {
@@ -146,7 +146,7 @@
 .week-bar {
   height: 7px;
   border-radius: 999px;
-  background: rgba(45, 81, 133, 0.12);
+  background: #e9edf3;
   overflow: hidden;
 }
 

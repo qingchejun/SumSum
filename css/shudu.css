@@ -65,7 +65,7 @@
 .slider {
   width: 100%;
   margin: 2px 0 0;
-  accent-color: var(--red, #c8461d);
+  accent-color: var(--blue, #2f4fe0);
 }
 
 /* 两端标注哪头难哪头容易——光给数字，家长得想一下「多给提示是更难还是更简单」 */
@@ -189,13 +189,13 @@
 /* 空格默认就是空白格子；只有开了在线玩才显出可点击的样子 */
 .sheet.playable .sudoku .cell.blank {
   cursor: pointer;
-  background: #fbfaf5;
+  background: #f7f9fc;
   /* 去掉移动端 300ms 点击延迟与双击缩放误触——格子挨得近，孩子连点两下很常见 */
   touch-action: manipulation;
 }
 
 .sheet.playable .sudoku .cell.blank:hover {
-  background: #f3eedd;
+  background: #eef2fb;
 }
 
 /* 已填的格子点了是「高亮这个数字」，也给个手型 */
@@ -293,22 +293,27 @@
  * 原地（实测：视口 800px 高时数字条落在 y=3504，根本看不见）。这和
  * css/app.css:474 里记的 .panel 那个坑是同一个。
  * A4 一整张有 1122px 高，屏幕放不下，孩子一定是滚着玩的，所以数字条必须常驻视口底部。
- * left 与 .panel 的 336px 宽度对应，改面板宽度要同步改这里。
+ * 做成悬浮在画布正中的一块操作坞：left 取「面板右缘 + 画布宽度的一半」，
+ * 再 translateX(-50%) 居中。面板宽度用 --panel-w（css/app.css），改一处即可。
+ * 底部多让出 iPhone 的 Home 条高度，否则最后一行会被它压住。
  */
 .num-bar {
   position: fixed;
-  left: 336px;
-  right: 0;
-  bottom: 0;
+  left: calc(var(--panel-w, 360px) + (100vw - var(--panel-w, 360px)) / 2);
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   z-index: 5;
+  width: min(680px, calc(100vw - var(--panel-w, 360px) - 32px));
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  /* 底部多让出 iPhone 的 Home 条高度，否则最后一行会被它压住 */
-  padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
-  background: var(--card, #fffdf6);
-  border-top: 1px solid var(--card-edge, #e7dcc2);
-  box-shadow: 0 -3px 14px rgba(90, 70, 30, 0.12);
+  gap: 8px;
+  padding: 12px 14px 10px;
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--card-edge, #dde2ea);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.06), 0 16px 40px -12px rgba(23, 32, 51, 0.3);
 }
 
 /*
@@ -325,7 +330,8 @@ body.playing .preview {
 @media (max-width: 900px) {
   /* 手机端面板是置顶的静态块，预览占满宽度，数字条也跟着贴满 */
   .num-bar {
-    left: 0;
+    left: 50%;
+    width: calc(100vw - 24px);
   }
 }
 
@@ -339,13 +345,19 @@ body.playing .preview {
 
 .num-bar button {
   min-width: 48px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   font: 700 19px/1.2 inherit;
-  color: var(--blue-deep, #1f3a60);
+  font-family: inherit;
+  color: var(--ink, #172033);
   background: #fff;
-  border: 1.5px solid var(--blue, #2d5185);
-  border-radius: 10px;
+  border: 1px solid var(--card-edge, #dde2ea);
+  border-radius: 9px;
   cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.num-bar button:hover:not(:disabled) {
+  border-color: var(--blue, #2f4fe0);
 }
 
 .num-bar button:active {
@@ -361,13 +373,17 @@ body.playing .preview {
 /* 提交是这一排里的主操作，做成实心，免得淹没在一堆同样的描边按钮里 */
 .num-bar button.primary {
   color: #fff;
-  background: var(--red, #c8461d);
-  border-color: var(--red, #c8461d);
+  background: var(--blue, #2f4fe0);
+  border-color: var(--blue, #2f4fe0);
+}
+
+.num-bar button.primary:hover:not(:disabled) {
+  background: var(--blue-deep, #1f36b0);
 }
 
 .num-bar button:disabled {
-  color: #b8b2a4;
-  border-color: #ddd6c6;
+  color: #b5bcc8;
+  border-color: #e6e9ef;
   cursor: default;
 }
 
@@ -386,12 +402,12 @@ body.playing .preview {
 
 /* 填满的数字没什么可填了，压暗；但仍可点，用来回看它都放在哪儿 */
 .num-bar button.used {
-  color: #b0a996;
-  border-color: #e0d8c6;
+  color: #b5bcc8;
+  border-color: #e6e9ef;
 }
 
 .num-bar button.used .left {
-  color: #b0a996;
+  color: #b5bcc8;
 }
 
 /* 荧光笔开着的那个数字 */
@@ -427,7 +443,7 @@ body.playing .preview {
 
 .bar-foot .num-tip.win {
   font-weight: 700;
-  color: var(--red, #c8461d);
+  color: var(--green, #1d8a4e);
 }
 
 .bar-links {
@@ -440,10 +456,10 @@ body.playing .preview {
   min-width: 0;
   padding: 2px 4px;
   font: 400 13px/1.2 inherit;
-  color: var(--blue, #2d5185);
+  font-family: inherit;
+  color: var(--blue, #2f4fe0);
   background: none;
   border: none;
-  text-decoration: underline;
 }
 
 @media (max-width: 560px) {
