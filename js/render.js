@@ -123,12 +123,36 @@
     )
   }
 
+  /*
+   * 每 GROUP 题一组，组间画一条虚线：孩子一次做一组，错 1 题以内算过关，
+   * 错 2 题及以上再做下一组。虚线占一条 0 高的网格行，正好落在两行题目
+   * 之间，不额外占纵向空间；组末不满一行时（如 3 列的第 ⑩ 题）余下格子
+   * 空着，下一组从新的一行开始。
+   */
+  var GROUP = 10
+
+  function segmentsOf(list) {
+    var segs = []
+    for (var i = 0; i < list.length; i += GROUP) {
+      segs.push(list.slice(i, i + GROUP))
+    }
+    return segs
+  }
+
   function pageHTML(opts) {
-    var cells = opts.questions
-      .map(function (q, i) {
-        return cellHTML(q, opts.startIdx + i, opts.showAnswer, opts.stepHint)
+    var idx = opts.startIdx
+    var rowMM = opts.rowMM.toFixed(1) + 'mm'
+    var tracks = []
+    var cells = opts.segments
+      .map(function (seg) {
+        tracks.push('repeat(' + Math.ceil(seg.length / opts.cols) + ',' + rowMM + ')')
+        return seg
+          .map(function (q) {
+            return cellHTML(q, idx++, opts.showAnswer, opts.stepHint)
+          })
+          .join('')
       })
-      .join('')
+      .join('<div class="group-rule"></div>')
     return (
       '<section class="sheet" data-cols="' + opts.cols + '">' +
       '<header class="sheet-head">' +
@@ -136,7 +160,7 @@
       metaHTML() +
       '</header>' +
       '<div class="sheet-grid" style="--cols:' + opts.cols +
-      ';grid-auto-rows:' + opts.rowMM.toFixed(1) + 'mm">' + cells + '</div>' +
+      ';grid-template-rows:' + tracks.join(' 0 ') + '">' + cells + '</div>' +
       '<footer class="sheet-foot">' +
       opts.footPrefix + '第 ' + opts.pageNo + ' 页 / 共 ' + opts.pageTotal + ' 页' +
       '</footer>' +
@@ -145,19 +169,21 @@
   }
 
   /*
-   * 分页并把题目在各页间摊匀：直接按 perPage 切会让最后一页只剩零星几题
-   * （40 题 3 列 → 45 + 0 不均；60 题 2 列 → 30 + 30 正好，但 40 题会变成
-   * 30 + 10）。页数不变的前提下均分，卷面各页疏密一致。
+   * 按整组分页，一组 10 题不会被拆到两页上。每页放得下的组数由行数决定
+   * （2 列一组 5 行、3 列 4 行、4 列 3 行）；页数不变的前提下把组摊匀，
+   * 免得最后一页只剩零星一组，卷面各页疏密一致。
    */
-  function paginate(list, perPage) {
-    var k = Math.ceil(list.length / perPage) || 1
-    var base = Math.floor(list.length / k)
-    var extra = list.length % k // 前 extra 页各多一题，如 100 题 3 页 → 34+33+33
+  function paginate(list, rowsPerPage, cols) {
+    var groups = segmentsOf(list)
+    var perPage = Math.max(1, Math.floor(rowsPerPage / Math.ceil(GROUP / cols)))
+    var k = Math.ceil(groups.length / perPage) || 1
+    var base = Math.floor(groups.length / k)
+    var extra = groups.length % k // 前 extra 页各多一组，如 10 组 4 页 → 3+3+2+2
     var pages = []
     var at = 0
     for (var p = 0; p < k; p++) {
       var take = base + (p < extra ? 1 : 0)
-      pages.push(list.slice(at, at + take))
+      pages.push(groups.slice(at, at + take))
       at += take
     }
     return pages
@@ -172,8 +198,10 @@
   var ROW_MAX = 24
   var AREA_MM = { portrait: 225, landscape: 135 } // 与打印段 min-height 对应
 
-  function rowHeightMM(count, cols, paper) {
-    var rows = Math.ceil(count / cols) || 1
+  function rowHeightMM(segments, cols, paper) {
+    var rows = segments.reduce(function (n, seg) {
+      return n + Math.ceil(seg.length / cols)
+    }, 0) || 1
     var h = AREA_MM[paper] / rows
     /* 向下取到 0.1mm：四舍五入会让 行高×行数 超出内容区，多挤出一张空白页 */
     h = Math.floor(h * 10) / 10
@@ -213,15 +241,16 @@
   /* 主入口：把一批题目渲染成若干张练习纸（可选追加同排版的答案页） */
   function render(container, s, questions) {
     var title = s.title || root.SumSum.generator.titleFor(s)
-    var perPage = ROWS[s.paper] * s.columns
-    var pages = paginate(questions, perPage)
+    var pages = paginate(questions, ROWS[s.paper], s.columns)
     var html = []
     /* 各页起始题号：均分后每页题数可能不同，不能再用 p × perPage 推算 */
     var startIdx = []
     var acc = 1
     pages.forEach(function (page) {
       startIdx.push(acc)
-      acc += page.length
+      page.forEach(function (seg) {
+        acc += seg.length
+      })
     })
 
     function sheetsFor(suffix, showAnswer, footPrefix) {
@@ -229,10 +258,10 @@
         html.push(
           pageHTML({
             title: title + suffix,
-            questions: page,
+            segments: page,
             startIdx: startIdx[p],
             cols: s.columns,
-            rowMM: rowHeightMM(page.length, s.columns, s.paper),
+            rowMM: rowHeightMM(page, s.columns, s.paper),
             stepHint: s.stepHint,
             pageNo: p + 1,
             pageTotal: pages.length,

@@ -60,13 +60,20 @@ body.landscape .sheet {
 
 /* ---------- 题目网格：先横后竖，行高 15mm 留足手写空间 ---------- */
 
-/* 行高由 render.js 按当页题数内联给定（15~24mm），这里的 15mm 只是兜底 */
+/* 行高由 render.js 按当页题数内联给定（grid-template-rows，15~24mm），这里的 15mm 只是兜底 */
 .sheet-grid {
   display: grid;
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
   grid-auto-rows: 15mm;
   align-content: start;
   column-gap: 5mm;
+}
+
+/* 每 10 题一组的分隔虚线：落在 0 高的网格行里，即两行题目的交界处 */
+.group-rule {
+  grid-column: 1 / -1;
+  align-self: start;
+  border-top: 1.5px dashed #777;
 }
 
 .q {
