@@ -6,6 +6,7 @@
  * 读写失败就当「来过」，宁可不弹也别每次都弹）。
  *
  * 文案全是写死的，没有任何用户输入，可以直接进 innerHTML。
+ * 弹窗里还有「导出 / 导入备份」，数据逻辑在 js/backup.js，页面上须先于本文件加载。
  * 改了哪个板块的功能，记得回来同步这里的说明。
  */
 ;(function (root) {
@@ -22,7 +23,18 @@
       '<li><b>点面板底部的蓝色按钮打印</b>：纸张选 A4；打印对话框里把「页眉和页脚」关掉，纸面更干净。</li>' +
     '</ol>' +
     '<p class="help-note">口算、数独、识字的设置会写进网址：<b>把链接收藏或发给别人，打开就是一模一样的那张卷子</b>。' +
-      '想换一批题，点「↻ 重新生成」。奥数「已学」标记、识字的进度和错字集存在<b>这台电脑的这个浏览器</b>里，换电脑或清缓存会丢。</p>'
+      '想换一批题，点「↻ 重新生成」。</p>' +
+    '<div class="help-backup">' +
+      '<p>奥数「已学」标记、识字的进度和错字集存在<b>这台电脑的这个浏览器</b>里。' +
+        '<b>换电脑、换网址</b>（比如从旧网址 sumsum-3nx.pages.dev 搬过来）之前，先在原来的地方点「导出备份」存一个文件，' +
+        '再到新的地方点「导入备份」选这个文件。</p>' +
+      '<div class="help-backup-btns">' +
+        '<button type="button" class="btn btn-ghost" data-bk="export">导出备份</button>' +
+        '<button type="button" class="btn btn-ghost" data-bk="import">导入备份</button>' +
+        '<input type="file" accept=".json,application/json" hidden />' +
+      '</div>' +
+      '<div class="help-backup-msg" role="status" hidden></div>' +
+    '</div>'
 
   var MODULES = [
     {
@@ -67,7 +79,8 @@
         '<b>记下不会的字</b>：孩子念不出来的字，在屏幕卷面上点一下，格子变红，这个字就进了错字集。可以边念边点，也可以先在纸上圈出来，事后对着点。<b>纸上不会印出任何标记</b>。',
         '<b>错字集</b>：切到「错字集」页签，打印一张全是错字的卷子。格子右上角的数字表示还要认出几次：认出来了点一下，2 变 1；<b>改天</b>再认出来，再点一下才移出。当天点错了，再点一下就撤回。',
         '<b>顺带复习错字</b>：在「本周复习」里勾上「复习卷后面附一页错字」，会从错字集里随机抽 20 个字附在后面。',
-        '<b>整表核对</b>：拿来和原字表逐页对照用的，不是给孩子做的卷子。'
+        '<b>整表核对</b>：拿来和原字表逐页对照用的，不是给孩子做的卷子。',
+        '<b>换电脑、换网址</b>：错字集和进度只存在这个浏览器里，用上面的「导出备份 / 导入备份」带过去。'
       ]
     }
   ]
@@ -143,12 +156,120 @@
       if (e.target === dlg) dlg.close()
     })
 
+    wireBackup(dlg.querySelector('.help-backup'))
+
     var seen = true
     try {
       seen = !!root.localStorage.getItem(SEEN_KEY)
       root.localStorage.setItem(SEEN_KEY, '1')
     } catch (e) { /* 存不了就不自动弹 */ }
     if (!seen) open()
+  }
+
+  /* ---------- 备份 / 搬家（数据逻辑在 js/backup.js，这里只管按钮和提示） ---------- */
+
+  function stamp() {
+    var d = new Date()
+    var p = function (n) {
+      return (n < 10 ? '0' : '') + n
+    }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+  }
+
+  function wireBackup(box) {
+    var B = root.SumSum && root.SumSum.backup
+    if (!B) {
+      box.hidden = true
+      return
+    }
+    var msg = box.querySelector('.help-backup-msg')
+    var file = box.querySelector('input[type=file]')
+    var pending = null
+
+    /* 所有文字都是写死的文案或 describe() 拼出来的固定句式，数字来自 JSON，不含文件里的原始字符串 */
+    function say(html, kind) {
+      msg.innerHTML = html
+      msg.className = 'help-backup-msg' + (kind ? ' is-' + kind : '')
+      msg.hidden = false
+    }
+
+    function list(lines) {
+      return '<ul>' + lines.map(function (t) { return '<li>' + t + '</li>' }).join('') + '</ul>'
+    }
+
+    function doExport() {
+      var pack
+      try {
+        pack = B.collect(root.localStorage)
+      } catch (e) {
+        return say('这个浏览器不允许读取本地数据（可能是无痕模式），没法导出。', 'bad')
+      }
+      if (!Object.keys(pack.data).length) {
+        return say('这个浏览器上还没有可以备份的进度。', 'bad')
+      }
+      var name = '练习纸备份-' + stamp() + '.json'
+      var url = URL.createObjectURL(new Blob([JSON.stringify(pack)], { type: 'application/json' }))
+      var a = doc.createElement('a')
+      a.href = url
+      a.download = name
+      doc.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(function () { URL.revokeObjectURL(url) }, 1000)
+      say('已下载 <b>' + name + '</b>，里面有：' + list(B.describe(pack.data)) +
+        '到新电脑或新网址上，打开「使用说明」点「导入备份」选这个文件。', 'ok')
+    }
+
+    function confirmImport(r) {
+      pending = r
+      say('备份里有：' + list(B.describe(r.data)) +
+        '导入后，这个浏览器上<b>同样的这几项会被备份里的替换掉</b>。' +
+        '<div class="help-backup-btns">' +
+          '<button type="button" class="btn btn-primary" data-bk="confirm">确认导入</button>' +
+          '<button type="button" class="btn btn-ghost" data-bk="cancel">取消</button>' +
+        '</div>')
+    }
+
+    function doImport() {
+      if (!pending) return
+      try {
+        B.apply(root.localStorage, pending.data)
+      } catch (e) {
+        pending = null
+        return say('这个浏览器不允许写入本地数据（可能是无痕模式），导入没有成功。', 'bad')
+      }
+      pending = null
+      say('导入成功，页面马上刷新。', 'ok')
+      /* 各板块只在页面加载时读一次存储，刷新一下才能看到导入的进度 */
+      setTimeout(function () { root.location.reload() }, 900)
+    }
+
+    file.addEventListener('change', function () {
+      var f = file.files && file.files[0]
+      file.value = '' // 同一个文件再选一次也要触发 change
+      if (!f) return
+      var reader = new FileReader()
+      reader.onload = function () {
+        var r = B.parse(String(reader.result))
+        if (r.ok) confirmImport(r)
+        else say(r.error, 'bad')
+      }
+      reader.onerror = function () { say('文件读不出来，请重新选一次。', 'bad') }
+      reader.readAsText(f)
+    })
+
+    box.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-bk]')
+      if (!b) return
+      var act = b.getAttribute('data-bk')
+      if (act === 'export') doExport()
+      else if (act === 'import') file.click()
+      else if (act === 'confirm') doImport()
+      else if (act === 'cancel') {
+        pending = null
+        msg.hidden = true
+      }
+    })
   }
 
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', build)

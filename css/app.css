@@ -276,6 +276,53 @@ select {
   border-radius: var(--radius);
 }
 
+.help-backup {
+  margin-top: 12px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius);
+}
+
+.help-backup p {
+  margin: 0;
+}
+
+.help-backup-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.help-backup-btns .btn {
+  height: 34px;
+  font-size: 13px;
+}
+
+.help-backup-msg {
+  margin-top: 10px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--field);
+  border-radius: var(--radius);
+}
+
+.help-backup-msg ul {
+  margin: 4px 0 6px;
+  padding-left: 1.3em;
+}
+
+.help-backup-msg.is-ok {
+  background: var(--green-tint);
+}
+
+.help-backup-msg.is-bad {
+  color: var(--red-deep);
+  background: #fdf0ee;
+}
+
 .help-tabs {
   margin-bottom: 14px;
 }
