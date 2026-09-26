@@ -24,8 +24,7 @@
      * 看哪一张卷子：
      *   week  本周复习 —— 主场景，按周次印该复习的那一批字
      *   wrong 错字集   —— 把攒下来的错字单独印一张
-     *   proof 整表核对 —— 按原始截图的 15×12 印全表，和截图逐屏对照用
-     * 三种模式下字格都可以点，点一下就是把那个字加入 / 移出错字集（见 shizi-mark）。
+     * 两种模式下字格都可以点，点一下就是把那个字加入 / 移出错字集（见 shizi-mark）。
      */
     mode: 'week',
     /*
@@ -51,7 +50,7 @@
 
   var FONTS = ['kai', 'hei']
 
-  var MODES = ['week', 'wrong', 'proof']
+  var MODES = ['week', 'wrong']
 
   /*
    * 每页字数的合法取值，必须与 shizi.html 里 #f-perpage 的 <option> 一一对应。
@@ -81,13 +80,11 @@
   }
 
   /*
-   * 模式。早先只有「整表核对」一个复选框，链接里是 ?proof=true；
-   * 加了错字集之后换成三选一的 mode，这里把老链接翻译过去，免得收藏的链接打不开该看的东西。
-   * 与 js/shudu-settings.js 把老的 ?level=hard 翻成 clues=5 是同一套做法。
+   * 模式。曾经还有一个「整表核对」（?mode=proof，更早是 ?proof=true），字表核对完后下架了；
+   * 老链接里的 mode=proof 不在白名单里，自然回到本周复习，?proof= 参数 load() 不再放行。
    */
   function pickMode(given, merged) {
     if (given.mode != null && given.mode !== '') return oneOf(String(given.mode), MODES, DEFAULTS.mode)
-    if (toBool(given.proof, false)) return 'proof'
     return oneOf(merged.mode, MODES, DEFAULTS.mode)
   }
 
@@ -121,11 +118,9 @@
     var hasUrl = false
     try {
       new URLSearchParams(root.location.search).forEach(function (v, k) {
-        /* proof 已不在 DEFAULTS 里（换成了 mode），但老链接还带着它，
-           得放行给 sanitize 去翻译 —— 与数独放行老的 level 参数同理。
-           LOCAL_ONLY 的项 save() 不会写进网址，手敲进来的也不认。 */
+        /* LOCAL_ONLY 的项 save() 不会写进网址，手敲进来的也不认。 */
         if (LOCAL_ONLY.indexOf(k) >= 0) return
-        if (Object.prototype.hasOwnProperty.call(DEFAULTS, k) || k === 'proof') {
+        if (Object.prototype.hasOwnProperty.call(DEFAULTS, k)) {
           fromUrl[k] = v
           hasUrl = true
         }
@@ -150,7 +145,7 @@
       base = keep
     } else {
       /* 看哪张卷子不该被记住：打开页面永远回到「本周复习」这个主场景。
-         想直达错字集或核对页，存一个带 ?mode=wrong / ?mode=proof 的链接即可。 */
+         想直达错字集，存一个带 ?mode=wrong 的链接即可。 */
       delete base.mode
     }
     return sanitize(Object.assign({}, base, fromUrl))

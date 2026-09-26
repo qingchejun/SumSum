@@ -86,19 +86,11 @@
   white-space: normal;
 }
 
-/* 整表核对页上超出本轮复习范围的字：印灰，一眼看出这一轮管到哪儿。
-   这是【印在纸上的信息】，不是交互态，打印段不要还原它。 */
-.shizi-cell.is-out {
-  color: #b0b0b0;
-}
-
 /*
- * 红底 = 这个字在错字集里。三种模式下含义一致，见 js/shizi-mark.js 的说明。
+ * 红底 = 这个字在错字集里。两种模式下含义一致，见 js/shizi-mark.js 的说明。
  *
- * 只改 background、不碰 color：上面的 .is-out 改的就是 color（特异性同为 0,2,0），
- * 两个状态可能同时出现在一个格子上（在整表核对页标一个超范围的字），
- * 都改 color 就会互相盖掉、谁在后面谁赢。数独在 css/shudu.css:170-187 明文定过
- * 这条规矩：叠加的状态只改 background。
+ * 只改 background、不碰 color：数独在 css/shudu.css 明文定过这条规矩 ——
+ * 叠加的状态只改 background，打印段那条还原才兜得住。
  */
 .shizi-cell.is-wrong {
   position: relative;
@@ -110,7 +102,7 @@
  * 规则见 js/shizi-core.js 的 markStep。
  *
  * 用伪元素而不是往格子里塞 <span>：字格的 textContent 就是那个字，别的地方
- *（整表核对、将来的复制）不该读到多出来的数字。字号跟着格子的内联字号走（em），
+ *（将来的复制之类）不该读到多出来的数字。字号跟着格子的内联字号走（em），
  * 不同版面下角标和字的比例不变。
  */
 .shizi-cell.is-wrong::after {

@@ -11,7 +11,8 @@
  * 这个板块最要命的风险不是算法，而是【字表本身是人肉照着截图转录的】。
  * 所以第一组检查全是冲着转录错误去的：结构、总数、重复、非汉字。
  * 但要清楚它的边界 —— 把「未」认成「末」这种，两个都是合法汉字、都不重复，
- * 脚本一定抓不住，只能靠页面上的「整表核对」模式拿原图逐屏对。
+ * 脚本一定抓不住，只能拿原图逐屏人工对（页面上原有的「整表核对」已于 2026-09 下架，
+ * 字表已核对完毕）。
  */
 'use strict'
 
@@ -211,12 +212,6 @@ function checkLayout() {
     bad('100 字应排成 10 列 × 10 行，实际 ' + lay100.cols + '×' + lay100.rows)
   }
   if (lay100.glyph < 10) bad('100 字时每个字应不小于 10mm，实际 ' + lay100.glyph)
-
-  /* 整表核对页：强制 15 列，必须正好 12 行、和原图同构 */
-  var proof = R.layout(COLS * ROWS, COLS)
-  if (!proof || proof.cols !== COLS || proof.rows !== ROWS) {
-    bad('核对页应为 ' + COLS + ' 列 × ' + ROWS + ' 行')
-  }
 
   /* 一页放不下时必须分页，而且每页均分 */
   var big = R.autoPer(400)
@@ -556,13 +551,14 @@ function checkSettings() {
     [{ perWeek: 9999 }, 'perWeek', 200],
     [{ perWeek: '' }, 'perWeek', 100],
     [{ font: 'comic' }, 'font', 'kai'],
-    /* 模式白名单。早先是 ?proof=true 一个复选框，老链接要能翻译过去 */
+    /* 模式白名单。「整表核对」（?mode=proof，更早是 ?proof=true）已下架，
+       老链接一律回到本周复习，不能停在一个不存在的页签上 */
     [{}, 'mode', 'week'],
     [{ mode: 'wrong' }, 'mode', 'wrong'],
-    [{ mode: 'proof' }, 'mode', 'proof'],
+    [{ mode: 'proof' }, 'mode', 'week'],
     [{ mode: 'xx' }, 'mode', 'week'],
     [{ mode: '' }, 'mode', 'week'],
-    [{ proof: 'true' }, 'mode', 'proof'],
+    [{ proof: 'true' }, 'mode', 'week'],
     [{ proof: 'false' }, 'mode', 'week'],
     [{ copies: 9 }, 'copies', 2],
     [{ copies: 0 }, 'copies', 1],
@@ -618,8 +614,7 @@ function main() {
   console.log('✓ 全部通过，耗时 ' + (Date.now() - t0) + 'ms')
   console.log('')
   console.log('注意：本脚本抓不住「把未认成末」这类【字对字】的转录错误 ——')
-  console.log('两个都是合法汉字、都不重复。那一层只能在 shizi.html 里勾「整表核对」，')
-  console.log('拿洪恩的字表截图逐屏对一遍。')
+  console.log('两个都是合法汉字、都不重复。改字表时要拿洪恩的字表截图逐屏人工对一遍。')
 }
 
 main()

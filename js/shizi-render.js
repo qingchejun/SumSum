@@ -7,9 +7,6 @@
  *
  * 卷面刻意做成纯字格：不印拼音、不印组词、不留勾选框。这是一张【认读考核卷】，
  * 孩子念、家长听，纸上任何多余的东西都是给孩子的线索。
- *
- * 另有一个「整表核对」模式（proof），按原始截图的 15×12 结构把整张字表印出来，
- * 用来核对人肉转录的字表有没有出错，不是给孩子做的。
  */
 (function (root) {
   'use strict'
@@ -122,7 +119,7 @@
   }
 
   /*
-   * 一页字格。dim 里的下标（相对 chars）渲染成灰字：整表核对时用来标出没纳入复习的尾巴。
+   * 一页字格。
    *
    * 每格带 data-ch：js/shizi-mark.js 的事件委托靠它认字，不读 textContent ——
    * 将来格子里多放任何东西（笔画数、小标记）textContent 就不再是那个字了。
@@ -130,10 +127,9 @@
    * 也没有 :focus-visible 样式，读屏器只会念一串无名 button，比不加更糟；
    * 而且一页 100 个格子不该占掉 100 个 Tab 停靠点。
    */
-  function gridHTML(chars, lay, dim) {
-    var cells = chars.map(function (ch, i) {
-      var cls = dim && dim.indexOf(i) >= 0 ? 'shizi-cell is-out' : 'shizi-cell'
-      return '<div class="' + cls + '" data-ch="' + P().esc(ch) + '">' + P().esc(ch) + '</div>'
+  function gridHTML(chars, lay) {
+    var cells = chars.map(function (ch) {
+      return '<div class="shizi-cell" data-ch="' + P().esc(ch) + '">' + P().esc(ch) + '</div>'
     })
     return (
       '<div class="shizi-grid" style="grid-template-columns:repeat(' + lay.cols + ',' + mm(lay.w) + ')' +
@@ -160,46 +156,10 @@
          但这是本文件唯一一处「靠调用方保证」的插值，包一层 esc 成本为零 */
       '<section class="sheet sheet-shizi" data-font="' + P().esc(opts.font) + '">' +
       headHTML(opts.title) +
-      '<div class="shizi-stage">' + gridHTML(chars, opts.lay, opts.dim) + '</div>' +
+      '<div class="shizi-stage">' + gridHTML(chars, opts.lay) + '</div>' +
       '<footer class="sheet-foot">' + P().esc(opts.foot) + '</footer>' +
       '</section>'
     )
-  }
-
-  /*
-   * 整表核对：一屏一页，严格按原图的 15 列 × 12 行排，好和截图逐屏对照。
-   * 超出复习范围（shizi.TOTAL 之后）的字印成灰色 —— 一眼能看出这一轮到底管到哪儿。
-   */
-  function renderProof(s) {
-    var D = root.SumSum.shiziData
-    var total = root.SumSum.shizi.poolSize()
-    var lay = layout(D.COLS * D.ROWS, D.COLS)
-    var html = []
-    var offset = 0
-    D.SCREENS.forEach(function (screen, si) {
-      var chars = []
-      screen.forEach(function (line) {
-        Array.prototype.push.apply(chars, Array.from(line))
-      })
-      var dim = []
-      chars.forEach(function (ch, i) {
-        if (offset + i >= total) dim.push(i)
-      })
-      html.push(
-        sheetHTML(chars, {
-          title: '字表核对 · 第 ' + (si + 1) + ' 屏',
-          lay: lay,
-          dim: dim,
-          font: s.font,
-          foot:
-            '第 ' + (offset + 1) + '–' + (offset + chars.length) + ' 字　·　' +
-            D.COLS + ' 列 × ' + D.ROWS + ' 行，与原图同构' +
-            (dim.length ? '　·　灰字为本轮未纳入复习的 ' + dim.length + ' 字' : '')
-        })
-      )
-      offset += chars.length
-    })
-    return html
   }
 
   /*
@@ -256,9 +216,7 @@
     var Z = root.SumSum.shizi
     var html
 
-    if (s.mode === 'proof') {
-      html = renderProof(s)
-    } else if (s.mode === 'wrong') {
+    if (s.mode === 'wrong') {
       html = renderWrong(s, wrongChars)
     } else {
       var sl = Z.sliceOf(s.week, s.perWeek)

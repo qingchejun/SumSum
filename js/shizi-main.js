@@ -96,9 +96,6 @@
        留着变灰只是噪音 —— 上面的页签已经说清楚现在在看哪张卷子。 */
     $('sec-progress').hidden = s.mode !== 'week'
     $('sec-range').hidden = s.mode !== 'week'
-    /* 核对模式固定按原图 15×12 排、只印一份，这两个控件不起作用 */
-    els.perPage.disabled = s.mode === 'proof'
-    els.copies.disabled = s.mode === 'proof'
     /* 每周字数一改，总周数就变了，输入框的上限要跟着走，
        否则浏览器自带的上下箭头能点到一个会被钳掉的数，看着像没生效。 */
     els.week.max = String(S.shizi.totalWeeks(s.perWeek))
@@ -147,12 +144,6 @@
    * 家长有这个参照才知道 7.8mm 是「有点小但能认」还是「太小了」。
    */
   function pagesHint(s, count, append) {
-    if (s.mode === 'proof') {
-      /* 核对模式不受「每页字数 / 份数」影响，页数是字表屏数定死的。
-         不说一句的话，面板上那两个控件点了没反应，像是坏了。 */
-      return '整表核对：固定 ' + S.shiziData.SCREENS.length + ' 页，每页 ' +
-        S.shiziData.COLS * S.shiziData.ROWS + ' 字，不受上面的每页字数与份数影响。'
-    }
     if (!count) return ''
     var per = S.shiziRender.perPageOf(s, count)
     var lay = S.shiziRender.layout(per)
@@ -171,7 +162,7 @@
   }
 
   /*
-   * 错字集那一块的说明。三种模式下点击的规则一致（见 shizi-core 的 markStep），只是初始状态不同。
+   * 错字集那一块的说明。两种模式下点击的规则一致（见 shizi-core 的 markStep），只是初始状态不同。
    * 返回的是 HTML，里面全是写死的文案，没有任何用户输入，可以直接进 innerHTML。
    */
   function markHint(s) {
@@ -187,14 +178,11 @@
     var once = S.shiziMark.onceCount()
     var head = '错字集里有 <b>' + n + '</b> 个字' +
       (once ? '（其中 ' + once + ' 个只差一次）' : '') + '。'
-    /* 出错字集的规则三种模式都一样，只在错字卷上讲全 —— 那是家长真正在「点掉」字的地方 */
+    /* 出错字集的规则两种模式都一样，只在错字卷上讲全 —— 那是家长真正在「点掉」字的地方 */
     if (s.mode === 'wrong') {
       return head + '右上角的数字是还要认出几次：孩子认出来了就点一下，<b>2</b> 变 <b>1</b>；' +
         '<b>改天</b>再认出来、再点一下才移出。同一天点两下不算两次 —— 当天点的，再点一下就是撤回。' +
         '<br>点掉的字先留在原位不重排，不然下一个字会跳到手指底下，很容易误点。'
-    }
-    if (s.mode === 'proof') {
-      return head + '这一页也能点：看到孩子肯定不会的字，顺手点一下就收进错字集。'
     }
     var tail = head + '孩子念不出来的字，在右边卷面上点一下就变红底，收进错字集。' +
       '可以边念边点，也可以先在纸上圈、事后对着纸点一遍。<b>纸上不会印出任何标记。</b>'
@@ -207,7 +195,7 @@
   }
 
   /* 按钮文案随模式走：印的是哪张卷子，按钮上就写哪张 */
-  var PRINT_LABEL = { week: '打印复习卷', wrong: '打印错字卷', proof: '打印全表' }
+  var PRINT_LABEL = { week: '打印复习卷', wrong: '打印错字卷' }
 
   /* 主流程：保存设置 → 同步表单 → 渲染 → 把错字标记投影回新 DOM */
   function refresh() {
@@ -237,9 +225,6 @@
     if (settings.mode === 'wrong' && !renderedWrong.length) {
       notice.textContent =
         '错字集还是空的。切到「本周复习」，孩子念不出来的字在卷面上点一下，就会收到这里。'
-      notice.hidden = false
-    } else if (settings.mode === 'proof') {
-      notice.textContent = '整表核对模式：这不是给孩子做的卷子，是用来和原字表截图逐屏对照的。'
       notice.hidden = false
     } else {
       notice.hidden = true

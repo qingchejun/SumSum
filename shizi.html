@@ -34,11 +34,10 @@
       <p class="brand-sub">只印字，不印拼音——孩子念，你听</p>
     </div>
 
-    <!-- 看哪一张卷子。三种模式下字格都能点，点一下就是加入/移出错字集 -->
+    <!-- 看哪一张卷子。两种模式下字格都能点，点一下就是加入/移出错字集 -->
     <div class="stage-tabs" id="mode-tabs">
       <button type="button" class="stage-tab" data-mode="week">本周复习</button>
       <button type="button" class="stage-tab" data-mode="wrong">错字集<span id="wrong-n"></span></button>
-      <button type="button" class="stage-tab" data-mode="proof">整表核对</button>
     </div>
 
     <section class="group" id="sec-progress">
@@ -106,7 +105,7 @@
     <section class="group">
       <h2 class="group-title">错字集</h2>
       <p class="hint" id="mark-hint"></p>
-      <!-- 只在「本周复习」模式下有意义：错字集模式整张卷子就是错字，核对模式不是给孩子做的 -->
+      <!-- 只在「本周复习」模式下有意义：错字集模式整张卷子就是错字 -->
       <label class="check" id="sec-append">
         <input type="checkbox" id="f-withwrong" /><span>复习卷后面附一页错字（随机抽 20 个）</span>
       </label>
