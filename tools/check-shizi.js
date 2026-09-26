@@ -380,6 +380,59 @@ function checkWrongSet() {
   }
 }
 
+/* ---------- 5b. 错字的进出规则（markStep） ---------- */
+
+/*
+ * 进错字集点一下；出错字集要【在两个不同的日子】各认出来一次。
+ * 当天点的，再点一下是撤回 —— 手一滑点错了，不能留下改不掉的痕迹。
+ * 这里把每一种状态、每一种「今天 / 以前」的组合都走一遍。
+ */
+function checkMarkStep() {
+  var D1 = '2026-09-20'
+  var D2 = '2026-09-21'
+  var D3 = '2026-09-22'
+  var step = Z.markStep
+  var state = Z.markState
+  function eq(a, b, msg) {
+    if (JSON.stringify(a) !== JSON.stringify(b)) {
+      bad('markStep ' + msg + '：期望 ' + JSON.stringify(b) + '，实际 ' + JSON.stringify(a))
+    }
+  }
+
+  /* 主线：第一天进，第二天认出一次，第三天再认出 → 移出 */
+  var e = step(null, D1)
+  eq(e, { add: D1 }, '不在集里点一下应当加进来')
+  eq(state(e), 'wrong', '刚加进来应是红底')
+  e = step(e, D2)
+  eq(e, { add: D1, hit: D2 }, '隔天认出应记一次')
+  eq(state(e), 'once', '认出一次应是半红')
+  e = step(e, D3)
+  eq(state(e), 'out', '另一天再认出应当移出')
+
+  /* 同一天连点两下不算认两次：半红当天再点是撤回 */
+  eq(step({ add: D1, hit: D2 }, D2), { add: D1 }, '半红当天再点应撤回成红底')
+
+  /* 当天刚加进来的，再点是撤回（误点），而不是「认出一次」 */
+  eq(step({ add: D2 }, D2), null, '当天加的再点应直接撤回')
+
+  /* 当天移出的，再点能原样撤回；隔天再点就是重新加进来 */
+  var gone = step({ add: D1, hit: D2 }, D3)
+  eq(state(gone), 'out', '移出后状态应是 out')
+  eq(step(gone, D3), { add: D1, hit: D2 }, '当天移出的再点应原样撤回')
+  eq(step(gone, '2026-09-23'), { add: '2026-09-23' }, '隔天点已移出的字应重新加进来')
+
+  /* 老数据（v1 只存了字，没有日期）当作「很早以前加的」，今天就能记一次 */
+  eq(step({ add: '' }, D1), { add: '', hit: D1 }, '没有日期的老条目今天点应记一次')
+
+  /* 返回的是新对象，不改传进来的那个 —— mark 层靠这个做撤回 */
+  var orig = { add: D1 }
+  step(orig, D2)
+  eq(orig, { add: D1 }, '不应改动传入的条目')
+
+  eq(state(null), 'out', 'null 应是 out')
+  eq(state(undefined), 'out', 'undefined 应是 out')
+}
+
 /* ---------- 6. 本周卷附页抽字（sampleWrong） ---------- */
 
 /*
@@ -544,6 +597,7 @@ function main() {
     ['面板所有设置组合都排得出版面', checkAllCombos],
     ['换每周字数时进度不倒退', checkRemap],
     ['错字集排序与错字卷排版（1~400 字全扫）', checkWrongSet],
+    ['错字进出规则（进点一下，出要两个不同的日子）', checkMarkStep],
     ['附页抽字：边界 / 顺序 / 均匀性（2 万轮）', checkSample],
     ['设置钳位', checkSettings]
   ]

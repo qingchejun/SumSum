@@ -1,11 +1,13 @@
 /**
- * 错字集：在预览的卷面上点一下，就把那个字加入 / 移出错字集。
+ * 错字集：在预览的卷面上点字，把它加入 / 移出错字集。
  *
- * 一条规则贯穿三种模式 ——【红底 = 在错字集里，点一下 = 切换】。
- * 本周复习卷上点，是「他这个字不认识」；错字集卷上点，是「他认出来了，拿掉」。
- * 两件事在用户眼里是同一个动作，所以刻意不做语义反转（比如错字集里点表示「认识了」
- * 却显示成打勾），那会变成两套规则，每次都要先想自己在哪一页。
- * 移出之后的样子和从没标记过的字完全一样，也就不需要第三种视觉状态。
+ * 【进来容易，出去难】：不认识的字点一下就收进来（红底）；
+ * 要移出，得在【两个不同的日子】各认出来一次 —— 第一次点变半红，改天再认出来、再点一下才移出。
+ * 同一天连点不算两次：今天点的，再点一下就是撤回。完整规则和理由见 shizi-core 的 markStep。
+ *
+ * 三种模式下点击规则完全一样，不做「在错字集页点表示认识了、在本周卷页点表示不认识」
+ * 那种按页面区分的语义，否则每次都要先想自己在哪一页。
+ * 移出之后的样子和从没标记过的字完全一样，所以屏幕上只有红底、半红两种标记。
  *
  * 【点击绝不触发重新渲染】—— 这是这个功能好不好用的分水岭。
  * shizi-main 的 refresh() 会把 #preview 的 innerHTML 整个换掉；若每点一次就 refresh，
@@ -29,60 +31,110 @@
    * 【存汉字本身，不存字表下标】：每周字数是可改的，下标会随之漂移
    *（remapWeek 那套换算就是在处理这个问题），汉字则天然稳定。
    */
-  var KEY = 'sumsum:shizi:wrong:v1'
+  var KEY = 'sumsum:shizi:wrong:v2'
+  /* v1 只存了一个字的数组，没有「哪天认出过」这回事。读进来当作「很早以前加的红底字」，
+     add 给空串 —— 比任何日期都小，所以今天就能记一次认出。v1 那一项留着不删，不碍事。 */
+  var KEY_V1 = 'sumsum:shizi:wrong:v1'
 
-  function load() {
-    try {
-      var arr = JSON.parse(root.localStorage.getItem(KEY))
-      /* Array.isArray 同时挡住 null 和被人手改坏的值 */
-      return new Set(Array.isArray(arr) ? arr : [])
-    } catch (e) {
-      return new Set() // 隐私模式或数据损坏时当作空集
-    }
+  function isObj(v) {
+    return !!v && typeof v === 'object' && !Array.isArray(v)
   }
 
-  function save(set) {
+  /* 本地日期。toISOString 是 UTC，北京时间早上 8 点前会算成前一天，所以自己拼 */
+  function today() {
+    var d = new Date()
+    var p = function (n) {
+      return (n < 10 ? '0' : '') + n
+    }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+  }
+
+  function load() {
+    var map = {}
     try {
-      root.localStorage.setItem(KEY, JSON.stringify(Array.from(set)))
+      var raw = JSON.parse(root.localStorage.getItem(KEY))
+      if (isObj(raw)) {
+        var t = today()
+        Object.keys(raw).forEach(function (ch) {
+          var e = raw[ch]
+          if (!isObj(e) || typeof e.add !== 'string') return // 被人手改坏的条目
+          if (e.out && e.out !== t) return // 以前移出的，撤回期已过
+          map[ch] = e
+        })
+        return map
+      }
+      var old = JSON.parse(root.localStorage.getItem(KEY_V1))
+      if (Array.isArray(old)) {
+        old.forEach(function (ch) {
+          if (typeof ch === 'string' && ch) map[ch] = { add: '' }
+        })
+      }
+    } catch (e) {
+      /* 隐私模式或数据损坏时当作空集 */
+    }
+    return map
+  }
+
+  function save() {
+    try {
+      root.localStorage.setItem(KEY, JSON.stringify(marks))
     } catch (e) {
       /* 隐私模式下写入失败可忽略 */
     }
   }
 
-  var wrong = load()
+  var marks = load()
   var listeners = []
 
   function fire() {
     listeners.forEach(function (fn) {
-      fn(wrong.size)
+      fn(size())
     })
   }
 
+  function stateOf(ch) {
+    return root.SumSum.shizi.markState(marks[ch])
+  }
+
+  /* 「在错字集里」= 红底或半红。当天刚移出、还能撤回的不算 */
   function has(ch) {
-    return wrong.has(ch)
+    return stateOf(ch) !== 'out'
+  }
+
+  function members() {
+    return Object.keys(marks).filter(has)
   }
 
   function size() {
-    return wrong.size
+    return members().length
+  }
+
+  /* 其中认出过一次、再认出一次就能移出的 */
+  function onceCount() {
+    return members().filter(function (ch) {
+      return stateOf(ch) === 'once'
+    }).length
   }
 
   /* 按字表顺序排好的错字数组。排序逻辑在 shizi-core（纯函数，node 里测得动） */
   function all() {
-    return root.SumSum.shizi.sortByTable(Array.from(wrong))
+    return root.SumSum.shizi.sortByTable(members())
   }
 
-  function toggle(ch) {
-    if (!ch) return false
-    if (wrong.has(ch)) wrong.delete(ch)
-    else wrong.add(ch)
-    save(wrong)
+  /* 点一下：按 markStep 走一步，返回这个字的新状态 'wrong' | 'once' | 'out' */
+  function step(ch) {
+    if (!ch) return 'out'
+    var next = root.SumSum.shizi.markStep(marks[ch], today())
+    if (next) marks[ch] = next
+    else delete marks[ch]
+    save()
     fire()
-    return wrong.has(ch)
+    return stateOf(ch)
   }
 
   function clear() {
-    wrong.clear()
-    save(wrong)
+    marks = {}
+    save()
     fire()
   }
 
@@ -96,10 +148,15 @@
    * 全量重刷、不做增量：一页最多两百来个格子，重算一遍 class 是微秒级，
    * 而增量更新要维护「上次是什么状态」，是 bug 的温床。
    */
+  function paintCell(cell, st) {
+    cell.classList.toggle('is-wrong', st !== 'out')
+    cell.classList.toggle('is-once', st === 'once')
+  }
+
   function paint() {
     var cells = doc.querySelectorAll('#preview .shizi-cell')
     for (var i = 0; i < cells.length; i++) {
-      cells[i].classList.toggle('is-wrong', wrong.has(cells[i].dataset.ch))
+      paintCell(cells[i], stateOf(cells[i].dataset.ch))
     }
   }
 
@@ -118,10 +175,10 @@
       if (!cell || !preview.contains(cell)) return
       var ch = cell.dataset.ch
       if (!ch) return
-      var on = toggle(ch)
+      var st = step(ch)
       var same = preview.querySelectorAll('.shizi-cell[data-ch="' + ch.replace(/"/g, '\\"') + '"]')
       for (var i = 0; i < same.length; i++) {
-        same[i].classList.toggle('is-wrong', on)
+        paintCell(same[i], st)
       }
     })
   }
@@ -133,8 +190,9 @@
     onChange: onChange,
     has: has,
     size: size,
+    onceCount: onceCount,
     all: all,
-    toggle: toggle,
+    step: step,
     clear: clear
   }
 })(typeof window !== 'undefined' ? window : globalThis)

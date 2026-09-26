@@ -159,6 +159,44 @@
   }
 
   /*
+   * 错字进出错字集的规则：【进来点一下，出去要在两个不同的日子各认出来一次】。
+   *
+   * 一个字的条目 entry 长这样（日期都是本地日期 'YYYY-MM-DD'，字符串直接比大小）：
+   *   { add }             红底：在错字集里，还没认出来过
+   *   { add, hit }        半红：hit 那天认出来过一次
+   *   { add, hit, out }   out 那天刚移出。只为当天能撤回而留着，隔天就作废
+   *   null                不在错字集里
+   *
+   * 点一下怎么走，只看两件事：现在是哪种状态，上一步是不是今天点的。
+   *   【今天点的，再点一下就是撤回】；不是今天点的，再点一下才往前走一步。
+   * 这样「同一天连点两下」永远凑不成「认出两次」—— 孩子当场念对两遍，和隔天
+   * 还记得，是两回事；而手一滑点错了，当场再点一下就回去，不会留下改不掉的痕迹。
+   *
+   * 「两次」是累计，不要求连续：认出一次之后又念错，不用去点，它就停在半红。
+   *
+   * 永远返回新对象，不改传进来的 entry。纯函数放 core，理由同 sortByTable。
+   */
+  function markState(e) {
+    if (!e || e.out) return 'out'
+    return e.hit ? 'once' : 'wrong'
+  }
+
+  function markStep(e, today) {
+    var st = markState(e)
+    if (st === 'out') {
+      /* 当天移出的，原样恢复成半红；其余一律当作新错字 */
+      if (e && e.out === today) return { add: e.add, hit: e.hit }
+      return { add: today }
+    }
+    if (st === 'wrong') {
+      if (e.add === today) return null // 今天刚加的：撤回
+      return { add: e.add, hit: today }
+    }
+    if (e.hit === today) return { add: e.add } // 今天刚认出的：撤回
+    return { add: e.add, hit: e.hit, out: today }
+  }
+
+  /*
    * 练习纸标题。用户在面板上填了标题就用他的，这里只管默认的那一行。
    *
    * 标题【必须短】。页眉是 .sheet-title + .sheet-meta 一行排开，两者都是
@@ -186,6 +224,8 @@
     remapWeek: remapWeek,
     sortByTable: sortByTable,
     sampleWrong: sampleWrong,
+    markState: markState,
+    markStep: markStep,
     sliceOf: sliceOf,
     titleFor: titleFor
   }

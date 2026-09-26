@@ -101,7 +101,29 @@
  * 这条规矩：叠加的状态只改 background。
  */
 .shizi-cell.is-wrong {
+  position: relative;
   background: rgba(217, 58, 43, 0.16);
+}
+
+/*
+ * 右上角的数字 = 还要再认出几次才移出错字集：刚收进来是 2，认出一次变 1，再认出一次就移出。
+ * 规则见 js/shizi-core.js 的 markStep。
+ *
+ * 用伪元素而不是往格子里塞 <span>：字格的 textContent 就是那个字，别的地方
+ *（整表核对、将来的复制）不该读到多出来的数字。字号跟着格子的内联字号走（em），
+ * 不同版面下角标和字的比例不变。
+ */
+.shizi-cell.is-wrong::after {
+  content: '2';
+  position: absolute;
+  top: 0.12em;
+  right: 0.14em;
+  font: 700 0.26em/1 "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  color: var(--red);
+}
+
+.shizi-cell.is-wrong.is-once::after {
+  content: '1';
 }
 
 @media print {
@@ -111,6 +133,11 @@
    */
   .shizi-cell.is-wrong {
     background: none;
+  }
+
+  /* 角标同理。.is-once 那条特异性更高，但它只改 content，上面这条 display 足以盖住两者 */
+  .shizi-cell.is-wrong::after {
+    display: none;
   }
 
   /*
