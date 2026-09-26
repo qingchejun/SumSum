@@ -149,6 +149,142 @@ select {
   box-shadow: 0 1px 2px rgba(23, 32, 51, 0.12), 0 0 0 1px rgba(23, 32, 51, 0.04);
 }
 
+/* 右上角「使用说明」：弹窗本体由 js/help.js 插进页面，打印时隐藏（见 sheet.css） */
+.help-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  height: 32px;
+  padding: 0 12px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--blue);
+  background: var(--blue-tint);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.help-btn:hover {
+  border-color: rgba(47, 79, 224, 0.3);
+}
+
+/* 窄屏只留问号，保证四个标签不折行 */
+@media (max-width: 520px) {
+  .help-btn {
+    padding: 0 7px;
+    font-size: 0;
+  }
+}
+
+.help-q {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.help-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: min(760px, calc(100vh - 48px));
+  padding: 0;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(23, 32, 51, 0.25);
+}
+
+.help-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.help-dialog::backdrop {
+  background: rgba(23, 32, 51, 0.4);
+}
+
+.help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 12px 24px;
+  border-bottom: 1px solid var(--card-edge);
+}
+
+.help-head h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.help-close {
+  width: 32px;
+  height: 32px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.help-close:hover {
+  color: var(--ink);
+  background: var(--field);
+}
+
+.help-body {
+  padding: 4px 24px 24px;
+  overflow-y: auto;
+}
+
+.help-h {
+  margin: 18px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+.help-steps,
+.help-list {
+  margin: 0;
+  padding-left: 1.4em;
+  line-height: 1.7;
+}
+
+.help-steps li + li,
+.help-list li + li {
+  margin-top: 6px;
+}
+
+.help-note {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  background: var(--field);
+  border-radius: var(--radius);
+}
+
+.help-tabs {
+  margin-bottom: 14px;
+}
+
+.help-lead {
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
 .layout {
   display: flex;
   align-items: flex-start;

@@ -177,7 +177,8 @@ body.landscape .sheet {
 
   .topbar,
   .panel,
-  .notice {
+  .notice,
+  .help-dialog {
     display: none !important;
   }
 
