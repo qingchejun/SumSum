@@ -103,19 +103,38 @@
  *
  * 用伪元素而不是往格子里塞 <span>：字格的 textContent 就是那个字，别的地方
  *（将来的复制之类）不该读到多出来的数字。字号跟着格子的内联字号走（em），
- * 不同版面下角标和字的比例不变。
+ * 不同版面下角标和字的比例不变；max() 给个下限，一页 100 字时光按 em 算只有 10px 左右，看不清。
  */
 .shizi-cell.is-wrong::after {
   content: '2';
   position: absolute;
   top: 0.12em;
   right: 0.14em;
-  font: 700 0.26em/1 "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  font: 700 max(13px, 0.3em)/1 "PingFang SC", "Helvetica Neue", Arial, sans-serif;
   color: var(--red);
 }
 
 .shizi-cell.is-wrong.is-once::after {
   content: '1';
+}
+
+/*
+ * 左上角的「×3」= 这个字累计进过几次错字集，移出了也照样标 —— 本周卷上一个白底字
+ * 标着 ×3，意思是「以前反复错过，这次多留意」。只有 2 次以上才有 data-n（见 shizi-mark 的 paintCell）。
+ * 颜色比右上角浅：右上角是「现在要做什么」，左上角只是背景信息。
+ * position: relative 写在这里而不是只写在 .is-wrong 上，因为白底格子也可能带这个标。
+ */
+.shizi-cell[data-n] {
+  position: relative;
+}
+
+.shizi-cell[data-n]::before {
+  content: '×' attr(data-n);
+  position: absolute;
+  top: 0.12em;
+  left: 0.14em;
+  font: 600 max(12px, 0.26em)/1 "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  color: var(--ink-soft);
 }
 
 @media print {
@@ -127,8 +146,9 @@
     background: none;
   }
 
-  /* 角标同理。.is-once 那条特异性更高，但它只改 content，上面这条 display 足以盖住两者 */
-  .shizi-cell.is-wrong::after {
+  /* 两个角标同理。.is-once 那条特异性更高，但它只改 content，这里的 display 足以盖住 */
+  .shizi-cell.is-wrong::after,
+  .shizi-cell[data-n]::before {
     display: none;
   }
 

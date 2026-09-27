@@ -231,10 +231,30 @@
     }
   }
 
+  /*
+   * 反复错的字：累计进过 2 次以上的，移出了的也列（灰字），好让家长看出哪些字总记不住。
+   * 最多列 30 个，再多就不是「一眼看出来」了；次数多的在前。
+   * 字来自字表、次数是数字，没有用户输入，可以直接进 innerHTML。
+   */
+  var REPEATS_MAX = 30
+  function repeatsHtml() {
+    var list = S.shiziMark.repeats()
+    if (!list.length) return ''
+    var shown = list.slice(0, REPEATS_MAX).map(function (r) {
+      var tag = r.on ? 'b' : 'span'
+      return '<' + tag + '>' + r.ch + '×' + r.n + '</' + tag + '>'
+    })
+    return '反复错的字（累计进过 2 次以上，卷面左上角的「×n」就是次数；<b>加粗</b>的现在还在错字集里）：<br>' +
+      shown.join('　') + (list.length > REPEATS_MAX ? '　… 共 ' + list.length + ' 个' : '')
+  }
+
   /* 只刷错字集那一块 + 页签徽标。标记动作走这条路，不碰 #preview */
   function refreshMarkPanel() {
     fillTabs(settings)
     $('mark-hint').innerHTML = markHint(settings)
+    var rep = repeatsHtml()
+    $('mark-repeats').hidden = !rep
+    $('mark-repeats').innerHTML = rep
 
     /* 附页开关只在「本周复习」下露面；错字集空的时候留着但点不动，
        比整个藏起来好 —— 至少看得见有这么个东西，攒够字自己会亮。 */
@@ -347,7 +367,7 @@
     var n = S.shiziMark.size()
     if (!n) return
     /* 清空是不可逆的，而且攒了几个月的东西 —— 值得拦一道 */
-    if (!root.confirm('清空错字集里的 ' + n + ' 个字？这一步撤不回来。')) return
+    if (!root.confirm('清空错字集里的 ' + n + ' 个字？这一步撤不回来。\n\n每个字累计进过几次的记录会留着。')) return
     S.shiziMark.clear()
     refresh()
   })

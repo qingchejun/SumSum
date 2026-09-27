@@ -160,19 +160,26 @@
 
   /*
    * 错字进出错字集的规则：【进来点一下，出去要在两个不同的日子各认出来一次】。
+   * 另外每个字记一个【累计次数】n：一共进过几次错字集，移出也不清零，再进来接着加一。
    *
-   * 一个字的条目 entry 长这样（日期都是本地日期 'YYYY-MM-DD'，字符串直接比大小）：
-   *   { add }             红底：在错字集里，还没认出来过
-   *   { add, hit }        半红：hit 那天认出来过一次
-   *   { add, hit, out }   out 那天刚移出。只为当天能撤回而留着，隔天就作废
-   *   null                不在错字集里
+   * 错字集和累计记录是【同一份数据】，不是两个库：每个字一条记录，状态和次数都在里面。
+   * 分两处存的话，点一下、撤回一下、清空一下都得两边一起改，迟早对不上。
+   *
+   * 一条记录 entry 长这样（日期都是本地日期 'YYYY-MM-DD'，字符串直接比大小）：
+   *   { add, n }              2：在错字集里，还没认出来过
+   *   { add, hit, n }         1：hit 那天认出来过一次
+   *   { add, hit, out, n }    out 那天刚移出。当天再点能原样撤回
+   *   { n, out }              早就移出了，只留累计次数
+   *   { add, n, prev }        移出过又进来的；prev 是上一次移出的日子，只为当天撤回用
+   *   null                    从没进过（或者进来当天就撤回了）
+   * 缺 n 的老记录（v1 迁移过来的、v2 早期的）一律当作进过 1 次，见 markCount。
    *
    * 点一下怎么走，只看两件事：现在是哪种状态，上一步是不是今天点的。
    *   【今天点的，再点一下就是撤回】；不是今天点的，再点一下才往前走一步。
    * 这样「同一天连点两下」永远凑不成「认出两次」—— 孩子当场念对两遍，和隔天
-   * 还记得，是两回事；而手一滑点错了，当场再点一下就回去，不会留下改不掉的痕迹。
+   * 还记得，是两回事；而手一滑点错了，当场再点一下就回去，次数也跟着退回，不留痕迹。
    *
-   * 「两次」是累计，不要求连续：认出一次之后又念错，不用去点，它就停在半红。
+   * 「两次」是累计，不要求连续：认出一次之后又念错，不用去点，它就停在 1。
    *
    * 永远返回新对象，不改传进来的 entry。纯函数放 core，理由同 sortByTable。
    */
@@ -181,19 +188,34 @@
     return e.hit ? 'once' : 'wrong'
   }
 
+  function markCount(e) {
+    return e ? e.n || 1 : 0
+  }
+
   function markStep(e, today) {
     var st = markState(e)
+    var n = markCount(e)
     if (st === 'out') {
-      /* 当天移出的，原样恢复成半红；其余一律当作新错字 */
-      if (e && e.out === today) return { add: e.add, hit: e.hit }
-      return { add: today }
+      if (!e) return { add: today, n: 1 }
+      /* 当天移出（或当天清空）的，原样恢复，不算又进来一次 */
+      if (e.out === today) return { add: e.add, hit: e.hit, n: n }
+      return { add: today, n: n + 1, prev: e.out }
     }
     if (st === 'wrong') {
-      if (e.add === today) return null // 今天刚加的：撤回
-      return { add: e.add, hit: today }
+      if (e.add === today) {
+        /* 今天刚进来的：撤回。以前进过的回到「已移出」，次数退回去；第一次进的整条删掉 */
+        return e.prev ? { n: n - 1, out: e.prev } : null
+      }
+      return { add: e.add, hit: today, n: n }
     }
-    if (e.hit === today) return { add: e.add } // 今天刚认出的：撤回
-    return { add: e.add, hit: e.hit, out: today }
+    if (e.hit === today) return { add: e.add, n: n } // 今天刚认出的：撤回
+    return { add: e.add, hit: e.hit, out: today, n: n }
+  }
+
+  /* 「清空错字集」：在集里的一律当作今天移出，次数不动；已经移出的原样返回 */
+  function markClear(e, today) {
+    if (markState(e) === 'out') return e
+    return { add: e.add, hit: e.hit, out: today, n: markCount(e) }
   }
 
   /*
@@ -226,6 +248,8 @@
     sampleWrong: sampleWrong,
     markState: markState,
     markStep: markStep,
+    markCount: markCount,
+    markClear: markClear,
     sliceOf: sliceOf,
     titleFor: titleFor
   }

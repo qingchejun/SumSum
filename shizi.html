@@ -105,6 +105,8 @@
     <section class="group">
       <h2 class="group-title">错字集</h2>
       <p class="hint" id="mark-hint"></p>
+      <!-- 累计进过 2 次以上的字，移出了的也列。空的时候整段藏起来 -->
+      <p class="hint" id="mark-repeats" hidden></p>
       <!-- 只在「本周复习」模式下有意义：错字集模式整张卷子就是错字 -->
       <label class="check" id="sec-append">
         <input type="checkbox" id="f-withwrong" /><span>复习卷后面附一页错字（随机抽 20 个）</span>

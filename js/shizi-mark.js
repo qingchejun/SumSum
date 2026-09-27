@@ -4,6 +4,8 @@
  * 【进来容易，出去难】：不认识的字点一下就收进来（红底）；
  * 要移出，得在【两个不同的日子】各认出来一次 —— 第一次点变半红，改天再认出来、再点一下才移出。
  * 同一天连点不算两次：今天点的，再点一下就是撤回。完整规则和理由见 shizi-core 的 markStep。
+ * 每个字还记着【累计进过几次】，移出、清空都不清零；进过 2 次以上的在左上角标「×n」，
+ * 面板上另列一份「反复错的字」。错字集和累计记录是同一份数据，见 markStep 的说明。
  *
  * 两种模式下点击规则完全一样，不做「在错字集页点表示认识了、在本周卷页点表示不认识」
  * 那种按页面区分的语义，否则每次都要先想自己在哪一页。
@@ -54,11 +56,11 @@
     try {
       var raw = JSON.parse(root.localStorage.getItem(KEY))
       if (isObj(raw)) {
-        var t = today()
         Object.keys(raw).forEach(function (ch) {
           var e = raw[ch]
-          if (!isObj(e) || typeof e.add !== 'string') return // 被人手改坏的条目
-          if (e.out && e.out !== t) return // 以前移出的，撤回期已过
+          /* 被人手改坏的条目丢掉。已经移出的【留着】—— 累计次数就记在它们身上，
+             见 shizi-core 的 markStep。在集里的必有 add，早就移出的至少有 out */
+          if (!isObj(e) || (typeof e.add !== 'string' && typeof e.out !== 'string')) return
           map[ch] = e
         })
         return map
@@ -96,7 +98,7 @@
     return root.SumSum.shizi.markState(marks[ch])
   }
 
-  /* 「在错字集里」= 红底或半红。当天刚移出、还能撤回的不算 */
+  /* 「在错字集里」= 右上角标着 2 或 1 的。移出了的（只剩累计次数的）不算 */
   function has(ch) {
     return stateOf(ch) !== 'out'
   }
@@ -116,6 +118,33 @@
     }).length
   }
 
+  /* 累计进过几次错字集，移出了也算。从没进过是 0 */
+  function countOf(ch) {
+    return root.SumSum.shizi.markCount(marks[ch])
+  }
+
+  /*
+   * 反复错的字：累计进过 2 次以上的，不管现在在不在集里。
+   * 次数多的排前面；次数一样的按字表顺序，免得每次打开顺序都在变。
+   */
+  var REPEAT_MIN = 2
+  function repeats() {
+    var chars = root.SumSum.shizi.sortByTable(Object.keys(marks).filter(function (ch) {
+      return countOf(ch) >= REPEAT_MIN
+    }))
+    var rank = {}
+    chars.forEach(function (ch, i) {
+      rank[ch] = i
+    })
+    return chars
+      .sort(function (a, b) {
+        return countOf(b) - countOf(a) || rank[a] - rank[b]
+      })
+      .map(function (ch) {
+        return { ch: ch, n: countOf(ch), on: has(ch) }
+      })
+  }
+
   /* 按字表顺序排好的错字数组。排序逻辑在 shizi-core（纯函数，node 里测得动） */
   function all() {
     return root.SumSum.shizi.sortByTable(members())
@@ -132,8 +161,12 @@
     return stateOf(ch)
   }
 
+  /* 清空的是【错字集】，不是历史：在集里的字一律当作今天移出，累计次数留着 */
   function clear() {
-    marks = {}
+    var t = today()
+    Object.keys(marks).forEach(function (ch) {
+      marks[ch] = root.SumSum.shizi.markClear(marks[ch], t)
+    })
     save()
     fire()
   }
@@ -148,15 +181,19 @@
    * 全量重刷、不做增量：一页最多两百来个格子，重算一遍 class 是微秒级，
    * 而增量更新要维护「上次是什么状态」，是 bug 的温床。
    */
-  function paintCell(cell, st) {
+  /* 左上角的「×3」靠 data-n + CSS 画，只有累计 2 次以上才有 */
+  function paintCell(cell, st, n) {
     cell.classList.toggle('is-wrong', st !== 'out')
     cell.classList.toggle('is-once', st === 'once')
+    if (n >= REPEAT_MIN) cell.dataset.n = n
+    else delete cell.dataset.n
   }
 
   function paint() {
     var cells = doc.querySelectorAll('#preview .shizi-cell')
     for (var i = 0; i < cells.length; i++) {
-      paintCell(cells[i], stateOf(cells[i].dataset.ch))
+      var ch = cells[i].dataset.ch
+      paintCell(cells[i], stateOf(ch), countOf(ch))
     }
   }
 
@@ -175,9 +212,10 @@
       var ch = cell.dataset.ch
       if (!ch) return
       var st = step(ch)
+      var n = countOf(ch)
       var same = preview.querySelectorAll('.shizi-cell[data-ch="' + ch.replace(/"/g, '\\"') + '"]')
       for (var i = 0; i < same.length; i++) {
-        paintCell(same[i], st)
+        paintCell(same[i], st, n)
       }
     })
   }
@@ -190,6 +228,8 @@
     has: has,
     size: size,
     onceCount: onceCount,
+    countOf: countOf,
+    repeats: repeats,
     all: all,
     step: step,
     clear: clear
