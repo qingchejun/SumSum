@@ -88,7 +88,8 @@
     }
     /* 页签上直接带字数，不用切进去才知道攒了多少 */
     var n = S.shiziMark.size()
-    $('wrong-n').textContent = n ? ' ' + n : ''
+    $('wrong-n').textContent = n ? ' · ' + n : ''
+    $('wrong-title-n').textContent = n ? n + ' 个' : ''
   }
 
   function fillForm(s) {
@@ -171,7 +172,7 @@
       /* 一个字都没有时，讲「怎么移出」是没意义的 —— 不管在哪个模式，
          此刻唯一有用的信息都是「去哪儿、怎么把第一个字收进来」。 */
       return '错字集还是空的。' +
-        (s.mode === 'week' ? '孩子念不出来的字，在右边卷面上点一下就收进来了，'
+        (s.mode === 'week' ? '孩子念不出来的字，在卷面上点一下就收进来了，'
           : '切到「本周复习」，孩子念不出来的字在卷面上点一下就收进来了，') +
         '<b>纸上不会印出任何标记。</b>'
     }
@@ -180,16 +181,16 @@
       (once ? '（其中 ' + once + ' 个只差一次）' : '') + '。'
     /* 出错字集的规则两种模式都一样，只在错字卷上讲全 —— 那是家长真正在「点掉」字的地方 */
     if (s.mode === 'wrong') {
-      return head + '右上角的数字是还要认出几次：孩子认出来了就点一下，<b>2</b> 变 <b>1</b>；' +
+      return head + '孩子认出来了就点一下，红底变成<b>半红</b>；' +
         '<b>改天</b>再认出来、再点一下才移出。同一天点两下不算两次 —— 当天点的，再点一下就是撤回。' +
         '<br>点掉的字先留在原位不重排，不然下一个字会跳到手指底下，很容易误点。'
     }
-    var tail = head + '孩子念不出来的字，在右边卷面上点一下就变红底，收进错字集。' +
+    var tail = head + '孩子念不出来的字，在卷面上点一下就变红底，收进错字集。' +
       '可以边念边点，也可以先在纸上圈、事后对着纸点一遍。<b>纸上不会印出任何标记。</b>'
     if (s.withWrong && appendPick.length) {
       tail += '<br>本周卷后面附了 <b>' + appendPick.length + '</b> 个旧错字' +
         (n > appendPick.length ? '（从 ' + n + ' 个里随机抽的，本周卷上已有的不重复印）' : '') +
-        '。孩子认出来了就点一下，右上角的数字减一；数字是 1 的字，要改天再认出来一次才移出。'
+        '。孩子认出来了就点一下变半红；半红的字要改天再认出来一次才移出。'
     }
     return tail
   }
@@ -217,9 +218,10 @@
       ? renderedWrong.length
       : S.shizi.sliceOf(settings.week, settings.perWeek).chars.length
     $('pages-hint').textContent = pagesHint(settings, count, append)
-    $('btn-print').textContent = PRINT_LABEL[settings.mode]
+    $('btn-print').querySelector('.txt').textContent = PRINT_LABEL[settings.mode]
     $('btn-print').disabled = settings.mode === 'wrong' && !renderedWrong.length
     refreshMarkPanel()
+    paintSummary(settings, count)
 
     var notice = $('notice')
     if (settings.mode === 'wrong' && !renderedWrong.length) {
@@ -241,11 +243,26 @@
     var list = S.shiziMark.repeats()
     if (!list.length) return ''
     var shown = list.slice(0, REPEATS_MAX).map(function (r) {
-      var tag = r.on ? 'b' : 'span'
-      return '<' + tag + '>' + r.ch + '×' + r.n + '</' + tag + '>'
+      return '<span class="zchip' + (r.on ? ' on' : '') + '">' + r.ch + '<b>×' + r.n + '</b></span>'
     })
-    return '反复错的字（累计进过 2 次以上，卷面左上角的「×n」就是次数；<b>加粗</b>的现在还在错字集里）：<br>' +
-      shown.join('　') + (list.length > REPEATS_MAX ? '　… 共 ' + list.length + ' 个' : '')
+    return '<p class="lbl">反复错的字（累计进过 2 次以上；红底的现在还在错字集里）</p>' +
+      '<div class="zchips">' + shown.join('') +
+      (list.length > REPEATS_MAX ? '<span class="lbl">… 共 ' + list.length + ' 个</span>' : '') + '</div>'
+  }
+
+  /* 顶栏摘要：现在印的是哪一张、多少字 */
+  function paintSummary(s, count) {
+    if (s.mode === 'wrong') {
+      S.shell.summary(['错字集', count + ' 个字'])
+      return
+    }
+    var sl = S.shizi.sliceOf(s.week, s.perWeek)
+    S.shell.summary([
+      '本周复习',
+      '第 ' + sl.week + ' 周',
+      '第 ' + sl.from + '–' + sl.to + ' 字',
+      s.withWrong && appendPick.length ? '附 ' + appendPick.length + ' 个错字' : ''
+    ])
   }
 
   /* 只刷错字集那一块 + 页签徽标。标记动作走这条路，不碰 #preview */
@@ -278,18 +295,13 @@
     $('btn-clear-wrong').disabled = !S.shiziMark.size()
   }
 
-  /* 窄屏时按容器宽度整体缩放预览（打印样式里会强制还原成 1:1） */
+  /* 纸张区放不下一整张 A4 时整体缩小（见 js/shell.js 的 fit）；错字集空着时没有纸，清掉缩放 */
   function fitPreview() {
-    var wrap = $('preview-wrap')
-    var sheet = doc.querySelector('.sheet')
-    var preview = $('preview')
-    if (!preview) return
-    if (!sheet) {
-      preview.style.zoom = ''
+    if (!doc.querySelector('#preview .sheet')) {
+      $('preview').style.zoom = ''
       return
     }
-    var factor = Math.min(1, (wrap.clientWidth - 8) / sheet.offsetWidth)
-    preview.style.zoom = factor < 1 ? String(factor) : ''
+    S.shell.fit()
   }
 
   function onFormChange() {

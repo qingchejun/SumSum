@@ -262,7 +262,7 @@
   }
 
   /*
-   * 数字条是 fixed 的，会盖住预览区最底下那张纸，所以要给预览垫出等高的留白。
+   * 手机上数字条是 fixed 的，会盖住预览区最底下那张纸，所以要给预览垫出等高的留白。
    * 必须实测而不能写死：四宫格在桌面上只有两行，九宫格在 375px 手机上
    * 数字键会折行、整条高得多，写死一个数总有一头不对。
    * 窗口变窄变宽时折行数会变，所以 resize 也要重算（见 bind）。
@@ -271,7 +271,8 @@
     var bar = $('num-bar')
     var wrap = $('preview-wrap')
     if (!wrap) return
-    if (!bar || bar.hidden) {
+    /* 电脑上作答面板和纸并排（不是 fixed），不会盖住纸，不用垫 */
+    if (!bar || bar.hidden || root.getComputedStyle(bar).position !== 'fixed') {
       wrap.style.paddingBottom = ''
       return
     }

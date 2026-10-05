@@ -14,99 +14,119 @@
 </head>
 <body>
 
-<header class="topbar">
-  <nav class="topbar-tabs">
-    <a href="index.html">口算</a>
-    <a href="aoshu.html" class="active">奥数</a>
-    <a href="shudu.html">数独</a>
-    <a href="shizi.html">识字</a>
-  </nav>
-  <span class="topbar-brand">练习纸</span>
-</header>
+<div class="app">
+<!-- rail:奥数 -->
+<nav class="rail" aria-label="板块">
+  <a class="rail-brand" href="index.html">练习纸</a>
+  <a class="rail-link" href="index.html" data-module="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg><span>今天</span></a>
+  <a class="rail-link" href="kousuan.html" data-module="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6M7 4v6M14 7h6M5 15l4 4M9 15l-4 4M14 16h6M14 19h6"/></svg><span>口算</span></a>
+  <a class="rail-link active" href="aoshu.html" data-module="奥数" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg><span>奥数</span></a>
+  <a class="rail-link" href="shudu.html" data-module="数独"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg><span>数独</span></a>
+  <a class="rail-link" href="shizi.html" data-module="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-1.5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-14c-3-.5-6 0-8 1.5zM12 6v14"/></svg><span>识字</span></a>
+  <span class="rail-gap"></span>
+  <button type="button" class="rail-link small" data-help><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>说明</span></button>
+  <button type="button" class="rail-link small" data-backup><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M8 11l4 4 4-4M5 19h14"/></svg><span>备份</span></button>
+</nav>
+<!-- /rail -->
 
-<div class="layout">
-
-  <!-- ======== 设置面板 ======== -->
-  <aside class="panel" id="panel">
-    <div class="brand">
-      <span class="brand-mark">奥</span>
-      <h1 class="brand-name">奥数练习纸</h1>
-      <p class="brand-sub">一天两页，把一个知识点讲透</p>
+<!-- ======== 知识点目录 ======== -->
+<aside class="topic-nav" aria-label="知识点目录">
+  <div class="topic-nav-head">
+    <div class="row-between">
+      <h2 class="group-title">知识点</h2>
+      <span class="lbl" id="learned-n"></span>
     </div>
-
-    <!-- 知识点目录：L1/L2 分页签 + 胶囊按钮，未实现的显示为灰色 -->
-    <section class="group">
-      <h2 class="group-title">知识点目录</h2>
-      <div class="stage-tabs" id="stage-tabs">
-        <button type="button" class="stage-tab" data-stage="L1">L1 · 立足算理</button>
-        <button type="button" class="stage-tab" data-stage="L2">L2 · 思维启蒙</button>
-      </div>
-      <div class="topic-chips" id="topic-chips"></div>
-      <p class="catalog-hint">点圆点标「已学 ✓」，点名称切换知识点</p>
-      <button type="button" class="next-topic" id="btn-next" hidden></button>
-    </section>
-
-    <section class="group">
-      <h2 class="group-title">综合复习</h2>
-      <label class="check">
-        <input type="checkbox" id="f-review" /><span>出一张综合复习卷（从已学的知识点里混合出题）</span>
-      </label>
-      <p class="catalog-hint" id="review-hint" hidden></p>
-    </section>
-
-    <section class="group" id="group-variants">
-      <h2 class="group-title">题型<span class="sub">至少选一种</span></h2>
-      <div id="variant-list"></div>
-    </section>
-
-    <section class="group">
-      <h2 class="group-title">难度</h2>
-      <select id="f-difficulty" class="input">
-        <option value="L1">入门 · 20 以内</option>
-        <option value="L2">提高 · 50 以内</option>
-        <option value="L3">挑战 · 100 以内</option>
-      </select>
-    </section>
-
-    <section class="group">
-      <h2 class="group-title">题量<span class="sub">排得下就一页</span></h2>
-      <input type="number" id="f-count" class="input" min="2" max="30" step="1" />
-    </section>
-
-    <section class="group">
-      <h2 class="group-title">选项</h2>
-      <label class="check">
-        <input type="checkbox" id="f-lessonpage" /><span>打印时附讲解页（方法 + 例题示范）</span>
-      </label>
-      <label class="check">
-        <input type="checkbox" id="f-anspage" /><span>打印时附解析页（推荐，供家长讲解）</span>
-      </label>
-    </section>
-
-    <section class="group">
-      <h2 class="group-title">练习纸标题<span class="sub">选填</span></h2>
-      <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：移多补少练习 · 20以内" />
-    </section>
-
-    <p class="hint">设置会自动保存，也已写入网址 —— 收藏本页链接即可固定「每日题型」。</p>
-
-    <div class="actions">
-      <button type="button" id="btn-regen" class="btn btn-ghost">↻ 重新生成</button>
-      <button type="button" id="btn-print" class="btn btn-primary">打印练习纸</button>
+    <div class="progress" aria-hidden="true"><i id="learned-bar"></i></div>
+    <div class="stage-tabs" id="stage-tabs">
+      <button type="button" class="stage-tab" data-stage="L1">L1 · 立足算理</button>
+      <button type="button" class="stage-tab" data-stage="L2">L2 · 思维启蒙</button>
     </div>
-  </aside>
+    <button type="button" class="next-topic" id="btn-next" hidden></button>
+  </div>
+  <div class="topic-list" id="topic-list"></div>
+  <p class="topic-legend"><svg class="cam" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>= 有讲解视频　·　圆点 = 已学</p>
+</aside>
 
-  <!-- ======== 练习纸预览（所见即所得） ======== -->
-  <main class="preview" id="preview-wrap">
-    <div class="notice" id="notice" hidden></div>
-    <div id="preview"></div>
-  </main>
+<div class="work">
+  <header class="work-head">
+    <h1 class="work-title" id="lesson-title">奥数</h1>
+    <button type="button" id="btn-learned" class="btn btn-sm learned-btn"><span class="dot" aria-hidden="true"></span><span class="txt">标记为已学</span></button>
+    <span class="work-grow"></span>
+    <span class="work-sum" id="work-sum"></span>
+    <button type="button" id="btn-regen" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>重新生成</button>
+    <button type="button" id="btn-print" class="btn btn-primary btn-lg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2M7 14h10v6H7z"/></svg>打印</button>
+  </header>
 
+  <div class="work-body">
+
+    <!-- ======== 练习纸预览（所见即所得） ======== -->
+    <main class="preview" id="preview-wrap">
+      <div class="notice" id="notice" hidden></div>
+      <div id="preview"></div>
+    </main>
+
+    <!-- ======== 设置 ======== -->
+    <aside class="panel" id="panel" aria-label="设置">
+
+      <!-- 讲解视频：有视频的课显示播放器，没有的显示一行说明；综合复习卷整段藏起来。内容由 aoshu-main.js 填 -->
+      <section class="group" id="video-group"></section>
+
+      <section class="group" id="group-variants">
+        <h2 class="group-title">题型<span class="sub">至少选一种</span></h2>
+        <div id="variant-list"></div>
+      </section>
+
+      <section class="group">
+        <h2 class="group-title">难度</h2>
+        <select id="f-difficulty" class="input" data-seg aria-label="难度">
+          <option value="L1" data-short="20 以内">入门 · 20 以内</option>
+          <option value="L2" data-short="50 以内">提高 · 50 以内</option>
+          <option value="L3" data-short="100 以内">挑战 · 100 以内</option>
+        </select>
+        <div class="row-between">
+          <label class="lbl" for="f-count">题量 · 排得下就一页</label>
+          <input type="number" id="f-count" class="input" min="2" max="30" step="1" data-stepper />
+        </div>
+      </section>
+
+      <section class="group">
+        <h2 class="group-title">打印哪几部分<span class="sub">随意勾，不分先后</span></h2>
+        <label class="tick" id="tick-lesson">
+          <input type="checkbox" id="f-lessonpage" /><span>讲解页（方法 + 例题）</span>
+        </label>
+        <label class="tick">
+          <input type="checkbox" id="f-practice" /><span>练习题</span>
+        </label>
+        <label class="tick">
+          <input type="checkbox" id="f-anspage" /><span>解析页（给家长讲）</span>
+        </label>
+      </section>
+
+      <section class="group">
+        <h2 class="group-title">综合复习</h2>
+        <label class="check">
+          <input type="checkbox" id="f-review" /><span>出一张综合复习卷（从已学的课里混合出题）</span>
+        </label>
+        <p class="hint" id="review-hint" hidden></p>
+      </section>
+
+      <section class="group">
+        <label class="field"><span>练习纸标题（选填）</span>
+          <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：移多补少练习 · 20以内" />
+        </label>
+        <p class="hint">设置会自动保存，也已写入网址 —— 收藏本页链接即可固定「每日题型」。</p>
+      </section>
+
+    </aside>
+  </div>
+</div>
 </div>
 
 <!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
+<script src="js/shell.js"></script>
 <script src="js/render.js"></script>
 <script src="js/aoshu-topics.js"></script>
+<script src="js/aoshu-videos.js"></script>
 <script src="js/aoshu-topic-daxiao.js"></script>
 <script src="js/aoshu-topic-coushi.js"></script>
 <script src="js/aoshu-topic-yiduobushao2.js"></script>

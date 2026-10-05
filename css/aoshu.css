@@ -294,3 +294,299 @@
     min-height: 225mm; /* 撑满内容区，把页脚推到纸张底部 */
   }
 }
+
+/* ============ 屏幕：知识点目录、顶栏「已学」、讲解视频 ============
+   只在屏幕上出现，打印时整块隐藏（.topic-nav / .panel / .work-head 见 sheet.css 打印段）。 */
+
+.topic-nav {
+  flex: none;
+  width: 264px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-right: 1px solid var(--card-edge);
+}
+
+.topic-nav-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #e4e7ec;
+}
+
+.topic-nav-head .group-title {
+  font-size: 15px;
+}
+
+.topic-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px;
+  scrollbar-width: thin;
+}
+
+.tp {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 6px;
+}
+
+.tp:hover {
+  background: #f1f3f6;
+}
+
+.tp.cur {
+  background: var(--blue-tint);
+}
+
+/* 「已学」圆点：空心 = 没学，绿底白勾 = 学过；点它只改已学，不切课 */
+.tp-dot {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 32px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.tp-dot::before {
+  content: "";
+  grid-area: 1 / 1;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #b4bac4;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.tp-dot svg {
+  grid-area: 1 / 1;
+  position: relative;
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+.tp-dot:hover::before {
+  border-color: var(--green);
+}
+
+.tp.done .tp-dot::before {
+  border-color: var(--green);
+  background: var(--green);
+}
+
+.tp.done .tp-dot svg {
+  opacity: 1;
+}
+
+.tp-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px 0 2px;
+  font-size: 13px;
+  text-align: left;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.tp.cur .tp-name {
+  color: var(--blue-deep);
+  font-weight: 600;
+}
+
+.tp-name .no {
+  flex: none;
+  width: 20px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.tp-name .nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-name:disabled {
+  color: var(--ink-faint);
+  cursor: default;
+}
+
+.cam {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.topic-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  border-top: 1px solid #e4e7ec;
+}
+
+/* 「接着学」：按大纲顺序指向第一个还没标已学的知识点 */
+.next-topic {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--green);
+  background: var(--green-tint);
+  border: 1px solid #b9dcc6;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.next-topic:hover {
+  background: #dcefe3;
+}
+
+/* 顶栏「标记为已学」：没学是空心圆点，学过变绿 */
+.learned-btn .dot {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #b4bac4;
+  border-radius: 50%;
+}
+
+.learned-btn.on {
+  color: var(--green);
+  border-color: #b9dcc6;
+  background: var(--green-tint);
+}
+
+.learned-btn.on .dot {
+  border-color: var(--green);
+  background: var(--green);
+}
+
+/* ---------- 讲解视频：设置区小窗 → 放大浮层 ---------- */
+
+.video-none {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+}
+
+.video-none .cam {
+  stroke: var(--ink-faint);
+}
+
+.video-box video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #101318;
+  border-radius: 8px;
+}
+
+.video-top,
+.video-foot {
+  display: none;
+}
+
+#video-group .btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/*
+ * 放大：同一个盒子铺满屏幕，<video> 元素不换，进度不丢。
+ * 宽度同时受「最宽 1040」和「屏幕高度放得下 16:9」两头限制，矮屏上也不会顶出去。
+ */
+.video-box.is-big {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px;
+  background: rgba(10, 12, 16, 0.86);
+}
+
+.video-box.is-big video {
+  width: min(1040px, 100%, (100vh - 180px) * 16 / 9);
+  border-radius: 12px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+
+.video-box.is-big .video-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(1040px, 100%, (100vh - 180px) * 16 / 9);
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.video-box.is-big .video-top .btn {
+  color: #fff;
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.video-box.is-big .video-foot {
+  display: block;
+  margin: 0;
+  font-size: 13px;
+  color: #aeb4be;
+}
+
+@media (max-width: 900px) {
+  .topic-nav {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--card-edge);
+  }
+
+  .topic-list {
+    max-height: 260px;
+  }
+}

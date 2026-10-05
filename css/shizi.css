@@ -87,41 +87,26 @@
 }
 
 /*
- * 红底 = 这个字在错字集里。两种模式下含义一致，见 js/shizi-mark.js 的说明。
+ * 红底 = 这个字在错字集里；半红（斜着一半红一半白）= 认出过一次，改天再认出来、再点一下才移出。
+ * 规则见 js/shizi-core.js 的 markStep，两种模式下含义一致，见 js/shizi-mark.js 的说明。
+ * （2026-10 以前用右上角的数字 2 / 1 表示，按 Claude Design 定稿改成半红，用户同意先试用。）
  *
  * 只改 background、不碰 color：数独在 css/shudu.css 明文定过这条规矩 ——
  * 叠加的状态只改 background，打印段那条还原才兜得住。
  */
 .shizi-cell.is-wrong {
   position: relative;
-  background: rgba(217, 58, 43, 0.16);
+  background: var(--mark, #f4bdb8);
 }
 
-/*
- * 右上角的数字 = 还要再认出几次才移出错字集：刚收进来是 2，认出一次变 1，再认出一次就移出。
- * 规则见 js/shizi-core.js 的 markStep。
- *
- * 用伪元素而不是往格子里塞 <span>：字格的 textContent 就是那个字，别的地方
- *（将来的复制之类）不该读到多出来的数字。字号跟着格子的内联字号走（em），
- * 不同版面下角标和字的比例不变；max() 给个下限，一页 100 字时光按 em 算只有 10px 左右，看不清。
- */
-.shizi-cell.is-wrong::after {
-  content: '2';
-  position: absolute;
-  top: 0.12em;
-  right: 0.14em;
-  font: 700 max(13px, 0.3em)/1 "PingFang SC", "Helvetica Neue", Arial, sans-serif;
-  color: var(--red);
-}
-
-.shizi-cell.is-wrong.is-once::after {
-  content: '1';
+.shizi-cell.is-wrong.is-once {
+  background: linear-gradient(135deg, var(--mark, #f4bdb8) 0 50%, #fff 50% 100%);
 }
 
 /*
  * 左上角的「×3」= 这个字累计进过几次错字集，移出了也照样标 —— 本周卷上一个白底字
  * 标着 ×3，意思是「以前反复错过，这次多留意」。只有 2 次以上才有 data-n（见 shizi-mark 的 paintCell）。
- * 颜色比右上角浅：右上角是「现在要做什么」，左上角只是背景信息。
+ * 颜色用次要文字色：底色是「现在的状态」，左上角只是背景信息。
  * position: relative 写在这里而不是只写在 .is-wrong 上，因为白底格子也可能带这个标。
  */
 .shizi-cell[data-n] {
@@ -146,8 +131,12 @@
     background: none;
   }
 
-  /* 两个角标同理。.is-once 那条特异性更高，但它只改 content，这里的 display 足以盖住 */
-  .shizi-cell.is-wrong::after,
+  /* 半红那条特异性更高（两个类），必须单独压一次，否则斜线会印上纸 */
+  .shizi-cell.is-wrong.is-once {
+    background: none;
+  }
+
+  /* 左上角的次数同理 */
   .shizi-cell[data-n]::before {
     display: none;
   }
@@ -177,7 +166,7 @@
 }
 
 .week-sub {
-  margin: 2px 0 10px;
+  margin: -6px 0 0;
   font-size: 13px;
   color: var(--ink-soft);
 }
@@ -199,8 +188,8 @@
 
 .week-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
 }
 
 .week-nav .btn {
@@ -212,4 +201,82 @@
 .week-nav .btn:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* ---------- 纸张上方的图例：点字标记各是什么意思（只在屏幕上，打印隐藏，见 sheet.css） ---------- */
+
+.mark-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 16px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 12px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--ink-2, #4a505b);
+  background: #fff;
+  border: 1px solid var(--card-edge);
+  border-radius: 8px;
+}
+
+.mark-legend b {
+  color: var(--ink);
+}
+
+.mark-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mark-legend .sw {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #b4bac4;
+  background: var(--mark, #f4bdb8);
+}
+
+.mark-legend .sw.half {
+  background: linear-gradient(135deg, var(--mark, #f4bdb8) 0 50%, #fff 50% 100%);
+}
+
+.mark-legend .n {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* 设置区「反复错的字」：一字一块，粗边 = 现在还在错字集里 */
+.zchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.zchip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 2px 8px;
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "楷体", serif;
+  font-size: 20px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  background: var(--field);
+  border-radius: 6px;
+}
+
+.zchip.on {
+  color: var(--ink);
+  background: var(--red-tint, #fcedec);
+}
+
+.zchip b {
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 11px;
+  color: var(--red);
 }

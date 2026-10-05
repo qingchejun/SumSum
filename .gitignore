@@ -1,3 +1,5 @@
 .DS_Store
 .gstack/
 .wrangler/
+*.mp4
+*.mov

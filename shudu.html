@@ -14,58 +14,75 @@
 </head>
 <body>
 
-<header class="topbar">
-  <nav class="topbar-tabs">
-    <a href="index.html">口算</a>
-    <a href="aoshu.html">奥数</a>
-    <a href="shudu.html" class="active">数独</a>
-    <a href="shizi.html">识字</a>
-  </nav>
-  <span class="topbar-brand">练习纸</span>
-</header>
+<div class="app">
+<!-- rail:数独 -->
+<nav class="rail" aria-label="板块">
+  <a class="rail-brand" href="index.html">练习纸</a>
+  <a class="rail-link" href="index.html" data-module="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg><span>今天</span></a>
+  <a class="rail-link" href="kousuan.html" data-module="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6M7 4v6M14 7h6M5 15l4 4M9 15l-4 4M14 16h6M14 19h6"/></svg><span>口算</span></a>
+  <a class="rail-link" href="aoshu.html" data-module="奥数"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg><span>奥数</span></a>
+  <a class="rail-link active" href="shudu.html" data-module="数独" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg><span>数独</span></a>
+  <a class="rail-link" href="shizi.html" data-module="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-1.5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-14c-3-.5-6 0-8 1.5zM12 6v14"/></svg><span>识字</span></a>
+  <span class="rail-gap"></span>
+  <button type="button" class="rail-link small" data-help><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>说明</span></button>
+  <button type="button" class="rail-link small" data-backup><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M8 11l4 4 4-4M5 19h14"/></svg><span>备份</span></button>
+</nav>
+<!-- /rail -->
 
-<div class="layout">
+<div class="work">
+  <header class="work-head">
+    <h1 class="work-title">数独</h1>
+    <span class="work-sum" id="work-sum"></span>
+    <span class="work-grow"></span>
+    <button type="button" id="btn-regen" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>重新生成</button>
+    <button type="button" id="btn-print" class="btn btn-primary btn-lg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2M7 14h10v6H7z"/></svg>打印</button>
+  </header>
 
-  <!-- ======== 设置面板 ======== -->
-  <aside class="panel" id="panel">
-    <div class="brand">
-      <span class="brand-mark">独</span>
-      <h1 class="brand-name">数独练习纸</h1>
-      <p class="brand-sub">印两份，父子各一张，比谁先做出来</p>
-    </div>
+  <div class="work-body">
 
-    <section class="group">
-      <h2 class="group-title">盘型</h2>
-      <select id="f-shape" class="input">
-        <option value="s4">四宫格 4×4 · 行、列、2×2 宫</option>
-        <option value="s6">六宫格 6×6 · 行、列、2×3 宫</option>
-        <option value="s9">九宫格 9×9 · 标准数独</option>
-      </select>
-      <p class="hint" id="shape-hint"></p>
-    </section>
+    <!-- ======== 练习纸预览（所见即所得，也是在线作答区） ======== -->
+    <main class="preview" id="preview-wrap">
+      <div class="notice" id="notice" hidden></div>
+      <!-- 电脑上作答面板在纸的右边，手机上贴屏幕底部（见 css/shudu.css） -->
+      <div class="play-row">
+        <div id="preview"></div>
+        <div class="num-bar" id="num-bar" hidden></div>
+      </div>
+    </main>
 
-    <section class="group">
-      <h2 class="group-title">难度：<span id="clues-label"></span></h2>
-      <input type="range" id="f-clues" class="slider" step="1" />
-      <div class="slider-ends"><span id="clues-min"></span><span id="clues-max"></span></div>
-      <p class="hint">提示给得越少越难。<b>无论拖到哪一档，都保证不用猜</b>——任何时候盘上
-        总有一个格子能直接排除出唯一答案，孩子不会卡死在那儿瞎蒙。</p>
-    </section>
+    <!-- ======== 设置 ======== -->
+    <aside class="panel" id="panel" aria-label="设置">
 
-    <section class="group">
-      <h2 class="group-title">题量与排版</h2>
-      <div class="pair">
-        <label class="field"><span>题目数量</span>
-          <input type="number" id="f-count" class="input" min="1" max="20" step="1" />
-        </label>
-        <label class="field"><span>打印份数</span>
-          <select id="f-copies" class="input">
+      <section class="group">
+        <h2 class="group-title">盘型</h2>
+        <select id="f-shape" class="input" data-seg aria-label="盘型">
+          <option value="s4" data-short="四宫格">四宫格 4×4 · 行、列、2×2 宫</option>
+          <option value="s6" data-short="六宫格">六宫格 6×6 · 行、列、2×3 宫</option>
+          <option value="s9" data-short="九宫格">九宫格 9×9 · 标准数独</option>
+        </select>
+        <p class="hint" id="shape-hint"></p>
+      </section>
+
+      <section class="group">
+        <h2 class="group-title">难度：<span id="clues-label"></span></h2>
+        <input type="range" id="f-clues" class="slider" step="1" />
+        <div class="slider-ends"><span id="clues-min"></span><span id="clues-max"></span></div>
+        <p class="hint">提示给得越少越难。<b>无论拖到哪一档，都保证不用猜</b>——任何时候盘上
+          总有一个格子能直接排除出唯一答案，孩子不会卡死在那儿瞎蒙。</p>
+      </section>
+
+      <section class="group">
+        <h2 class="group-title">题量与排版</h2>
+        <div class="row-between">
+          <label class="lbl" for="f-count">题目数量</label>
+          <input type="number" id="f-count" class="input" min="1" max="20" step="1" data-stepper />
+        </div>
+        <div class="field"><span>打印份数</span>
+          <select id="f-copies" class="input" data-seg aria-label="打印份数">
             <option value="1">1 份</option>
             <option value="2">2 份（同题对战）</option>
           </select>
-        </label>
-      </div>
-      <div class="pair">
+        </div>
         <label class="field"><span>每页题数</span>
           <select id="f-perpage" class="input">
             <option value="0">自动（格子尽量大）</option>
@@ -75,46 +92,35 @@
             <option value="4">4 题 / 页</option>
           </select>
         </label>
-      </div>
-      <p class="hint" id="pages-hint"></p>
-    </section>
+        <p class="hint" id="pages-hint"></p>
+      </section>
 
-    <section class="group">
-      <h2 class="group-title">选项</h2>
-      <label class="check">
-        <input type="checkbox" id="f-play" /><span>屏幕上可以直接玩（点格子填数字）</span>
-      </label>
-      <label class="check">
-        <input type="checkbox" id="f-nodup" /><span>题目不重复</span>
-      </label>
-      <label class="check">
-        <input type="checkbox" id="f-anspage" /><span>打印时附答案页（末尾集中小图）</span>
-      </label>
-    </section>
+      <section class="group">
+        <label class="check">
+          <input type="checkbox" id="f-play" /><span>屏幕上可以直接玩（点格子填数字）</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="f-nodup" /><span>题目不重复</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="f-anspage" /><span>打印时附答案页（末尾集中小图）</span>
+        </label>
+      </section>
 
-    <section class="group">
-      <h2 class="group-title">练习纸标题<span class="sub">选填</span></h2>
-      <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：四宫格数独 · 给 7 个提示" />
-    </section>
+      <section class="group">
+        <label class="field"><span>练习纸标题（选填）</span>
+          <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：四宫格数独 · 给 7 个提示" />
+        </label>
+        <p class="hint">设置和这批题目都写进了网址：收藏或分享这个链接，打开后就是一模一样的一张卷子。</p>
+      </section>
 
-    <p class="hint">设置和这批题目都写进了网址：收藏或分享这个链接，打开后就是一模一样的一张卷子。想换一批题，点「重新生成」。</p>
-
-    <div class="actions">
-      <button type="button" id="btn-regen" class="btn btn-ghost">↻ 重新生成</button>
-      <button type="button" id="btn-print" class="btn btn-primary">打印练习纸</button>
-    </div>
-  </aside>
-
-  <!-- ======== 练习纸预览（所见即所得，也是在线作答区） ======== -->
-  <main class="preview" id="preview-wrap">
-    <div class="notice" id="notice" hidden></div>
-    <div id="preview"></div>
-    <div class="num-bar" id="num-bar" hidden></div>
-  </main>
-
+    </aside>
+  </div>
+</div>
 </div>
 
 <!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
+<script src="js/shell.js"></script>
 <script src="js/render.js"></script>
 <script src="js/shudu-core.js"></script>
 <script src="js/shudu-settings.js"></script>

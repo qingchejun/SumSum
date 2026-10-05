@@ -113,6 +113,12 @@
 
     $('shape-hint').textContent = shapeHint(settings)
     $('pages-hint').textContent = pagesHint(settings, result.puzzles.length)
+    S.shell.summary([
+      S.shudu.shapeOf(settings.shape).name,
+      settings.clues + ' 个提示',
+      result.puzzles.length + ' 题',
+      settings.copies > 1 ? '2 份' : ''
+    ])
 
     var notice = $('notice')
     if (result.shortfall > 0) {
@@ -130,14 +136,14 @@
     }
   }
 
-  /* 窄屏时按容器宽度整体缩放预览（打印样式里会强制还原成 1:1） */
+  /*
+   * 纸张区放不下一整张 A4 时整体缩小（见 js/shell.js 的 fit）。
+   * 电脑上作答面板和纸并排，要把它的宽度和间距让出来；手机上它贴屏幕底部（fixed），不占这一行。
+   */
   function fitPreview() {
-    var wrap = $('preview-wrap')
-    var sheet = doc.querySelector('.sheet')
-    var preview = $('preview')
-    if (!sheet || !preview) return
-    var factor = Math.min(1, (wrap.clientWidth - 8) / sheet.offsetWidth)
-    preview.style.zoom = factor < 1 ? String(factor) : ''
+    var bar = $('num-bar')
+    var beside = bar && !bar.hidden && root.getComputedStyle(bar).position !== 'fixed'
+    S.shell.fit(beside ? bar.offsetWidth + 20 : 0)
   }
 
   function onFormChange() {

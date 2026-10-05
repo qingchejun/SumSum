@@ -13,6 +13,7 @@
     difficulty: 'L1', // L1/L2/L3 → 20/50/100 以内
     count: 5, // 总题数；排得下就压在一页，题少时自动排松
     lessonPage: true, // 讲解页：新知识点先看讲解再做题，默认开
+    practicePage: true, // 练习题：可以关掉，比如看完视频只想单独印一张讲解页
     answerPage: true, // 解析是本板块核心，默认开
     review: false, // 综合复习卷：从已学的知识点里混合出题
     title: ''
@@ -59,10 +60,14 @@
       difficulty: oneOf(s.difficulty, DIFFICULTIES, DEFAULTS.difficulty),
       count: clampInt(s.count, 2, 30, DEFAULTS.count),
       lessonPage: toBool(s.lessonPage, DEFAULTS.lessonPage),
+      practicePage: toBool(s.practicePage, DEFAULTS.practicePage),
       answerPage: toBool(s.answerPage, DEFAULTS.answerPage),
       review: toBool(s.review, DEFAULTS.review),
       title: String(s.title == null ? '' : s.title).slice(0, 30)
     }
+    /* 讲解 / 练习 / 解析至少印一样，否则打印出一张白纸。综合复习卷没有讲解页，那时讲解不算数 */
+    var lessonCounts = out.lessonPage && !out.review
+    if (!lessonCounts && !out.practicePage && !out.answerPage) out.practicePage = true
     /* 变式勾选逐知识点清洗；某知识点全取消时无题可出，强制回落到它的第一个变式 */
     root.SumSum.aoshu.topicList.forEach(function (t) {
       var anyOn = false

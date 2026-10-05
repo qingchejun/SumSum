@@ -482,8 +482,9 @@
   }
 
   /*
-   * 主入口：（可选）讲解页 + 题目页 + （可选）解析页。
+   * 主入口：（可选）讲解页 + （可选）题目页 + （可选）解析页，三样至少一样（aoshu-settings 的 sanitize 保证）。
    * opts.review = 综合复习卷：题目来自多个知识点，讲解页无从谈起，标题另取。
+   * 返回每部分各几页，顶栏摘要「讲解 1 页 + 练习 2 页 + 解析 1 页」用。
    */
   function render(container, s, questions, opts) {
     opts = opts || {}
@@ -491,14 +492,16 @@
     var title = s.title || (opts.review
       ? '综合复习 · 已学 ' + (opts.topicCount || 0) + ' 个知识点'
       : topic.titleFor(s))
-    var html = []
+    var lesson = []
+    var practice = []
+    var answer = []
 
     if (!opts.review && s.lessonPage && topic.lesson) {
-      html = html.concat(lessonPages(container, topic, s, topic.lesson.title))
+      lesson = lessonPages(container, topic, s, topic.lesson.title)
     }
 
-    html = html.concat(
-      sheetsHTML(container, questions, {
+    if (s.practicePage) {
+      practice = sheetsHTML(container, questions, {
         title: title,
         gridClass: 'aoshu-grid',
         blockHTML: questionBlockHTML,
@@ -508,22 +511,21 @@
         stretch: true,
         footPrefix: ''
       })
-    )
-
-    if (s.answerPage) {
-      html = html.concat(
-        sheetsHTML(container, questions, {
-          title: title + '（解析）',
-          gridClass: 'sol-grid',
-          blockHTML: solutionBlockHTML,
-          pad: MM.solPad,
-          footPrefix: '解析 · '
-        })
-      )
     }
 
-    container.innerHTML = html.join('')
+    if (s.answerPage) {
+      answer = sheetsHTML(container, questions, {
+        title: title + '（解析）',
+        gridClass: 'sol-grid',
+        blockHTML: solutionBlockHTML,
+        pad: MM.solPad,
+        footPrefix: '解析 · '
+      })
+    }
+
+    container.innerHTML = lesson.concat(practice, answer).join('')
     fitBlocks(container)
+    return { lesson: lesson.length, practice: practice.length, answer: answer.length }
   }
 
   root.SumSum = root.SumSum || {}
