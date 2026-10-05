@@ -175,20 +175,35 @@ body.landscape .sheet {
     background-image: none !important;
   }
 
-  .topbar,
+  /* 只出纸：外壳上的东西一律不上纸（视频、识字图例这类板块自己的屏幕件也在这里一并收掉） */
+  .rail,
+  .work-head,
   .panel,
+  .topic-nav,
   .notice,
+  .confirm-bar,
+  .mark-legend,
+  .video-box,
   .help-dialog {
     display: none !important;
   }
 
-  .layout {
+  /*
+   * 屏幕上骨架是「一屏装下、纸张区自己滚」（.app 定高 100vh + overflow:hidden），
+   * 打印时必须整个还原成普通文档流 —— 否则只印得出第一屏那一页。
+   */
+  .app,
+  .work,
+  .work-body {
     display: block;
+    height: auto;
+    overflow: visible;
   }
 
   .preview {
     padding: 0;
     overflow: visible;
+    background: none;
   }
 
   #preview {

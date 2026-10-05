@@ -1,7 +1,8 @@
 /**
- * 使用说明：顶栏右上角的「使用说明」按钮 + 弹窗。
+ * 使用说明：左侧板块栏底部的「说明」「备份」两个按钮 + 弹窗。
  *
- * 四个页面共用这一个文件，按钮和弹窗都由这里插进 .topbar，HTML 里只需一行 script。
+ * 五个页面共用这一个文件，弹窗由这里插进页面，按钮在板块栏里（tools/rail.py 生成，
+ * 带 data-help / data-backup）。「备份」打开同一个弹窗，直接滚到备份那一段。
  * 打开时默认翻到当前页面那个板块。第一次来这个站的人自动弹一次（记在 localStorage，
  * 读写失败就当「来过」，宁可不弹也别每次都弹）。
  *
@@ -17,20 +18,26 @@
 
   /* 四个板块都一样的部分：放在最上面，谁先看到都能明白这个站怎么用 */
   var COMMON =
+    '<p class="help-fast"><b>最快</b>：打开网站先到「今天」，四张卡片都是上次的设置。' +
+      '点卡片上的「打印」，看一眼纸没问题就打印；想改设置，点卡片进入对应板块。</p>' +
     '<ol class="help-steps">' +
-      '<li><b>左边设置</b>：选题型、范围、题量。</li>' +
-      '<li><b>右边就是纸</b>：屏幕上看到的，就是打印出来的样子。</li>' +
-      '<li><b>点面板底部的蓝色按钮打印</b>：纸张选 A4；打印对话框里把「页眉和页脚」关掉，纸面更干净。</li>' +
+      '<li><b>右边设置</b>：选题型、范围、题量。</li>' +
+      '<li><b>中间就是纸</b>：屏幕上看到的，就是打印出来的样子。</li>' +
+      '<li><b>点右上角蓝色「打印」</b>：纸张选 A4；打印对话框里把「页眉和页脚」关掉，纸面更干净。</li>' +
     '</ol>' +
     '<p class="help-note">口算、数独、识字的设置会写进网址：<b>把链接收藏或发给别人，打开就是一模一样的那张卷子</b>。' +
-      '想换一批题，点「↻ 重新生成」。</p>' +
+      '想换一批题，点「重新生成」。</p>'
+
+  /* 放在弹窗最后：板块栏的「备份」按钮直接滚到这里 */
+  var BACKUP =
     '<div class="help-backup">' +
+      '<h3>换电脑、换网址</h3>' +
       '<p>奥数「已学」标记、识字的进度和错字集存在<b>这台电脑的这个浏览器</b>里。' +
-        '<b>换电脑、换网址</b>（比如从旧网址 sumsum-3nx.pages.dev 搬过来）之前，先在原来的地方点「导出备份」存一个文件，' +
+        '换之前（比如从旧网址 lianxizhi.pages.dev 搬到 lianxizhi.qingchejun.com），先在原来的地方点「导出备份」存一个文件，' +
         '再到新的地方点「导入备份」选这个文件。</p>' +
       '<div class="help-backup-btns">' +
-        '<button type="button" class="btn btn-ghost" data-bk="export">导出备份</button>' +
-        '<button type="button" class="btn btn-ghost" data-bk="import">导入备份</button>' +
+        '<button type="button" class="btn" data-bk="export">导出备份</button>' +
+        '<button type="button" class="btn" data-bk="import">导入备份</button>' +
         '<input type="file" accept=".json,application/json" hidden />' +
       '</div>' +
       '<div class="help-backup-msg" role="status" hidden></div>' +
@@ -45,17 +52,18 @@
         '<b>自己配</b>：「运算模式」选加法 / 减法 / 乘除 / 四则等，再设数值范围；加减法可以指定只出、多出或不出进位退位题。',
         '<b>题量与排版</b>：题目数量、每行几列、A4 纵向或横向都能调。每 10 题一组，中间有虚线，方便分段计时。',
         '<b>常用选项</b>：「跳过送分题」去掉 7+0、5×1 这类题；「附答案页」打印时多一页答案；加减法还能在答案页附凑十 / 破十提示，给家长讲题用。',
-        '满意这张就直接打印；不满意点「↻ 重新生成」换一批。'
+        '满意这张就直接打印；不满意点「重新生成」换一批。'
       ]
     },
     {
       key: '奥数',
       lead: '40 个思维知识点，一天一个。每个知识点有讲解页、练习题和分步解析。',
       items: [
-        '<b>选知识点</b>：面板上方切换「L1 · 立足算理」「L2 · 思维启蒙」，点知识点名称就换到那一课。',
-        '<b>标记进度</b>：点名称前面的小圆点，标成「已学 ✓」。标过之后会出现「接着学 →」按钮，直接跳到下一课。',
+        '<b>选知识点</b>：左边目录切换「L1 · 立足算理」「L2 · 思维启蒙」，点课名就换到那一课。带摄像机图标的课有讲解视频。',
+        '<b>标记进度</b>：点课名前面的小圆点，或顶栏的「标记为已学」，标成「已学 ✓」。目录上方的「接着学 →」直接跳到下一课。',
+        '<b>讲解视频</b>：在右边设置区最上面播放；点「放大播放」铺满屏幕给孩子看，按 Esc 收起，进度不丢。视频只在屏幕上，不会打印。',
         '<b>题型与难度</b>：每个知识点有几种题型，至少勾一种；难度分 20 以内 / 50 以内 / 100 以内。',
-        '<b>推荐这样打印</b>：勾上「附讲解页」和「附解析页」。先和孩子一起看讲解页的方法和例题，再让孩子做练习，最后家长对着解析页讲。',
+        '<b>推荐这样打印</b>：「打印哪几部分」里讲解页、解析页都勾上。先和孩子一起看讲解页（有视频就先看视频），再让孩子做练习，最后家长对着解析页讲。',
         '<b>综合复习</b>：学过几课后，打开「出一张综合复习卷」，会从标了「已学」的知识点里混合出题，解析页标明每题出自哪一课。'
       ]
     },
@@ -66,8 +74,8 @@
         '<b>盘型</b>：初学从四宫格开始，熟练了换六宫格，最后到标准九宫格。',
         '<b>难度滑块</b>：拖动是在选「给几个提示数」，给得越少越难。拖到哪一档都不会卡死。',
         '<b>比赛玩法</b>：「打印份数」选 2 份，同一套题印两张，父子各一张，看谁先做完。',
-        '<b>在屏幕上玩</b>：勾上「屏幕上可以直接玩」，先点空格子，再点下方数字条（或按键盘 1～9）。方向键移动，退格键擦除，Ctrl+Z 撤销。',
-        '<b>卡住了</b>：点「💡 提示」，会填上一格并说明为什么是这个数。直接点数字条上的数，能把盘上所有同样的数高亮出来。',
+        '<b>在屏幕上玩</b>：打开「屏幕上可以直接玩」，先点空格子，再点纸右边作答面板上的数字（或按键盘 1～9）。方向键移动，退格键擦除，Ctrl+Z 撤销。',
+        '<b>卡住了</b>：点「💡 提示」，会填上一格并说明为什么是这个数。直接点作答面板上的数字，能把盘上所有同样的数高亮出来。',
         '<b>做完了</b>：点「提交批改」（或按回车），错的格子会标红。计时从填第一个数开始，全对才停。'
       ]
     },
@@ -77,17 +85,17 @@
       items: [
         '<b>本周复习</b>：打印这一周的字。印完点「下一周 ▶」，进度会记住，下次打开还在这一周。',
         '<b>记下不会的字</b>：孩子念不出来的字，在屏幕卷面上点一下，格子变红，这个字就进了错字集。可以边念边点，也可以先在纸上圈出来，事后对着点。<b>纸上不会印出任何标记</b>。',
-        '<b>错字集</b>：切到「错字集」页签，打印一张全是错字的卷子。格子右上角的数字表示还要认出几次：认出来了点一下，2 变 1；<b>改天</b>再认出来，再点一下才移出。当天点错了，再点一下就撤回。',
-        '<b>反复错的字</b>：每个字累计进过几次错字集都记着，移出、清空都不会抹掉。进过 2 次以上的，卷面格子左上角标「×3」这样的次数，面板上「错字集」一栏也会列出来。',
-        '<b>顺带复习错字</b>：在「本周复习」里勾上「复习卷后面附一页错字」，会从错字集里随机抽 20 个字附在后面。',
-        '<b>换电脑、换网址</b>：错字集和进度只存在这个浏览器里，用上面的「导出备份 / 导入备份」带过去。'
+        '<b>错字集</b>：切到「错字集」，打印一张全是错字的卷子。认出来了点一下，红底变成<b>半红</b>；<b>改天</b>再认出来，再点一下才移出。当天点错了，再点一下就撤回。',
+        '<b>反复错的字</b>：每个字累计进过几次错字集都记着，移出、清空都不会抹掉。进过 2 次以上的，卷面格子左上角标「×3」这样的次数，右边「错字集」一栏也会列出来。',
+        '<b>顺带复习错字</b>：在「本周复习」里打开「附一页错字」，会从错字集里随机抽 20 个字附在后面。',
+        '<b>换电脑、换网址</b>：错字集和进度只存在这个浏览器里，用下面的「导出备份 / 导入备份」带过去。'
       ]
     }
   ]
 
   function currentModule() {
-    var a = doc.querySelector('.topbar-tabs a.active')
-    var name = a ? a.textContent.trim() : ''
+    var a = doc.querySelector('.rail-link.active')
+    var name = a ? a.getAttribute('data-module') : ''
     for (var i = 0; i < MODULES.length; i++) {
       if (MODULES[i].key === name) return i
     }
@@ -95,14 +103,9 @@
   }
 
   function build() {
-    var bar = doc.querySelector('.topbar')
-    if (!bar) return
-
-    var btn = doc.createElement('button')
-    btn.type = 'button'
-    btn.className = 'help-btn'
-    btn.innerHTML = '<span class="help-q" aria-hidden="true">?</span>使用说明'
-    bar.appendChild(btn)
+    var helpBtn = doc.querySelector('[data-help]')
+    var backupBtn = doc.querySelector('[data-backup]')
+    if (!helpBtn) return
 
     var tabs = MODULES.map(function (m, i) {
       return '<button type="button" class="stage-tab" data-i="' + i + '">' + m.key + '</button>'
@@ -126,7 +129,7 @@
         '<h3 class="help-h">三步出一张练习纸</h3>' + COMMON +
         '<h3 class="help-h">四个板块</h3>' +
         '<div class="stage-tabs help-tabs">' + tabs + '</div>' +
-        bodies +
+        bodies + BACKUP +
       '</div>'
     doc.body.appendChild(dlg)
 
@@ -145,7 +148,14 @@
       dlg.querySelector('.help-body').scrollTop = 0
     }
 
-    btn.addEventListener('click', open)
+    /* 「备份」：同一个弹窗，直接滚到备份那一段 */
+    function openBackup() {
+      open()
+      dlg.querySelector('.help-backup').scrollIntoView({ block: 'start' })
+    }
+
+    helpBtn.addEventListener('click', open)
+    if (backupBtn) backupBtn.addEventListener('click', openBackup)
     dlg.querySelector('.help-close').addEventListener('click', function () { dlg.close() })
     dlg.querySelector('.help-tabs').addEventListener('click', function (e) {
       var b = e.target.closest('.stage-tab')
@@ -226,7 +236,7 @@
         '导入后，这个浏览器上<b>同样的这几项会被备份里的替换掉</b>。' +
         '<div class="help-backup-btns">' +
           '<button type="button" class="btn btn-primary" data-bk="confirm">确认导入</button>' +
-          '<button type="button" class="btn btn-ghost" data-bk="cancel">取消</button>' +
+          '<button type="button" class="btn" data-bk="cancel">取消</button>' +
         '</div>')
     }
 

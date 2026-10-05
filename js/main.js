@@ -141,14 +141,25 @@
     $('page-style').textContent = '@page { size: A4 ' + paper + '; margin: 15mm; }'
   }
 
-  /* 窄屏时按容器宽度整体缩放预览（zoom 会影响布局尺寸；打印样式里会强制还原） */
+  /* 纸张区放不下一整张 A4 时整体缩小（见 js/shell.js 的 fit） */
   function fitPreview() {
-    var wrap = $('preview-wrap')
-    var sheet = doc.querySelector('.sheet')
-    var preview = $('preview')
-    if (!sheet || !preview) return
-    var factor = Math.min(1, (wrap.clientWidth - 8) / sheet.offsetWidth)
-    preview.style.zoom = factor < 1 ? String(factor) : ''
+    S.shell.fit()
+  }
+
+  /*
+   * 屏幕外壳上跟着设置变的几处：预设按钮高亮、「更多选项」开了几项、顶栏摘要。
+   * 「更多选项」默认折叠，所以要在标题上写明开着几项 —— 否则家长不知道里面有没有开着的开关。
+   */
+  function paintShell(s) {
+    var preset = S.settings.presetOf(s)
+    Array.prototype.forEach.call(doc.querySelectorAll('#preset-row .preset'), function (b) {
+      b.classList.toggle('on', b.textContent === preset)
+    })
+    var on = Array.prototype.filter.call(doc.querySelectorAll('#more-opts .check'), function (label) {
+      return !label.hidden && label.querySelector('input').checked
+    }).length
+    $('more-count').textContent = '· 已开 ' + on + ' 项'
+    S.shell.summary([preset, S.settings.MODE_LABELS[s.mode], s.count + ' 题', s.columns + ' 列'])
   }
 
   /* 四则运算里含 × 或 ÷ 的题目占比，用来判断卷面是不是退化成了纯加减 */
@@ -172,6 +183,7 @@
     var result = S.generator.generate(settings)
     S.render.render($('preview'), settings, result.questions)
     fitPreview()
+    paintShell(settings)
 
     var notice = $('notice')
     /* 折行的格子由 render.fitSheet 打上 .q-wrap：算式没被裁掉，但版面挤 */

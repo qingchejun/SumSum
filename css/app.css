@@ -1,33 +1,41 @@
-/* ============ 屏幕 UI：制图台风（冷灰画布 + 白纸 + 蓝墨水） ============
+/* ============ 屏幕 UI：工作台（左板块栏 + 顶栏 + 中间纸 + 右设置） ============
  *
- * 打印时 .topbar / .panel / .notice 整块隐藏（见 css/sheet.css 打印段），
- * 本文件只管屏幕。颜色变量名沿用旧名（--blue / --red / --card …），
- * 因为 css/shudu.css、css/shizi.css 都拿它们做了 var() 引用。
+ * 2026-10 按 Claude Design 定稿「A 工作台 + 今天首页」重做。只管屏幕；
+ * 打印时导航、顶栏、设置区、提示条整块隐藏（见 css/sheet.css 打印段），卷面一点不动。
  *
- * 用色规矩：蓝 = 可操作 / 当前选中；红 = 错（填错、错字、警告）。
- * 红色不再用于主按钮，免得「打印」和「填错了」长得一个样。
+ * 颜色变量名沿用旧名（--blue / --red / --card …），因为 css/shudu.css、css/shizi.css
+ * 都拿它们做了 var() 引用；值换成了定稿规范里的色板。
+ *
+ * 用色规矩：蓝 = 可操作 / 当前选中；红 = 错（填错、错字、会丢数据的操作）；绿 = 已完成（奥数已学）。
+ * 每个板块只有一个蓝色实心按钮「打印」，固定在顶栏右侧。
  */
 
 :root {
-  --canvas: #e6eaf0;         /* 画布：冷灰制图台 */
-  --dot: rgba(23, 32, 51, 0.09);
-  --card: #ffffff;           /* 面板 / 顶栏 */
-  --card-edge: #dde2ea;      /* 细线 */
-  --field: #f6f8fb;          /* 输入框底色 */
-  --ink: #172033;
-  --ink-soft: #5f6b7e;
-  --ink-faint: #97a1b1;
-  --blue: #2f4fe0;           /* 蓝墨水：主色 */
-  --blue-deep: #1f36b0;
-  --blue-tint: #eef1fe;
-  --red: #d93a2b;            /* 批改红：只表示「错」 */
-  --red-deep: #b42d20;
-  --green: #1d8a4e;          /* 已学 */
-  --green-tint: #edf8f1;
-  --topbar-h: 56px;
-  --panel-w: 360px;
+  --canvas: #eceef1;         /* 桌面底 */
+  --dot: #d3d7de;            /* 桌面点阵 */
+  --card: #ffffff;           /* 面板 / 纸 */
+  --card-edge: #d9dde3;      /* 分隔线 */
+  --line-strong: #c9ced6;    /* 控件描边 */
+  --field: #f6f7f9;          /* 次级底 */
+  --ink: #1a1d23;
+  --ink-2: #4a505b;
+  --ink-soft: #646a75;
+  --ink-faint: #9aa0aa;
+  --blue: #2a55c9;
+  --blue-deep: #1e419e;
+  --blue-tint: #e6ecfa;
+  --red: #c62f28;
+  --red-deep: #a32620;
+  --red-tint: #fcedec;
+  --mark: #f4bdb8;           /* 错字红底 */
+  --green: #2b7a4b;
+  --green-tint: #e9f4ed;
+  --rail: #1a1d23;
+  --rail-w: 76px;
+  --panel-w: 340px;
+  --head-h: 64px;
   --radius: 8px;
-  --focus: 0 0 0 3px rgba(47, 79, 224, 0.22);
+  --focus: 0 0 0 3px rgba(42, 85, 201, 0.25);
 }
 
 * {
@@ -42,16 +50,17 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/*
+ * 字体和行高【不能动】：卷面（.sheet）从 body 继承这两个值，改了讲解页、解析页的行距就变，
+ * 动态装页量出来的块高跟着变，分页可能就不一样了（2026-10 改版时实测踩过：1.6 → 1.5 讲解页明显变紧）。
+ */
 body {
   margin: 0;
   color: var(--ink);
   font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC",
     "MiSans", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   font-variant-numeric: tabular-nums;
-  background-color: var(--canvas);
-  /* 点阵底纹：方格本的格点，只留交点 */
-  background-image: radial-gradient(var(--dot) 1px, transparent 1.2px);
-  background-size: 20px 20px;
+  background: var(--canvas);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -59,6 +68,7 @@ button,
 input,
 select {
   font: inherit;
+  color: inherit;
 }
 
 :focus-visible {
@@ -66,345 +76,237 @@ select {
   box-shadow: var(--focus);
 }
 
-/* ---------- 顶栏：品牌 + 板块切换 ---------- */
-
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  height: var(--topbar-h);
-  padding: 0 20px;
-  background: var(--card);
-  border-bottom: 1px solid var(--card-edge);
-}
-
-/* HTML 里品牌写在导航后面（历史顺序），用 order 摆到最左 */
-.topbar-brand {
-  order: -1;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 15px;
-  font-weight: 700;
-  white-space: nowrap;
-  color: var(--ink);
-}
-
-.topbar-brand::before {
-  content: "+";
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: var(--blue);
-  color: #fff;
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.topbar-brand small {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--ink-soft);
-}
-
-/* 四个标签 + 品牌名在 375px 手机上放不下，品牌是装饰、标签是导航，窄屏收起品牌 */
-@media (max-width: 520px) {
-  .topbar-brand {
-    display: none;
-  }
-}
-
-.topbar-tabs {
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 10px;
-  background: #eef1f5;
-}
-
-.topbar-tabs a {
-  padding: 5px 16px;
-  font-size: 14px;
-  white-space: nowrap;
-  color: var(--ink-soft);
-  text-decoration: none;
-  border-radius: 7px;
-  transition: background 0.15s, color 0.15s;
-}
-
-.topbar-tabs a:hover {
-  color: var(--ink);
-}
-
-.topbar-tabs a.active {
-  color: var(--ink);
-  font-weight: 600;
-  background: var(--card);
-  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.12), 0 0 0 1px rgba(23, 32, 51, 0.04);
-}
-
-/* 右上角「使用说明」：弹窗本体由 js/help.js 插进页面，打印时隐藏（见 sheet.css） */
-.help-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-left: auto;
-  height: 32px;
-  padding: 0 12px 0 8px;
-  font-size: 13px;
-  font-weight: 600;
+a {
   color: var(--blue);
-  background: var(--blue-tint);
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  cursor: pointer;
-  white-space: nowrap;
+  text-decoration: none;
 }
 
-.help-btn:hover {
-  border-color: rgba(47, 79, 224, 0.3);
+/* ---------- 骨架：一屏装下，纸张区和设置区各自滚动 ---------- */
+
+/*
+ * 板块栏固定不动，纸张区（.preview）和设置区（.panel）各是一个滚动容器。
+ * 以前是整页滚，设置面板比一屏高时「打印」按钮要靠 sticky 吸底；
+ * 现在按钮在顶栏里，永远看得见。
+ */
+.app {
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-/* 窄屏只留问号，保证四个标签不折行 */
-@media (max-width: 520px) {
-  .help-btn {
-    padding: 0 7px;
-    font-size: 0;
-  }
-}
-
-.help-q {
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--blue);
-  color: #fff;
-  font-size: 12px;
-  line-height: 1;
-}
-
-.help-dialog {
-  width: min(620px, calc(100vw - 32px));
-  max-height: min(760px, calc(100vh - 48px));
-  padding: 0;
-  color: var(--ink);
-  background: var(--card);
-  border: 1px solid var(--card-edge);
-  border-radius: 12px;
-  box-shadow: 0 24px 60px rgba(23, 32, 51, 0.25);
-}
-
-.help-dialog[open] {
+.work {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
-.help-dialog::backdrop {
-  background: rgba(23, 32, 51, 0.4);
-}
-
-.help-head {
+.work-body {
+  flex: 1;
+  min-height: 0;
   display: flex;
+}
+
+/* ---------- 左侧板块栏 ---------- */
+
+.rail {
+  flex: none;
+  width: var(--rail-w);
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px 12px 24px;
-  border-bottom: 1px solid var(--card-edge);
+  gap: 6px;
+  padding: 16px 0;
+  overflow-y: auto;
+  background: var(--rail);
+  scrollbar-width: none;
 }
 
-.help-head h2 {
-  margin: 0;
-  font-size: 17px;
+.rail-brand {
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #fff;
+  white-space: nowrap;
 }
 
-.help-close {
-  width: 32px;
-  height: 32px;
-  font-size: 22px;
-  line-height: 1;
-  color: var(--ink-soft);
-  background: none;
+.rail-brand:hover {
+  color: #fff;
+}
+
+.rail-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 60px;
+  padding: 9px 0;
+  font-size: 12px;
+  line-height: 1.2;
+  color: #aeb4be;
+  background: transparent;
   border: 0;
-  border-radius: var(--radius);
+  border-radius: 10px;
   cursor: pointer;
 }
 
-.help-close:hover {
-  color: var(--ink);
-  background: var(--field);
+.rail-link:hover {
+  color: #fff;
+  background: #2a2f38;
 }
 
-.help-body {
-  padding: 4px 24px 24px;
-  overflow-y: auto;
+.rail-link.active {
+  color: #fff;
+  background: var(--blue);
 }
 
-.help-h {
-  margin: 18px 0 8px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--ink-faint);
+.rail-link svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.help-steps,
-.help-list {
-  margin: 0;
-  padding-left: 1.4em;
-  line-height: 1.7;
+.rail-gap {
+  flex: 1;
 }
 
-.help-steps li + li,
-.help-list li + li {
-  margin-top: 6px;
+.rail-link.small svg {
+  width: 20px;
+  height: 20px;
 }
 
-.help-note {
-  margin: 12px 0 0;
-  padding: 10px 12px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--ink-soft);
-  background: var(--field);
-  border-radius: var(--radius);
-}
+/* ---------- 顶栏：板块名 + 当前这张的摘要 + 重新生成 / 打印 ---------- */
 
-.help-backup {
-  margin-top: 12px;
-  padding: 12px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--ink-soft);
-  border: 1px solid var(--card-edge);
-  border-radius: var(--radius);
-}
-
-.help-backup p {
-  margin: 0;
-}
-
-.help-backup-btns {
+.work-head {
+  flex: none;
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  min-height: var(--head-h);
+  padding: 10px 24px;
+  background: var(--card);
+  border-bottom: 1px solid var(--card-edge);
 }
 
-.help-backup-btns .btn {
-  height: 34px;
+.work-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.work-sum {
   font-size: 13px;
+  color: var(--ink-soft);
 }
 
-.help-backup-msg {
-  margin-top: 10px;
-  padding: 10px 12px;
-  color: var(--ink);
-  background: var(--field);
+.work-grow {
+  flex: 1;
+}
+
+.work-head .btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- 纸张区：桌面点阵 + 白纸 ---------- */
+
+.preview {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 24px;
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+#preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.notice {
+  max-width: 210mm;
+  margin: 0 auto 16px;
+  padding: 10px 14px 10px 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #6b4200;
+  background: #fff8e8;
+  border: 1px solid #f1d9a6;
+  border-left: 3px solid #e3a21a;
   border-radius: var(--radius);
 }
 
-.help-backup-msg ul {
-  margin: 4px 0 6px;
-  padding-left: 1.3em;
-}
-
-.help-backup-msg.is-ok {
-  background: var(--green-tint);
-}
-
-.help-backup-msg.is-bad {
-  color: var(--red-deep);
-  background: #fdf0ee;
-}
-
-.help-tabs {
-  margin-bottom: 14px;
-}
-
-.help-lead {
-  margin: 0 0 10px;
-  font-weight: 600;
-}
-
-.layout {
+/* 从「今天」点「打印」进来：先看一眼纸，再确认打印 */
+.confirm-bar {
   display: flex;
-  align-items: flex-start;
-  min-height: calc(100vh - var(--topbar-h));
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  max-width: 210mm;
+  margin: 0 auto 16px;
+  padding: 12px 14px 12px 16px;
+  font-size: 14px;
+  color: var(--blue-deep);
+  background: var(--blue-tint);
+  border: 1px solid #c3d0f2;
+  border-radius: 10px;
 }
 
-/* ---------- 设置面板 ---------- */
+.confirm-bar p {
+  flex: 1;
+  min-width: 220px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.confirm-bar .btn {
+  height: 36px;
+}
+
+/* ---------- 右侧设置区 ---------- */
 
 .panel {
-  position: sticky;
-  top: var(--topbar-h); /* 顶栏 sticky 在最上面，面板贴在它下方 */
   flex: none;
   width: var(--panel-w);
-  height: calc(100vh - var(--topbar-h));
   overflow-y: auto;
-  padding: 22px 24px 0;
   background: var(--card);
-  border-right: 1px solid var(--card-edge);
+  border-left: 1px solid var(--card-edge);
   scrollbar-width: thin;
 }
 
-/* 面板页头：图标块 + 标题 + 一句话说明 */
-.brand {
-  display: grid;
-  grid-template-columns: 40px 1fr;
-  column-gap: 12px;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.brand-mark {
-  grid-row: span 2;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--blue-tint);
-  color: var(--blue);
-  font-size: 19px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.brand-name {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.3;
-  color: var(--ink);
-}
-
-.brand-sub {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.45;
-  color: var(--ink-soft);
-}
-
-/* 分组：之间用一条细线隔开，标题只写名字，说明放下面的 .hint */
 .group {
-  padding: 16px 0;
-  border-top: 1px solid var(--card-edge);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e4e7ec;
 }
 
-.brand + .group,
-.brand + .stage-tabs + .group {
-  border-top: none;
-  padding-top: 0;
+.group:last-child {
+  border-bottom: 0;
 }
 
 .group-title {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--ink);
@@ -412,29 +314,29 @@ select {
 
 .group-title .sub {
   margin-left: 6px;
-  font-weight: 400;
-  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
 }
 
 .input {
   width: 100%;
   height: 36px;
-  padding: 0 11px;
+  padding: 0 10px;
   font-size: 14px;
   color: var(--ink);
-  background: var(--field);
-  border: 1px solid var(--card-edge);
-  border-radius: var(--radius);
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
   outline: none;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .input:hover {
-  border-color: #c7cfdb;
+  border-color: #aeb4be;
 }
 
 .input:focus {
-  background: #fff;
   border-color: var(--blue);
   box-shadow: var(--focus);
 }
@@ -444,30 +346,28 @@ select.input {
   -webkit-appearance: none;
   padding-right: 30px;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235f6b7e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23646a75' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 11px center;
 }
 
 .pair {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.pair + .pair {
-  margin-top: 10px;
-}
-
 .field {
-  flex: 1;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
 }
 
-.field > span {
-  display: block;
-  margin-bottom: 4px;
+.field > span,
+.lbl {
   font-size: 12px;
+  font-weight: 500;
   color: var(--ink-soft);
 }
 
@@ -477,8 +377,8 @@ select.input {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 6px 0;
-  font-size: 13.5px;
+  padding: 3px 0;
+  font-size: 13px;
   line-height: 1.45;
   cursor: pointer;
   user-select: none;
@@ -496,8 +396,8 @@ select.input {
   width: 34px;
   height: 20px;
   margin: 0;
-  border-radius: 999px;
-  background: #cfd5df;
+  border-radius: 10px;
+  background: var(--line-strong);
   cursor: pointer;
   transition: background 0.18s;
 }
@@ -511,7 +411,7 @@ select.input {
   height: 16px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.25);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   transition: transform 0.18s;
 }
 
@@ -535,337 +435,540 @@ select.input {
   }
 }
 
-/* ---------- 分段切换（奥数 L1/L2、识字三种模式） ---------- */
+/* 勾选框（奥数题型、打印哪几部分）：方框打勾，比开关更像「从几样里挑」 */
+.tick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 13px;
+  line-height: 1.45;
+  cursor: pointer;
+  user-select: none;
+}
 
-.stage-tabs {
+.tick input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  border: 1.5px solid #b4bac4;
+  border-radius: 4px;
+  background: #fff center / 12px no-repeat;
+  cursor: pointer;
+}
+
+.tick input:checked {
+  border-color: var(--blue);
+  background-color: var(--blue);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12l5 5 9-10' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.tick > span {
+  flex: 1;
+}
+
+.tick .lbl {
+  flex: none;
+}
+
+/* ---------- 分段切换 ---------- */
+
+/*
+ * 两种来源长得一样：
+ *   .stage-tabs / .stage-tab —— 手写的按钮组（识字模式、奥数 L1/L2、说明弹窗的板块页签）；
+ *   .seg-ctl —— js/shell.js 把 <select data-seg> 变出来的按钮组，select 本身藏起来仍是数据源。
+ * 不叫 .seg：奥数线段图已经用了 .seg-diagram .seg。
+ */
+.stage-tabs,
+.seg-ctl {
   display: flex;
   gap: 2px;
-  margin-bottom: 12px;
   padding: 3px;
-  border-radius: 10px;
-  background: #eef1f5;
+  border-radius: 8px;
+  background: #e4e7ec;
 }
 
-.stage-tab {
+.stage-tab,
+.seg-ctl button {
   flex: 1;
+  min-width: 0;
   padding: 6px 8px;
   font-size: 13px;
-  font-weight: 500;
   line-height: 1.4;
   white-space: nowrap;
-  color: var(--ink-soft);
+  color: var(--ink-2);
   background: transparent;
-  border: none;
-  border-radius: 7px;
+  border: 0;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
 }
 
-.stage-tab:hover {
+.stage-tab:hover,
+.seg-ctl button:hover {
   color: var(--ink);
 }
 
-.stage-tab.active {
-  color: var(--ink);
+.stage-tab.active,
+.seg-ctl button.on {
+  color: var(--blue);
   font-weight: 600;
-  background: var(--card);
-  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.12), 0 0 0 1px rgba(23, 32, 51, 0.04);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(20, 24, 32, 0.14);
 }
 
-/* ---------- 奥数知识点目录（胶囊按钮） ---------- */
+/* ---------- 数量步进器（js/shell.js 给 input[data-stepper] 套上 − ＋） ---------- */
 
-.topic-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.topic-chip {
+.stepper {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px 4px 5px;
-  font-size: 12.5px;
-  line-height: 1.4;
-  white-space: nowrap;
-  color: var(--ink);
-  background: var(--card);
-  border: 1px solid var(--card-edge);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
-.topic-chip:hover {
-  border-color: var(--blue);
+.stepper .btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 16px;
 }
 
-.topic-chip.active {
-  background: var(--blue);
-  border-color: var(--blue);
-  color: #fff;
-  font-weight: 600;
-}
-
-/* 清单式「已学」圆点：空心 ○ 未学，点一下变绿 ✓；点名称才是选中知识点 */
-.chip-dot {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  border: 1.5px solid #c3cad6;
-  border-radius: 50%;
-  background: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 13px;
+.stepper .input {
+  width: 56px;
+  height: 32px;
+  padding: 0 4px;
   text-align: center;
-  color: transparent;
-  transition: border-color 0.15s, background 0.15s;
+  font-weight: 600;
+  -moz-appearance: textfield;
 }
 
-.topic-chip:hover .chip-dot {
-  border-color: var(--green);
+.stepper .input::-webkit-inner-spin-button,
+.stepper .input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-.topic-chip.done {
-  color: var(--green);
-  border-color: #b5dcc4;
-  background: var(--green-tint);
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.topic-chip.done .chip-dot {
-  border-color: var(--green);
-  background: var(--green);
-  color: #fff;
+/* ---------- 折叠的「更多选项」 ---------- */
+
+.more > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
 }
 
-/* 选中且已学：蓝底 active 下圆点仍是绿底 ✓，状态不被盖掉 */
-.topic-chip.done.active {
-  color: #fff;
-  background: var(--blue);
-  border-color: var(--blue);
+.more > summary::-webkit-details-marker {
+  display: none;
 }
 
-.topic-chip.done.active .chip-dot {
-  border-color: #fff;
+.more > summary::after {
+  content: "";
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-right: 2px solid var(--ink-soft);
+  border-bottom: 2px solid var(--ink-soft);
+  transform: rotate(45deg) translateY(-2px);
 }
 
-.topic-chip:disabled {
-  padding-left: 10px; /* 无圆点，左内边距补回来 */
-  color: var(--ink-faint);
-  background: transparent;
-  border-style: dashed;
-  cursor: default;
+.more[open] > summary::after {
+  transform: rotate(225deg) translateY(-2px);
 }
 
-.topic-chip:disabled:hover {
-  border-color: var(--card-edge);
+.more[open] > summary {
+  margin-bottom: 6px;
 }
 
-.catalog-hint {
-  margin: 8px 0 0;
-  font-size: 12px;
-  line-height: 1.5;
+.more .sub {
+  font-weight: 400;
   color: var(--ink-soft);
 }
 
-/* 「接着学下一个」：按大纲顺序指向第一个还没标已学的知识点 */
-.next-topic {
-  display: block;
-  width: 100%;
-  margin-top: 10px;
-  padding: 8px 12px;
-  font-size: 13px;
-  line-height: 1.5;
-  text-align: left;
-  color: var(--green);
-  background: var(--green-tint);
-  border: 1px solid #b5dcc4;
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-
-.next-topic:hover {
-  background: #e1f3e8;
-}
-
-/* ---------- 口算快速预设 ---------- */
+/* ---------- 口算快速预设（胶囊） ---------- */
 
 .preset-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .preset {
-  padding: 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
   font-size: 13px;
-  line-height: 1.4;
   color: var(--ink);
-  background: var(--field);
-  border: 1px solid var(--card-edge);
-  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .preset:hover {
   color: var(--blue);
+  border-color: var(--blue);
+}
+
+.preset.on {
+  color: var(--blue);
+  font-weight: 600;
   background: var(--blue-tint);
-  border-color: #c9d2fb;
+  border-color: var(--blue);
 }
 
-/* ---------- 操作栏：贴在面板底部常驻 ---------- */
-
-/*
- * 生成 / 打印是每天都要点的主操作，面板又比一屏高，所以吸在面板底部。
- * 左右用负外边距铺满面板宽度、底色不透明，否则后面滚上来的选项会从按钮缝里露出来。
- * 桌面端 .panel 自己是滚动容器，手机端面板是静态的、由页面滚动，
- * sticky bottom 在两种情形下都贴在可视区底部。
- */
-.actions {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-  display: flex;
-  gap: 10px;
-  margin: 8px -24px 0;
-  padding: 14px 24px 18px;
-  background: var(--card);
-  border-top: 1px solid var(--card-edge);
-}
+/* ---------- 按钮 ---------- */
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   height: 40px;
-  padding: 0 14px;
+  padding: 0 16px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1;
   white-space: nowrap;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  border: 1px solid transparent;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn:hover {
+  color: var(--blue);
+  border-color: var(--blue);
 }
 
 .btn:active {
   transform: translateY(1px);
 }
 
-.actions .btn {
-  flex: 1;
-}
-
-.actions .btn-primary {
-  flex: 1.3;
-}
-
 .btn-primary {
   color: #fff;
   background: var(--blue);
+  border-color: var(--blue);
 }
 
 .btn-primary:hover {
+  color: #fff;
   background: var(--blue-deep);
+  border-color: var(--blue-deep);
 }
 
+.btn-lg {
+  height: 44px;
+  padding: 0 22px;
+  font-size: 15px;
+}
+
+.btn-sm {
+  height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+/* 会丢数据的操作（清空错字集）：红字描边，不做实心 */
+.btn-danger {
+  color: var(--red);
+}
+
+.btn-danger:hover {
+  color: var(--red);
+  border-color: var(--red);
+  background: var(--red-tint);
+}
+
+/* 旧类名：白底描边按钮，和 .btn 默认一样 */
 .btn-ghost {
-  color: var(--ink);
-  background: var(--card);
-  border-color: var(--card-edge);
-}
-
-.btn-ghost:hover {
-  border-color: #c3cad6;
-  background: var(--field);
+  background: #fff;
 }
 
 .btn:disabled,
 .btn:disabled:hover {
   opacity: 0.45;
-  background: var(--card);
+  color: var(--ink);
+  background: #fff;
+  border-color: var(--line-strong);
   cursor: default;
   transform: none;
 }
 
+.btn-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .hint {
-  margin: 8px 0 0;
+  margin: 0;
   font-size: 12px;
   line-height: 1.55;
   color: var(--ink-soft);
 }
 
-/* 面板末尾那段「设置写进网址」的说明，放在操作栏上面 */
-.panel > .hint {
-  margin: 0;
-  padding: 14px 0 6px;
-  border-top: 1px solid var(--card-edge);
-  color: var(--ink-faint);
+/* ---------- 使用说明弹窗（js/help.js 插入；打印时隐藏，见 sheet.css） ---------- */
+
+.help-dialog {
+  width: min(680px, calc(100vw - 32px));
+  max-height: min(820px, calc(100vh - 48px));
+  padding: 0;
+  color: var(--ink);
+  background: var(--card);
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
 }
 
-/* ---------- 预览画布 ---------- */
-
-.preview {
-  flex: 1;
-  min-width: 0;
-  padding: 40px 32px 64px;
-  overflow-x: auto;
-}
-
-#preview {
+.help-dialog[open] {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 32px;
 }
 
-.notice {
-  max-width: 210mm;
-  margin: 0 auto 20px;
-  padding: 10px 14px 10px 16px;
+.help-dialog::backdrop {
+  background: rgba(20, 24, 32, 0.45);
+}
+
+.help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e4e7ec;
+}
+
+.help-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.help-close {
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink-2);
+  background: #f1f3f6;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.help-close:hover {
+  color: var(--ink);
+  background: #e4e7ec;
+}
+
+.help-body {
+  padding: 4px 24px 24px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.help-h {
+  margin: 18px 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.help-fast {
+  margin: 0 0 10px;
+  padding: 10px 12px;
   font-size: 13px;
-  line-height: 1.55;
-  color: #6b4200;
-  background: #fff8e8;
-  border: 1px solid #f1d9a6;
-  border-left: 3px solid #e3a21a;
+  color: var(--blue-deep);
+  background: var(--blue-tint);
   border-radius: var(--radius);
 }
 
-/* ---------- 移动端：面板置顶，预览横向滚动 ---------- */
+.help-steps,
+.help-list {
+  margin: 0;
+  padding-left: 1.4em;
+  line-height: 1.7;
+}
 
+.help-list {
+  font-size: 13px;
+}
+
+.help-steps li + li,
+.help-list li + li {
+  margin-top: 6px;
+}
+
+.help-note {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  background: var(--field);
+  border-radius: var(--radius);
+}
+
+.help-backup {
+  margin-top: 18px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+}
+
+.help-backup h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.help-backup p {
+  margin: 0;
+}
+
+.help-backup-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.help-backup-btns .btn {
+  height: 36px;
+  font-size: 13px;
+}
+
+.help-backup-msg {
+  margin-top: 10px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--field);
+  border-radius: var(--radius);
+}
+
+.help-backup-msg ul {
+  margin: 4px 0 6px;
+  padding-left: 1.3em;
+}
+
+.help-backup-msg.is-ok {
+  background: var(--green-tint);
+}
+
+.help-backup-msg.is-bad {
+  color: var(--red-deep);
+  background: var(--red-tint);
+}
+
+.help-tabs {
+  margin-bottom: 14px;
+}
+
+.help-lead {
+  margin: 0 0 10px;
+  color: var(--ink-2);
+}
+
+/* ---------- 窄屏：板块栏横到顶上，设置在前、纸在后，整页滚动 ---------- */
+
+/*
+ * 这个站以电脑 + 打印为准，手机只要不塌、不横向滚动、能用。
+ * 一屏装下的骨架在手机上没意义（纸张区会被挤成一条缝），所以退回整页滚动。
+ */
 @media (max-width: 900px) {
-  .layout {
+  .app {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .rail {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex-direction: row;
+    width: 100%;
+    padding: 6px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .rail-brand {
+    margin: 0 8px 0 4px;
+  }
+
+  .rail-link {
+    flex: none;
+    width: 52px;
+    padding: 6px 0;
+    font-size: 11px;
+  }
+
+  .rail-link svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .rail-gap {
+    flex: 1 0 0;
+  }
+
+  .work-head {
+    padding: 10px 16px;
+  }
+
+  .work-body {
     flex-direction: column;
   }
 
   .panel {
-    position: static;
+    order: -1;
     width: 100%;
-    height: auto;
-    /* 必须去掉 overflow-y:auto：面板不再是滚动容器，
-       .actions 的 sticky 才会贴在视口底部而不是原地不动 */
     overflow: visible;
-    padding: 18px 16px 0;
-    border-right: none;
+    border-left: 0;
     border-bottom: 1px solid var(--card-edge);
   }
 
-  .actions {
-    margin: 8px -16px 0;
-    padding: 12px 16px 14px;
-  }
-
   .preview {
-    width: 100%;
-    padding: 20px 12px 40px;
+    overflow: visible;
+    padding: 16px 12px 40px;
   }
 
   #preview {
     align-items: flex-start;
   }
+}
+
+/* ---------- 进度条（奥数已学、首页卡片） ---------- */
+
+.progress {
+  height: 6px;
+  overflow: hidden;
+  background: #e4e7ec;
+  border-radius: 3px;
+}
+
+.progress > i {
+  display: block;
+  height: 100%;
+  background: var(--green);
+  border-radius: 3px;
 }

@@ -42,6 +42,28 @@
     { label: '四则入门', patch: { mode: 'mixed', min: 0, max: 20, parens: false } }
   ]
 
+  /* 给人看的模式名：顶栏摘要、「今天」卡片用。和 kousuan.html 下拉框的选项一致，只去掉括号里的说明 */
+  var MODE_LABELS = Object.freeze({
+    add: '加法',
+    sub: '减法',
+    addsub: '加减法混合',
+    mul: '乘法',
+    div: '除法',
+    muldiv: '乘除法混合',
+    addsubmul: '加减法 + 少量乘法',
+    mixed: '四则运算'
+  })
+
+  /* 当前设置和某个预设的 patch 逐项相同，就返回预设名（预设按钮高亮、卡片标题都靠它），否则 '' */
+  function presetOf(s) {
+    var hit = PRESETS.filter(function (p) {
+      return Object.keys(p.patch).every(function (k) {
+        return s[k] === p.patch[k]
+      })
+    })[0]
+    return hit ? hit.label : ''
+  }
+
   function clampInt(v, min, max, fallback) {
     if (v === '' || v == null) return fallback // Number('') === 0，需单独处理空输入
     var n = Number(v)
@@ -155,6 +177,8 @@
   root.SumSum.settings = {
     DEFAULTS: DEFAULTS,
     PRESETS: PRESETS,
+    MODE_LABELS: MODE_LABELS,
+    presetOf: presetOf,
     sanitize: sanitize,
     newSeed: newSeed,
     load: load,

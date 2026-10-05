@@ -1,0 +1,253 @@
+/* ============ 「今天」首页：四张卡片 ============
+   卡片上半部是进入板块的链接，底栏蓝色「打印」直接走「板块页 + 确认打印」。半径 14，内边距 20。 */
+
+.today {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px 32px 40px;
+}
+
+.today-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr));
+  gap: 20px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.today-note {
+  max-width: 1180px;
+  margin: 20px auto 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.tcard {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: 14px;
+}
+
+.tcard:hover {
+  border-color: #aeb4be;
+}
+
+.tcard-body {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  padding: 20px 20px 16px;
+  color: var(--ink);
+}
+
+.tcard-body:hover h2 {
+  color: var(--blue);
+}
+
+.tcard-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tcard h2 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.tag {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.meta {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.tcard-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tcard-prog,
+.tcard-end {
+  margin-top: auto;
+}
+
+.tcard-prog {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tcard-prog .progress {
+  flex: 1;
+  min-width: 80px;
+}
+
+.tcard-prog .meta {
+  white-space: nowrap;
+}
+
+.weeks {
+  flex: 1;
+  min-width: 80px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 3px;
+}
+
+.weeks i {
+  height: 6px;
+  border-radius: 2px;
+  background: #e4e7ec;
+}
+
+.weeks i.past {
+  background: #a9bbe9;
+}
+
+.weeks i.on {
+  background: var(--blue);
+}
+
+.vid {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--blue-deep);
+  background: var(--blue-tint);
+  border-radius: 12px;
+}
+
+.vid svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+.tcard-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #fafbfc;
+  border-top: 1px solid #eef0f3;
+}
+
+.tcard-foot .more {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* ---------- 卡片左边的小纸样：纯装饰，示意这一张长什么样 ---------- */
+
+.mini {
+  flex: none;
+  width: 112px;
+  height: 158px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 9px;
+  background: #fff;
+  border: 1px solid #e4e7ec;
+  box-shadow: 0 1px 2px rgba(20, 24, 32, 0.1), 0 6px 16px rgba(20, 24, 32, 0.1);
+}
+
+.mini::before {
+  content: "";
+  width: 60%;
+  height: 5px;
+  margin: 0 auto 6px;
+  background: #9aa0aa;
+  border-radius: 1px;
+}
+
+.mini-lines > i {
+  display: block;
+  height: 4px;
+  background: #dadde3;
+  border-radius: 1px;
+}
+
+.mini-lines > i:nth-child(3n + 2) {
+  width: 70%;
+}
+
+.mini-lines > i:nth-child(3n) {
+  width: 50%;
+}
+
+.mini-groups > b {
+  display: block;
+  border-top: 1px dashed #b4bac4;
+}
+
+.mini-center {
+  align-items: center;
+}
+
+.mini-zi {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: 90px;
+  font: 10px/14px "Kaiti SC", "STKaiti", "KaiTi", "楷体", serif;
+  text-align: center;
+  border-top: 1px solid #b4bac4;
+  border-left: 1px solid #b4bac4;
+}
+
+.mini-zi span {
+  border-right: 1px solid #b4bac4;
+  border-bottom: 1px solid #b4bac4;
+}
+
+.mini-boards {
+  justify-content: space-around;
+}
+
+.mini-boards::before {
+  margin-bottom: 0;
+}
+
+.mini-boards .board {
+  width: 58px;
+  height: 58px;
+  border: 1.5px solid var(--ink);
+  background-image: linear-gradient(#b4bac4 1px, transparent 1px),
+    linear-gradient(90deg, #b4bac4 1px, transparent 1px);
+  background-size: 9.6px 9.6px;
+}
+
+@media (max-width: 900px) {
+  .today {
+    padding: 16px 12px 32px;
+  }
+}
+
+@media (max-width: 560px) {
+  .mini {
+    display: none;
+  }
+}
