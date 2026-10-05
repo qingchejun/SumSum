@@ -183,7 +183,8 @@
     var p = function (n) {
       return (n < 10 ? '0' : '') + n
     }
-    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' +
+      p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds())
   }
 
   function wireBackup(box) {

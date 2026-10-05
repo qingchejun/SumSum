@@ -136,6 +136,37 @@
     wrap.insertBefore(bar, wrap.firstChild)
   }
 
+  /* ---------- 打印文件名不撞车 ---------- */
+
+  /*
+   * 「另存为 PDF」的默认文件名取自页面标题，标题固定 → 每次存都同名、被问要不要替换。
+   * 打印前把年月日-时分秒拼进标题（beforeprint 连 Ctrl/Cmd+P 也接得住），打完还原。
+   * 标题只动打印那一瞬间，屏幕和卷面都不受影响。
+   */
+  function pad(n) {
+    return (n < 10 ? '0' : '') + n
+  }
+
+  function stamp() {
+    var d = new Date()
+    return '' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' +
+      pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds())
+  }
+
+  var printTitle = null
+
+  root.addEventListener('beforeprint', function () {
+    if (printTitle !== null) return
+    printTitle = doc.title
+    doc.title = printTitle + ' · ' + stamp()
+  })
+
+  root.addEventListener('afterprint', function () {
+    if (printTitle === null) return
+    doc.title = printTitle
+    printTitle = null
+  })
+
   function init() {
     Array.prototype.forEach.call(doc.querySelectorAll('select[data-seg]'), buildSeg)
     Array.prototype.forEach.call(doc.querySelectorAll('input[data-stepper]'), buildStepper)
