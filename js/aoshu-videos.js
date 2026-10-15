@@ -16,6 +16,7 @@
   /* 知识点 id → 时长 */
   var LIST = Object.freeze({
     yiduobushao: '3:42', // 03 移多补少（基础篇）
+    yiduobushao2: '4:06', // 04 移多补少（提高篇）
     shuzimi: '3:09', // 06 数字谜问题（基础篇）
     xulie: '3:13' // 08 数列找规律
   })
