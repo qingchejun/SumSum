@@ -150,6 +150,8 @@ try {
 var V = globalThis.SumSum.aoshuVideos
 check(V.of('xulie').src === 'https://video.qingchejun.com/aoshu/xulie.mp4', '视频地址：' + JSON.stringify(V.of('xulie')))
 check(V.of('shuzimi').dur === '3:09', '数字谜基础篇视频时长：' + JSON.stringify(V.of('shuzimi')))
+check(V.of('yiduobushao').src === 'https://video.qingchejun.com/aoshu/yiduobushao.mp4' && V.of('yiduobushao').dur === '3:42',
+  '移多补少基础篇视频：' + JSON.stringify(V.of('yiduobushao')))
 check(V.of('daxiao') === null, '没视频的课应返回 null')
 check(V.of('__proto__') === null && V.of('toString') === null, '原型链上的名字不能当成有视频')
 Object.keys(V.list).forEach(function (id) {
