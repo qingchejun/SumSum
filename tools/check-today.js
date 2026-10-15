@@ -154,6 +154,8 @@ check(V.of('yiduobushao').src === 'https://video.qingchejun.com/aoshu/yiduobusha
   '移多补少基础篇视频：' + JSON.stringify(V.of('yiduobushao')))
 check(V.of('yiduobushao2').src === 'https://video.qingchejun.com/aoshu/yiduobushao2.mp4' && V.of('yiduobushao2').dur === '4:06',
   '移多补少提高篇视频：' + JSON.stringify(V.of('yiduobushao2')))
+check(V.of('shuzimi2').src === 'https://video.qingchejun.com/aoshu/shuzimi2.mp4' && V.of('shuzimi2').dur === '4:49',
+  '数字谜提高篇视频：' + JSON.stringify(V.of('shuzimi2')))
 check(V.of('daxiao') === null, '没视频的课应返回 null')
 check(V.of('__proto__') === null && V.of('toString') === null, '原型链上的名字不能当成有视频')
 Object.keys(V.list).forEach(function (id) {
