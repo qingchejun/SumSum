@@ -716,6 +716,22 @@ select.input {
   gap: 8px;
 }
 
+/* 文字样的小按钮（「只选已学的」「撤销结算」这类次要动作） */
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--blue);
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  color: var(--blue-deep);
+  text-decoration: underline;
+}
+
 .hint {
   margin: 0;
   font-size: 12px;

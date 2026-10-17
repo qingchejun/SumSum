@@ -375,6 +375,17 @@ function checkWrongSet() {
   }
 }
 
+/* 比较记录时不看键的先后（{a,b} 和 {b,a} 是同一条记录） */
+function canon(v) {
+  if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']'
+  if (v && typeof v === 'object') {
+    return '{' + Object.keys(v).filter(function (k) { return v[k] !== undefined }).sort().map(function (k) {
+      return JSON.stringify(k) + ':' + canon(v[k])
+    }).join(',') + '}'
+  }
+  return JSON.stringify(v)
+}
+
 /* ---------- 5b. 错字的进出规则与累计次数（markStep / markClear） ---------- */
 
 /*
@@ -392,26 +403,28 @@ function checkMarkStep() {
   var state = Z.markState
   var count = Z.markCount
   function eq(a, b, msg) {
-    if (JSON.stringify(a) !== JSON.stringify(b)) {
+    if (canon(a) !== canon(b)) {
       bad('markStep ' + msg + '：期望 ' + JSON.stringify(b) + '，实际 ' + JSON.stringify(a))
     }
   }
 
   /* 主线：第一天进，第二天认出一次，第三天再认出 → 移出，但累计次数留着 */
   var e = step(null, D1)
-  eq(e, { add: D1, n: 1 }, '不在集里点一下应当加进来，记第 1 次')
+  eq(e, { add: D1, n: 1, first: D1 }, '不在集里点一下应当加进来，记第 1 次，并记下第一次错的日子')
   eq(state(e), 'wrong', '刚加进来应是 2')
   e = step(e, D2)
-  eq(e, { add: D1, hit: D2, n: 1 }, '隔天认出应记一次')
+  eq(e, { add: D1, hit: D2, n: 1, first: D1 }, '隔天认出应记一次，first 跟着走')
   eq(state(e), 'once', '认出一次应是 1')
   e = step(e, D3)
   eq(state(e), 'out', '另一天再认出应当移出')
   eq(count(e), 1, '移出后累计次数不应清零')
+  eq(e.first, D1, '移出后 first 不应丢')
 
   /* 移出之后隔天又错 → 第 2 次进来，当天撤回 → 回到「移出、1 次」 */
   var again = step(e, D4)
   eq(state(again), 'wrong', '移出的字隔天再点应重新进来')
   eq(count(again), 2, '再进来应记第 2 次')
+  eq(again.first, D1, '再进来 first 仍是第一次错的日子')
   var undo = step(again, D4)
   eq(state(undo), 'out', '当天再进来又撤回，应回到移出')
   eq(count(undo), 1, '撤回的那一次不应算进累计')
@@ -444,6 +457,8 @@ function checkMarkStep() {
   eq(count({ add: D1 }), 1, '没有 n 的老条目应当算 1 次')
   eq(count(null), 0, 'null 应是 0 次')
 
+  /* 结算后又点：见 checkMarkMiss */
+
   /* 返回的是新对象，不改传进来的那个 —— mark 层靠这个做撤回 */
   var orig = { add: D1, n: 1 }
   step(orig, D2)
@@ -452,6 +467,136 @@ function checkMarkStep() {
 
   eq(state(null), 'out', 'null 应是 out')
   eq(state(undefined), 'out', 'undefined 应是 out')
+}
+
+/* ---------- 5c. 复习结算：没点的算又错一次（markMiss / markUnmiss） ---------- */
+
+/*
+ * 「点了才算认出」只说明了点过的字；没点的字是又不认识了，还是这次根本没复习，系统分不出来。
+ * 所以由家长点「复习完了，结算」告诉它：卷面上还在错字集里、今天没动过的字，
+ *   - 累计次数 +1；
+ *   - 认出过一次（半红）的退回红底 —— 移出要【连续】两次复习都认出来；
+ *   - 同一天结算两次不重复加；当天能撤销；结算后发现漏点了，点一下那个字就当作认出。
+ */
+function checkMarkMiss() {
+  var D1 = '2026-09-20'
+  var D2 = '2026-09-21'
+  var D3 = '2026-09-22'
+  var D4 = '2026-09-23'
+  var step = Z.markStep
+  var miss = Z.markMiss
+  var unmiss = Z.markUnmiss
+  var state = Z.markState
+  var count = Z.markCount
+  function eq(a, b, msg) {
+    if (canon(a) !== canon(b)) {
+      bad('markMiss ' + msg + '：期望 ' + JSON.stringify(b) + '，实际 ' + JSON.stringify(a))
+    }
+  }
+
+  /* 红底的字没点 → 次数 +1，仍是红底 */
+  var a = miss({ add: D1, n: 1, first: D1 }, D2)
+  eq(state(a), 'wrong', '红底没点结算后仍是红底')
+  eq(count(a), 2, '红底没点结算后次数 +1')
+  eq(a.miss, D2, '应记下这次没认出的日子')
+  eq(miss(a, D2), a, '同一天结算两次不应再加')
+
+  /* 半红的字没点 → 退回红底：连续才算 */
+  var b = miss({ add: D1, hit: D2, n: 1, first: D1 }, D3)
+  eq(state(b), 'wrong', '半红没点结算后应退回红底')
+  eq(count(b), 2, '半红没点结算后次数 +1')
+  var b2 = step(b, D4)
+  eq(state(b2), 'once', '退回红底后再认出只算第一次')
+  eq(state(step(b2, '2026-09-24')), 'out', '再隔一次复习也认出才移出')
+
+  /* 今天动过的不算没认出：今天刚收进来的、今天认出的、今天移出的 */
+  var fresh = { add: D2, n: 1, first: D2 }
+  eq(miss(fresh, D2), fresh, '今天刚收进来的字不应结算')
+  var hitToday = { add: D1, hit: D2, n: 1, first: D1 }
+  eq(miss(hitToday, D2), hitToday, '今天认出的字不应结算')
+  var outToday = { add: D1, hit: D2, out: D3, n: 1, first: D1 }
+  eq(miss(outToday, D3), outToday, '今天移出的字不应结算')
+  eq(miss(null, D2), null, 'null 结算应原样返回')
+  var longOut = { n: 3, out: D1 }
+  eq(miss(longOut, D2), longOut, '早就移出的字不应结算')
+
+  /* 撤销结算：原样回去 */
+  eq(unmiss(a, D2), { add: D1, n: 1, first: D1 }, '撤销结算应回到红底、次数退回')
+  eq(unmiss(b, D3), { add: D1, hit: D2, n: 1, first: D1 }, '撤销结算应回到半红')
+  eq(unmiss(a, D3), a, '隔天不能撤销前一天的结算')
+  var twice = miss(unmiss(miss({ add: D1, miss: D1, n: 2, first: D1 }, D2), D2), D2)
+  eq(unmiss(twice, D2), { add: D1, miss: D1, n: 2, first: D1 }, '撤销应恢复上一次没认出的日子')
+
+  /* 结算后发现漏点了：点一下 = 当作今天认出（次数退回） */
+  var fixA = step(a, D2)
+  eq(state(fixA), 'once', '结算后点红底的字应当作今天认出')
+  eq(count(fixA), 1, '结算后点一下次数应退回')
+  eq(step(fixA, D2), { add: D1, n: 1, first: D1 }, '再点一下回到结算前的样子')
+  var fixB = step(b, D3)
+  eq(state(fixB), 'out', '半红结算后点一下应当作第二次认出而移出')
+  eq(count(fixB), 1, '移出时次数也应退回')
+  eq(step(fixB, D3), { add: D1, hit: D2, n: 1, first: D1 }, '再点一下回到结算前的半红')
+
+  /* 结算过的字隔天照常走：认出 / 下次复习再结算 */
+  eq(state(step(a, D3)), 'once', '结算过的字隔天点一下应记认出')
+  eq(step(a, D3).miss, D2, '最近一次没认出的日子要留着（历史统计用）')
+  eq(count(miss(a, D3)), 3, '隔天再结算应接着加')
+
+  /* 不改传入的条目 */
+  var orig = { add: D1, hit: D2, n: 1, first: D1 }
+  miss(orig, D3)
+  unmiss(miss(orig, D3), D3)
+  eq(orig, { add: D1, hit: D2, n: 1, first: D1 }, '不应改动传入的条目')
+
+  /* 清空错字集后同一天恢复，结算记录还在、仍可撤销 */
+  var cl = Z.markClear(a, D2)
+  var back = step(cl, D2)
+  eq(unmiss(back, D2), { add: D1, n: 1, first: D1 }, '清空又撤回后仍能撤销当天的结算')
+}
+
+/* ---------- 5d. 附页抽字的权重（reviewWeight） ---------- */
+
+function checkWeight() {
+  var w = Z.reviewWeight
+  function eq(a, b, msg) {
+    if (a !== b) bad('reviewWeight ' + msg + '：期望 ' + b + '，实际 ' + a)
+  }
+  eq(w({ add: 'x', n: 1 }), 2, '错 1 次、红底')
+  eq(w({ add: 'x', hit: 'y', n: 1 }), 1, '错 1 次、半红（上次认出了）权重减半')
+  eq(w({ add: 'x', n: 4 }), 8, '错 4 次、红底')
+  eq(w({ add: '' }), 2, '老数据没有 n 当作 1 次')
+  eq(w({ n: 3, out: 'x' }), 0, '已移出的不抽')
+  eq(w(null), 0, 'null 不抽')
+}
+
+/* ---------- 5e. 历史错字统计（historyStats） ---------- */
+
+function checkHistory() {
+  var marks = {
+    鸟: { add: '2026-09-20', n: 3, first: '2026-09-01', miss: '2026-10-01' },
+    闪: { add: '2026-09-21', hit: '2026-09-22', n: 1, first: '2026-09-21' },
+    瓜: { out: '2026-09-25', add: '2026-09-02', n: 3 },
+    伞: { add: '' },
+    坏: 'oops'
+  }
+  var h = Z.historyStats(marks)
+  function eq(a, b, msg) {
+    if (canon(a) !== canon(b)) {
+      bad('historyStats ' + msg + '：期望 ' + JSON.stringify(b) + '，实际 ' + JSON.stringify(a))
+    }
+  }
+  eq(h.total, 4, '历史错过的字数（坏条目不算）')
+  eq(h.inSet, 3, '现在还在错字集里的')
+  eq(h.once, 1, '只差一次的')
+  eq(h.out, 1, '已移出（学会了）的')
+  eq(h.times, 8, '累计错的次数')
+  eq(h.groups.map(function (g) { return g.n }), [3, 1], '按次数从多到少分组')
+  eq(h.groups[0].items.map(function (i) { return i.ch }), Z.sortByTable(['鸟', '瓜']), '同次数按字表顺序')
+  eq(h.groups[0].items.filter(function (i) { return i.ch === '鸟' })[0],
+    { ch: '鸟', n: 3, st: 'wrong', first: '2026-09-01', last: '2026-10-01' }, '单条明细：最近一次错取 add / miss 里晚的')
+  eq(h.groups[0].items.filter(function (i) { return i.ch === '瓜' })[0],
+    { ch: '瓜', n: 3, st: 'out', first: '2026-09-02', last: '2026-09-02' }, '没有 first 的老数据用 add 顶')
+  eq(Z.historyStats(null).total, 0, 'null 当作空')
 }
 
 /* ---------- 6. 本周卷附页抽字（sampleWrong） ---------- */
@@ -561,6 +706,38 @@ function checkSample() {
       ' 次，期望约 ' + Math.round(expect) + ' 次'
     )
   }
+
+  /*
+   * ④ 按权重偏向：60 个字里 10 个权重 8（错 4 次、红底），50 个权重 1。
+   * 抽 20 个，重的每轮中签率应远高于轻的（理论上重的几乎每次都在）。
+   */
+  var heavy = {}
+  cand.slice(0, 10).forEach(function (ch) {
+    heavy[ch] = true
+  })
+  var hHits = 0
+  var lHits = 0
+  var R2 = 5000
+  for (var k = 0; k < R2; k++) {
+    Z.sampleWrong(cand, [], MAX, rnd, function (ch) {
+      return heavy[ch] ? 8 : 1
+    }).forEach(function (ch) {
+      if (heavy[ch]) hHits++
+      else lHits++
+    })
+  }
+  var hRate = hHits / (R2 * 10)
+  var lRate = lHits / (R2 * 50)
+  if (!(hRate > 0.85 && hRate > lRate * 3)) {
+    bad('sampleWrong 按权重抽不够偏：重的中签率 ' + hRate.toFixed(2) + '，轻的 ' + lRate.toFixed(2))
+  }
+  /* 权重为 0 的不能被抽到（已移出的字） */
+  var zero = Z.sampleWrong(cand, [], MAX, rnd, function (ch) {
+    return heavy[ch] ? 1 : 0
+  })
+  if (zero.length !== 10 || zero.some(function (ch) { return !heavy[ch] })) {
+    bad('sampleWrong 抽到了权重为 0 的字：' + zero.join(''))
+  }
 }
 
 /* ---------- 7. 设置钳位 ---------- */
@@ -581,6 +758,7 @@ function checkSettings() {
        老链接一律回到本周复习，不能停在一个不存在的页签上 */
     [{}, 'mode', 'week'],
     [{ mode: 'wrong' }, 'mode', 'wrong'],
+    [{ mode: 'history' }, 'mode', 'history'],
     [{ mode: 'proof' }, 'mode', 'week'],
     [{ mode: 'xx' }, 'mode', 'week'],
     [{ mode: '' }, 'mode', 'week'],
@@ -620,7 +798,10 @@ function main() {
     ['换每周字数时进度不倒退', checkRemap],
     ['错字集排序与错字卷排版（1~400 字全扫）', checkWrongSet],
     ['错字进出规则与累计次数', checkMarkStep],
-    ['附页抽字：边界 / 顺序 / 均匀性（2 万轮）', checkSample],
+    ['复习结算：没点的算又错一次、连续两次才移出', checkMarkMiss],
+    ['附页抽字权重', checkWeight],
+    ['历史错字统计', checkHistory],
+    ['附页抽字：边界 / 顺序 / 均匀性 / 按权重偏向（2 万轮）', checkSample],
     ['设置钳位', checkSettings]
   ]
   steps.forEach(function (st) {

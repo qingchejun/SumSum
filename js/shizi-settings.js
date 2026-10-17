@@ -24,6 +24,7 @@
      * 看哪一张卷子：
      *   week  本周复习 —— 主场景，按周次印该复习的那一批字
      *   wrong 错字集   —— 把攒下来的错字单独印一张
+     *   history 历史   —— 屏幕上的统计页：错过的字按次数排、每次复习的记录。不印
      * 两种模式下字格都可以点，点一下就是把那个字加入 / 移出错字集（见 shizi-mark）。
      */
     mode: 'week',
@@ -50,7 +51,7 @@
 
   var FONTS = ['kai', 'hei']
 
-  var MODES = ['week', 'wrong']
+  var MODES = ['week', 'wrong', 'history']
 
   /*
    * 每页字数的合法取值，必须与 shizi.html 里 #f-perpage 的 <option> 一一对应。

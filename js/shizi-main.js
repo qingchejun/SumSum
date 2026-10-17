@@ -47,12 +47,15 @@
   var appendPick = []
   var pickedForWeek = null
 
-  /* 重抽一批。exclude 本周卷上已经有的字：同一沓纸里同一个字不印两遍 */
+  /* 重抽一批。exclude 本周卷上已经有的字：同一沓纸里同一个字不印两遍。
+     按权重抽：错得越多越容易抽到（见 shizi-core 的 reviewWeight） */
   function repick() {
     appendPick = S.shizi.sampleWrong(
       S.shiziMark.all(),
       S.shizi.sliceOf(settings.week, settings.perWeek).chars,
-      APPEND_MAX
+      APPEND_MAX,
+      null,
+      S.shiziMark.weightOf
     )
     pickedForWeek = settings.week
   }
@@ -97,6 +100,14 @@
        留着变灰只是噪音 —— 上面的页签已经说清楚现在在看哪张卷子。 */
     $('sec-progress').hidden = s.mode !== 'week'
     $('sec-range').hidden = s.mode !== 'week'
+    /* 「历史」是屏幕上的统计页，不印，排版、标题、错字集这几块都用不上 */
+    var hist = s.mode === 'history'
+    $('sec-history').hidden = !hist
+    $('sec-layout').hidden = hist
+    $('sec-wrong').hidden = hist
+    $('sec-title').hidden = hist
+    $('mark-legend').hidden = hist
+    $('btn-print').hidden = hist
     /* 每周字数一改，总周数就变了，输入框的上限要跟着走，
        否则浏览器自带的上下箭头能点到一个会被钳掉的数，看着像没生效。 */
     els.week.max = String(S.shizi.totalWeeks(s.perWeek))
@@ -182,21 +193,21 @@
     /* 出错字集的规则两种模式都一样，只在错字卷上讲全 —— 那是家长真正在「点掉」字的地方 */
     if (s.mode === 'wrong') {
       return head + '孩子认出来了就点一下，红底变成<b>半红</b>；' +
-        '<b>改天</b>再认出来、再点一下才移出。同一天点两下不算两次 —— 当天点的，再点一下就是撤回。' +
+        '<b>下次复习</b>再认出来、再点一下才移出。当天点的，再点一下就是撤回。' +
         '<br>点掉的字先留在原位不重排，不然下一个字会跳到手指底下，很容易误点。'
     }
     var tail = head + '孩子念不出来的字，在卷面上点一下就变红底，收进错字集。' +
       '可以边念边点，也可以先在纸上圈、事后对着纸点一遍。<b>纸上不会印出任何标记。</b>'
     if (s.withWrong && appendPick.length) {
       tail += '<br>本周卷后面附了 <b>' + appendPick.length + '</b> 个旧错字' +
-        (n > appendPick.length ? '（从 ' + n + ' 个里随机抽的，本周卷上已有的不重复印）' : '') +
-        '。孩子认出来了就点一下变半红；半红的字要改天再认出来一次才移出。'
+        (n > appendPick.length ? '（从 ' + n + ' 个里抽的，错得多的优先；本周卷上已有的不重复印）' : '') +
+        '。孩子认出来了就点一下变半红；半红的字要下次复习再认出来一次才移出。'
     }
     return tail
   }
 
   /* 按钮文案随模式走：印的是哪张卷子，按钮上就写哪张 */
-  var PRINT_LABEL = { week: '打印复习卷', wrong: '打印错字卷' }
+  var PRINT_LABEL = { week: '打印复习卷', wrong: '打印错字卷', history: '打印' }
 
   /* 主流程：保存设置 → 同步表单 → 渲染 → 把错字标记投影回新 DOM */
   function refresh() {
@@ -208,6 +219,16 @@
     /* 错字集模式下，渲染用的是【进入时的快照】；之后用户再点就只改 class，
        不动卷面结构，直到他自己点「重新排版」或切走再切回来。 */
     renderedWrong = settings.mode === 'wrong' ? S.shiziMark.all() : []
+    if (settings.mode === 'history') {
+      renderHistory()
+      fitPreview()
+      $('pages-hint').textContent = ''
+      $('notice').hidden = true
+      refreshMarkPanel()
+      var st = S.shiziMark.history().stats
+      S.shell.summary(['历史错字', st.total + ' 个字', '累计错 ' + st.times + ' 次'])
+      return
+    }
     var append = appendChars()
     S.shiziRender.render($('preview'), settings, renderedWrong, append)
     /* 渲染之后立刻把集合投影到新 DOM 上 —— 位置对应数独 render() 紧跟 attach() 的那两行 */
@@ -234,20 +255,130 @@
   }
 
   /*
-   * 反复错的字：累计进过 2 次以上的，移出了的也列（灰字），好让家长看出哪些字总记不住。
-   * 最多列 30 个，再多就不是「一眼看出来」了；次数多的在前。
-   * 字来自字表、次数是数字，没有用户输入，可以直接进 innerHTML。
+   * 错字集那一栏底下的一行历史摘要，点按钮去「历史」页签看全部。
+   * 以前这里直接列「反复错的字」，有了历史页之后挪过去了，面板上只留个入口。
    */
-  var REPEATS_MAX = 30
   function repeatsHtml() {
-    var list = S.shiziMark.repeats()
-    if (!list.length) return ''
-    var shown = list.slice(0, REPEATS_MAX).map(function (r) {
-      return '<span class="zchip' + (r.on ? ' on' : '') + '">' + r.ch + '<b>×' + r.n + '</b></span>'
-    })
-    return '<p class="lbl">反复错的字（累计进过 2 次以上；红底的现在还在错字集里）</p>' +
-      '<div class="zchips">' + shown.join('') +
-      (list.length > REPEATS_MAX ? '<span class="lbl">… 共 ' + list.length + ' 个</span>' : '') + '</div>'
+    var st = S.shiziMark.history().stats
+    if (!st.total) return ''
+    var rep = S.shiziMark.repeats().length
+    return '<p class="hint">历史上错过 <b>' + st.total + '</b> 个字' +
+      (rep ? '，其中 <b>' + rep + '</b> 个错过 2 次以上' : '') + '，已学会移出 ' + st.out + ' 个。</p>' +
+      '<button type="button" class="btn btn-sm" data-goto="history">看历史统计 →</button>'
+  }
+
+  /* ---------- 复习结算 ---------- */
+
+  /* 卷面上现在有哪些字（去重）。份数 = 2 时同一个字有两格 */
+  function sheetChars() {
+    var seen = {}
+    var out = []
+    var cells = doc.querySelectorAll('#preview .shizi-cell')
+    for (var i = 0; i < cells.length; i++) {
+      var ch = cells[i].dataset.ch
+      if (ch && !seen[ch]) {
+        seen[ch] = true
+        out.push(ch)
+      }
+    }
+    return out
+  }
+
+  /*
+   * 结算那一块。三种情况：
+   *   卷面上有旧错字今天还没点 → 「复习完了，结算」，并说清楚结算会怎样；
+   *   全点过了（都认出来了）    → 也给按钮，只为记一笔复习记录；
+   *   今天结算过              → 显示今天的结果和「撤销结算」。
+   * 文案里只有数字，没有用户输入，可以直接进 innerHTML。
+   */
+  function settleHtml() {
+    if (settings.mode === 'history') return ''
+    var chars = sheetChars()
+    var seen = S.shiziMark.reviewed(chars)
+    var pend = S.shiziMark.pending(chars)
+    var row = S.shiziMark.todayLog()
+    var html = ''
+    if (row) {
+      html += '<p class="hint settle-done">今天复习了 <b>' + row.seen.length + '</b> 个旧错字：认出 ' + row.ok +
+        (row.out ? '（其中 ' + row.out + ' 个连续两次认出，已移出）' : '') +
+        '，又错 <b>' + row.miss + '</b> 个。' +
+        (S.shiziMark.missedToday().length
+          ? ' <button type="button" class="link-btn" data-settle="undo">撤销结算</button>' : '') + '</p>'
+    }
+    if (pend.length) {
+      html += '<button type="button" class="btn btn-sm settle-btn" data-settle="go">复习完了，结算</button>' +
+        '<p class="hint">卷面上有 <b>' + pend.length + '</b> 个旧错字今天没点。结算后算孩子又错一次：次数 +1，' +
+        '半红的退回红底 —— 要<b>连续两次</b>复习都认出来才移出。这次没复习就别点。</p>'
+    } else if (seen.length && !row) {
+      html += '<button type="button" class="btn btn-sm settle-btn" data-settle="go">复习完了，记一笔</button>' +
+        '<p class="hint">卷面上的 ' + seen.length + ' 个旧错字今天都认出来了，点一下记进复习记录。</p>'
+    }
+    return html
+  }
+
+  $('settle').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-settle]')
+    if (!b) return
+    if (b.getAttribute('data-settle') === 'go') S.shiziMark.settle(sheetChars())
+    else S.shiziMark.unsettle()
+    /* 只改格子的颜色，卷面不重排（理由同 shizi-mark 的文件头）；面板由 onChange 刷 */
+    S.shiziMark.paint()
+  })
+
+  /* ---------- 历史页（只在屏幕上，不印） ---------- */
+
+  function md(d) {
+    var p = String(d || '').split('-')
+    return p.length === 3 ? Number(p[1]) + '/' + Number(p[2]) : ''
+  }
+
+  var ST_LABEL = { wrong: '在错字集里', once: '认出一次，差一次移出', out: '已学会，移出了' }
+
+  /*
+   * 上半：四个数；中间：按错的次数分组，一字一块，颜色和卷面一致（红底 / 半红 / 白底 = 已移出）；
+   * 下半：最近的复习记录。字来自字表、其余是数字和日期，没有用户输入，可以直接进 innerHTML。
+   */
+  function renderHistory() {
+    var h = S.shiziMark.history()
+    var st = h.stats
+    var box = $('preview')
+    if (!st.total) {
+      box.innerHTML = '<div class="hist"><p class="hist-empty">还没有错过的字。' +
+        '在「本周复习」卷面上点孩子念不出来的字，就会记到这里。</p></div>'
+      return
+    }
+    var cards = [
+      [st.total, '个字错过', '只要错过一次就算'],
+      [st.inSet, '个还在错字集', st.once ? '其中 ' + st.once + ' 个差一次移出' : '　'],
+      [st.out, '个已学会', '连续两次认出，移出了'],
+      [st.times, '次', '累计一共错过']
+    ].map(function (c) {
+      return '<div class="hist-card"><b>' + c[0] + '</b><span>' + c[1] + '</span><small>' + c[2] + '</small></div>'
+    }).join('')
+    var groups = st.groups.map(function (g) {
+      return '<div class="hist-row"><div class="hist-n">错 ' + g.n + ' 次<small>' + g.items.length + ' 字</small></div>' +
+        '<div class="hist-chars">' + g.items.map(function (it) {
+          var tip = ST_LABEL[it.st] + (it.first ? ' · 第一次错 ' + md(it.first) : '') +
+            (it.last && it.last !== it.first ? ' · 最近一次错 ' + md(it.last) : '')
+          return '<span class="hc ' + it.st + '" title="' + tip + '">' + it.ch + '</span>'
+        }).join('') + '</div></div>'
+    }).join('')
+    var LOG_SHOW = 12
+    var logRows = h.log.slice(0, LOG_SHOW).map(function (r) {
+      return '<tr><td>' + md(r.d) + '</td><td>' + r.seen.length + '</td><td>' + (r.ok || 0) + '</td><td>' +
+        (r.miss || 0) + '</td><td>' + (r.out || 0) + '</td></tr>'
+    }).join('')
+    box.innerHTML = '<div class="hist">' +
+      '<div class="hist-cards">' + cards + '</div>' +
+      '<h3 class="hist-h">按错的次数<span class="hist-key"><i class="hc wrong"></i>在错字集里' +
+        '<i class="hc once"></i>差一次移出<i class="hc out"></i>已学会</span></h3>' +
+      groups +
+      '<h3 class="hist-h">最近的复习</h3>' +
+      (logRows
+        ? '<table class="hist-log"><thead><tr><th>日期</th><th>复习旧错字</th><th>认出</th><th>又错</th>' +
+          '<th>学会移出</th></tr></thead><tbody>' + logRows + '</tbody></table>'
+        : '<p class="hist-empty">还没有复习记录。复习完错字后，在右边「错字集」里点「复习完了，结算」，这里就会记一笔。</p>') +
+      '</div>'
   }
 
   /* 顶栏摘要：现在印的是哪一张、多少字 */
@@ -272,6 +403,9 @@
     var rep = repeatsHtml()
     $('mark-repeats').hidden = !rep
     $('mark-repeats').innerHTML = rep
+    var settle = settleHtml()
+    $('settle').hidden = !settle
+    $('settle').innerHTML = settle
 
     /* 附页开关只在「本周复习」下露面；错字集空的时候留着但点不动，
        比整个藏起来好 —— 至少看得见有这么个东西，攒够字自己会亮。 */
@@ -344,14 +478,22 @@
     fillProgress(S.shiziSettings.sanitize(Object.assign({}, settings, { week: v })))
   })
 
+  function gotoMode(mode) {
+    if (mode === settings.mode) return
+    settings = S.shiziSettings.sanitize(Object.assign({}, settings, { mode: mode }))
+    refresh()
+  }
+
   /* 模式页签 */
   $('mode-tabs').addEventListener('click', function (ev) {
     var tab = ev.target.closest ? ev.target.closest('.stage-tab') : null
-    if (!tab || !tab.dataset.mode || tab.dataset.mode === settings.mode) return
-    settings = S.shiziSettings.sanitize(
-      Object.assign({}, settings, { mode: tab.dataset.mode })
-    )
-    refresh()
+    if (tab && tab.dataset.mode) gotoMode(tab.dataset.mode)
+  })
+
+  /* 错字集一栏底下的「看历史统计 →」 */
+  $('mark-repeats').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-goto]')
+    if (b) gotoMode(b.getAttribute('data-goto'))
   })
 
   function step(delta) {

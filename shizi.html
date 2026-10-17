@@ -41,11 +41,11 @@
 
     <!-- ======== 练习纸预览（所见即所得；字格可以点，点一下就是加入 / 移出错字集） ======== -->
     <main class="preview" id="preview-wrap">
-      <div class="mark-legend">
+      <div class="mark-legend" id="mark-legend">
         <b>在纸上点字标记</b>
         <span><i class="sw"></i>不认识，已收进错字集</span>
-        <span><i class="sw half"></i>认出一次，改天再认出就移出</span>
-        <span><i class="n">×2</i>累计进过几次</span>
+        <span><i class="sw half"></i>认出一次，下次复习再认出就移出</span>
+        <span><i class="n">×2</i>累计错过几次</span>
       </div>
       <div class="notice" id="notice" hidden></div>
       <div id="preview"></div>
@@ -59,6 +59,7 @@
         <div class="stage-tabs" id="mode-tabs">
           <button type="button" class="stage-tab" data-mode="week">本周复习</button>
           <button type="button" class="stage-tab" data-mode="wrong">错字集<span id="wrong-n"></span></button>
+          <button type="button" class="stage-tab" data-mode="history">历史</button>
         </div>
       </section>
 
@@ -85,7 +86,16 @@
         </details>
       </section>
 
-      <section class="group">
+      <!-- 「历史」页签：统计在左边纸张区，这里只放说明 -->
+      <section class="group" id="sec-history" hidden>
+        <h2 class="group-title">历史错字</h2>
+        <p class="hint">只要错过一次的字都记在这里，学会移出了也不删。<b>次数</b>是一共错过几次：
+          收进错字集算一次，之后每次复习结算时没认出来再加一次。</p>
+        <p class="hint">「本周复习」附的错字页按次数抽字：错得越多越容易被抽到；上次复习认出来的（半红），机会减半。</p>
+        <p class="hint">记录只存在这个浏览器里。换电脑或换网址前，点左下角「备份」导出。</p>
+      </section>
+
+      <section class="group" id="sec-layout">
         <h2 class="group-title">排版</h2>
         <label class="field"><span>每页字数</span>
           <select id="f-perpage" class="input">
@@ -113,15 +123,17 @@
         <p class="hint" id="pages-hint"></p>
       </section>
 
-      <section class="group">
+      <section class="group" id="sec-wrong">
         <h2 class="group-title">错字集<span class="sub" id="wrong-title-n"></span></h2>
         <!-- 只在「本周复习」模式下有意义：错字集模式整张卷子就是错字 -->
         <label class="check" id="sec-append">
-          <input type="checkbox" id="f-withwrong" /><span>附一页错字（随机抽 20 个）</span>
+          <input type="checkbox" id="f-withwrong" /><span>附一页错字（抽 20 个，错得多的优先）</span>
         </label>
         <p class="hint" id="mark-hint"></p>
-        <!-- 累计进过 2 次以上的字，移出了的也列。空的时候整段藏起来 -->
-        <div id="mark-repeats" hidden></div>
+        <!-- 复习结算：卷面上有旧错字时出现。内容由 shizi-main.js 填 -->
+        <div class="settle" id="settle" hidden></div>
+        <!-- 一行历史摘要 + 去「历史」页签的按钮。一个字都没错过时藏起来 -->
+        <div class="hist-link" id="mark-repeats" hidden></div>
         <div class="week-nav">
           <button type="button" id="btn-repick" class="btn btn-sm" hidden>↻ 换一批错字</button>
           <button type="button" id="btn-relayout" class="btn btn-sm" hidden></button>
@@ -130,7 +142,7 @@
         <p class="hint">错字集和进度只存在这个浏览器里。换电脑或换网址前，点左下角「备份」导出，到新的地方再导入。</p>
       </section>
 
-      <section class="group">
+      <section class="group" id="sec-title">
         <label class="field"><span>练习纸标题（选填）</span>
           <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：识字复习 · 第 3 周" />
         </label>

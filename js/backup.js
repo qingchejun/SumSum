@@ -99,6 +99,8 @@
       var old = json(data, 'sumsum:shizi:wrong:v1')
       if (Array.isArray(old)) lines.push('识字错字集：' + old.length + ' 个字')
     }
+    var slog = json(data, 'sumsum:shizi:log:v1')
+    if (Array.isArray(slog) && slog.length) lines.push('识字复习记录：' + slog.length + ' 天')
     var shizi = json(data, 'sumsum:shizi:v1')
     if (isObj(shizi) && shizi.week) lines.push('识字进度：第 ' + shizi.week + ' 周')
     var learned = json(data, 'sumsum:aoshu:learned:v1')

@@ -4,8 +4,13 @@
  * 【进来容易，出去难】：不认识的字点一下就收进来（红底）；
  * 要移出，得在【两个不同的日子】各认出来一次 —— 第一次点变半红，改天再认出来、再点一下才移出。
  * 同一天连点不算两次：今天点的，再点一下就是撤回。完整规则和理由见 shizi-core 的 markStep。
- * 每个字还记着【累计进过几次】，移出、清空都不清零；进过 2 次以上的在左上角标「×n」，
- * 面板上另列一份「反复错的字」。错字集和累计记录是同一份数据，见 markStep 的说明。
+ * 每个字还记着【累计错过几次】，移出、清空都不清零；错过 2 次以上的在左上角标「×n」。
+ * 错字集和累计记录（历史错字集）是同一份数据，见 markStep 的说明。
+ *
+ * 【复习结算】：点了的字是认出来的，没点的字系统分不出是「又不认识」还是「这次没复习」，
+ * 所以复习完由家长点「结算」：卷面上还在错字集里、今天没动过的字算又错一次（markMiss），
+ * 半红的退回红底 —— 移出要连续两次复习都认出。当天可以撤销。每次结算记一行复习记录（LOG_KEY），
+ * 「历史」页签里看。
  *
  * 两种模式下点击规则完全一样，不做「在错字集页点表示认识了、在本周卷页点表示不认识」
  * 那种按页面区分的语义，否则每次都要先想自己在哪一页。
@@ -88,7 +93,59 @@
   var marks = load()
   var listeners = []
 
+  /*
+   * 复习记录：每次结算记一行，一天一行（同一天结算几次合并）。
+   *   { d: 日期, seen: '复习到的旧错字', ok: 认出几个, miss: 又错几个, out: 学会移出几个 }
+   * 当天这一行在之后点字、撤销时跟着重算（见 refreshLog）；过了这一天就定格。
+   * 只留最近 LOG_MAX 天，够看趋势，不会越攒越大。
+   */
+  var LOG_KEY = 'sumsum:shizi:log:v1'
+  var LOG_MAX = 120
+
+  function loadLog() {
+    try {
+      var raw = JSON.parse(root.localStorage.getItem(LOG_KEY))
+      return Array.isArray(raw) ? raw.filter(function (r) {
+        return isObj(r) && typeof r.d === 'string' && typeof r.seen === 'string'
+      }) : []
+    } catch (e) {
+      return []
+    }
+  }
+
+  var log = loadLog()
+
+  function saveLog() {
+    try {
+      root.localStorage.setItem(LOG_KEY, JSON.stringify(log.slice(-LOG_MAX)))
+    } catch (e) {
+      /* 隐私模式下写入失败可忽略 */
+    }
+  }
+
+  /* 今天那一行的数字按当前记录重算：结算后又点了漏点的字、撤销了结算，都要反映出来 */
+  function refreshLog() {
+    var t = today()
+    var row = log.length && log[log.length - 1].d === t ? log[log.length - 1] : null
+    if (!row) return
+    var ok = 0
+    var miss = 0
+    var out = 0
+    Array.from(row.seen).forEach(function (ch) {
+      var e = marks[ch]
+      if (!e) return
+      if (e.miss === t && e.missWas && stateOf(ch) !== 'out') miss++
+      else if (e.out === t) out++
+      else if (e.hit === t) ok++
+    })
+    row.ok = ok + out
+    row.miss = miss
+    row.out = out
+    saveLog()
+  }
+
   function fire() {
+    refreshLog()
     listeners.forEach(function (fn) {
       fn(size())
     })
@@ -143,6 +200,89 @@
       .map(function (ch) {
         return { ch: ch, n: countOf(ch), on: has(ch) }
       })
+  }
+
+  /*
+   * 卷面上这些字里，哪些是「这次复习到的旧错字」：在错字集里、或今天刚认出移出的，
+   * 但不含今天才收进来的（那是本周卷上新发现的，不是复习旧账）。
+   */
+  function reviewed(chars) {
+    var t = today()
+    var seen = {}
+    return chars.filter(function (ch) {
+      var e = marks[ch]
+      if (!e || seen[ch]) return false
+      seen[ch] = true
+      if (e.add === t) return false
+      return stateOf(ch) !== 'out' || e.out === t
+    })
+  }
+
+  /* 结算会把哪些字算成又错一次 */
+  function pending(chars) {
+    var t = today()
+    return reviewed(chars).filter(function (ch) {
+      return root.SumSum.shizi.markMiss(marks[ch], t) !== marks[ch]
+    })
+  }
+
+  /* 今天已经结算成「又错一次」的字（不限卷面），撤销按钮用 */
+  function missedToday() {
+    var t = today()
+    return Object.keys(marks).filter(function (ch) {
+      var e = marks[ch]
+      return e.miss === t && e.missWas && stateOf(ch) !== 'out'
+    })
+  }
+
+  /* 结算：卷面上的字传进来，没点的算又错一次，并记一行复习记录 */
+  function settle(chars) {
+    var t = today()
+    var seen = reviewed(chars)
+    if (!seen.length) return
+    seen.forEach(function (ch) {
+      marks[ch] = root.SumSum.shizi.markMiss(marks[ch], t)
+    })
+    var row = log.length && log[log.length - 1].d === t ? log[log.length - 1] : null
+    if (!row) {
+      row = { d: t, seen: '' }
+      log.push(row)
+    }
+    seen.forEach(function (ch) {
+      if (row.seen.indexOf(ch) < 0) row.seen += ch
+    })
+    save()
+    fire() // fire 里 refreshLog 算出今天这一行的数字
+  }
+
+  /* 撤销今天的结算：次数退回、半红的回到半红；今天那一行复习记录删掉 */
+  function unsettle() {
+    var t = today()
+    Object.keys(marks).forEach(function (ch) {
+      marks[ch] = root.SumSum.shizi.markUnmiss(marks[ch], t)
+    })
+    if (log.length && log[log.length - 1].d === t) log.pop()
+    save()
+    saveLog()
+    fire()
+  }
+
+  function todayLog() {
+    var t = today()
+    return log.length && log[log.length - 1].d === t ? log[log.length - 1] : null
+  }
+
+  /* 最近的复习记录，新的在前 */
+  function history() {
+    return {
+      stats: root.SumSum.shizi.historyStats(marks),
+      log: log.slice().reverse()
+    }
+  }
+
+  /* 附页抽字的权重：错得越多越容易抽到，规则在 shizi-core 的 reviewWeight */
+  function weightOf(ch) {
+    return root.SumSum.shizi.reviewWeight(marks[ch])
   }
 
   /* 按字表顺序排好的错字数组。排序逻辑在 shizi-core（纯函数，node 里测得动） */
@@ -232,6 +372,14 @@
     repeats: repeats,
     all: all,
     step: step,
-    clear: clear
+    clear: clear,
+    reviewed: reviewed,
+    pending: pending,
+    missedToday: missedToday,
+    settle: settle,
+    unsettle: unsettle,
+    todayLog: todayLog,
+    history: history,
+    weightOf: weightOf
   }
 })(typeof window !== 'undefined' ? window : globalThis)
