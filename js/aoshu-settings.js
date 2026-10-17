@@ -15,7 +15,8 @@
     lessonPage: true, // 讲解页：新知识点先看讲解再做题，默认开
     practicePage: true, // 练习题：可以关掉，比如看完视频只想单独印一张讲解页
     answerPage: true, // 解析是本板块核心，默认开
-    review: false, // 综合复习卷：从已学的知识点里混合出题
+    review: false, // 综合复习卷：从 reviewTopics 勾选的知识点里混合出题
+    reviewTopics: '', // 复习卷混哪几课：逗号分隔的知识点 id，与「已学」标记互不相干
     title: ''
   })
 
@@ -51,6 +52,20 @@
     return list.indexOf(v) >= 0 ? v : fallback
   }
 
+  /* 复习范围：只留做好了的知识点，去重并按大纲顺序排，保证同一范围只有一种写法（URL 稳定） */
+  function cleanTopicList(v) {
+    var want = {}
+    String(v == null ? '' : v).split(',').forEach(function (id) {
+      want[id.trim()] = 1
+    })
+    var topics = root.SumSum.aoshu.topics
+    return root.SumSum.aoshu.OUTLINE.filter(function (o) {
+      return want[o.id] === 1 && topics[o.id]
+    }).map(function (o) {
+      return o.id
+    }).join(',')
+  }
+
   /* 把任意来源（表单 / localStorage / URL）的原始值清洗成合法设置对象 */
   function sanitize(raw) {
     var s = Object.assign({}, DEFAULTS, raw)
@@ -63,6 +78,7 @@
       practicePage: toBool(s.practicePage, DEFAULTS.practicePage),
       answerPage: toBool(s.answerPage, DEFAULTS.answerPage),
       review: toBool(s.review, DEFAULTS.review),
+      reviewTopics: cleanTopicList(s.reviewTopics),
       title: String(s.title == null ? '' : s.title).slice(0, 30)
     }
     /* 讲解 / 练习 / 解析至少印一样，否则打印出一张白纸。综合复习卷没有讲解页，那时讲解不算数 */

@@ -51,6 +51,26 @@
   var learned = loadLearned()
 
   /*
+   * 复习卷范围（settings.reviewTopics）和「已学」是两回事：已学记进度，范围决定这张卷混哪几课。
+   * 老用户以前的复习卷就是按已学出的，第一次没有范围记录时拿已学的课垫底，打开后看到的卷子不变；
+   * 之后两边各管各的。
+   */
+  function hasSavedScope() {
+    try {
+      if (new URLSearchParams(root.location.search).has('reviewTopics')) return true
+      var stored = JSON.parse(root.localStorage.getItem('sumsum:aoshu:v1'))
+      return !!stored && Object.prototype.hasOwnProperty.call(stored, 'reviewTopics')
+    } catch (e) {
+      return false
+    }
+  }
+  if (!hasSavedScope()) {
+    settings = S.aoshu.settings.sanitize(
+      Object.assign({}, settings, { reviewTopics: Array.from(learned).join(',') })
+    )
+  }
+
+  /*
    * 知识点目录：L1/L2 页签 + 按大纲一行一课的列表。
    * viewStage 是纯浏览状态（看哪个页签），与当前选中的知识点无关；
    * 未实现的知识点（OUTLINE 里有、topics 里没有）渲染为灰色不可点。
@@ -117,7 +137,6 @@
       b.classList.toggle('active', b.getAttribute('data-stage') === viewStage)
     })
     renderNextHint()
-    renderReviewHint()
   }
 
   /* 点圆点：只标已学；点课名：切换知识点。委托绑一次，目录重绘不用重绑 */
@@ -163,14 +182,63 @@
     }
   }
 
-  function renderReviewHint() {
-    var hint = $('review-hint')
-    var n = learnedIds().length
-    hint.hidden = false
-    hint.textContent = n
-      ? '已学 ' + n + ' 个知识点，可以混着出题了。'
-      : '还没标记已学的知识点——先在左边目录里点圆点标几个。'
+  /* ---------- 复习卷范围：混哪几课 ---------- */
+
+  function scopeIds(s) {
+    return s.reviewTopics ? s.reviewTopics.split(',') : []
   }
+
+  function setScope(ids) {
+    settings = S.aoshu.settings.sanitize(Object.assign({}, settings, { reviewTopics: ids.join(',') }))
+    refresh()
+  }
+
+  /* 勾选清单按 L1 / L2 分两组；课名来自大纲常量，没有用户输入，可以直接拼 HTML */
+  function renderScope(s) {
+    var box = $('review-scope')
+    box.hidden = !s.review
+    if (!s.review) return
+    var on = {}
+    scopeIds(s).forEach(function (id) {
+      on[id] = 1
+    })
+    var ready = S.aoshu.OUTLINE.filter(function (o) {
+      return S.aoshu.topics[o.id]
+    })
+    var html = ''
+    ;['L1', 'L2'].forEach(function (stage) {
+      var rows = ready.filter(function (o) {
+        return o.stage === stage
+      })
+      if (!rows.length) return
+      html += '<div class="scope-stage">' + stage + '</div>' + rows.map(function (o) {
+        return '<label class="tick"><input type="checkbox" data-scope="' + o.id + '"' +
+          (on[o.id] ? ' checked' : '') + ' /><span><span class="scope-no">' + o.no + '</span>' +
+          o.name + '</span></label>'
+      }).join('')
+    })
+    $('scope-list').innerHTML = html
+    var n = scopeIds(s).length
+    $('scope-n').textContent = n ? '已选 ' + n + ' 课' : '还没选'
+  }
+
+  $('scope-list').addEventListener('change', function (ev) {
+    var box = ev.target.closest('[data-scope]')
+    if (!box) return
+    var ids = scopeIds(settings).filter(function (id) {
+      return id !== box.getAttribute('data-scope')
+    })
+    if (box.checked) ids.push(box.getAttribute('data-scope'))
+    setScope(ids) // sanitize 会按大纲顺序重排
+  })
+
+  $('review-scope').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-scope-act]')
+    if (!b) return
+    var act = b.getAttribute('data-scope-act')
+    if (act === 'learned') setScope(learnedIds())
+    else if (act === 'none') setScope([])
+  })
 
   Array.prototype.forEach.call(doc.querySelectorAll('.stage-tab'), function (b) {
     b.addEventListener('click', function () {
@@ -326,12 +394,12 @@
   }
 
   /*
-   * 综合复习卷：从已学的知识点里轮着抽题。每道题都走对应知识点自己的
+   * 综合复习卷：从勾选范围里的知识点轮着抽题。每道题都走对应知识点自己的
    * 生成器（题型勾选、难度档都沿用），所以解析、图示一切照旧；
    * 额外记下知识点名字，解析页上标出来，方便家长知道这题在考什么。
    */
   function generateReview(s) {
-    var ids = learnedIds()
+    var ids = scopeIds(s)
     if (!ids.length) return { questions: [], shortfall: s.count, noTopics: true }
     var out = []
     var seen = {}
@@ -379,18 +447,18 @@
     })
     fitPreview()
     renderVideo(settings)
+    renderScope(settings)
     paintHead(settings, pages)
 
     var notice = $('notice')
     if (result.noTopics) {
       notice.textContent =
-        '还没有标记过「已学」的知识点，综合复习卷没题可出。' +
-        '在左边目录里点课名前面的圆点，把学过的标上 ✓ 就可以了。'
+        '综合复习卷还没选要混哪几课。在右边「综合复习」下面勾几课就能出题了。'
       notice.hidden = false
     } else if (result.shortfall > 0) {
       notice.textContent = settings.review
-        ? '已学的知识点里凑不出这么多不重复的题（只有 ' + result.questions.length +
-          ' 道）。可以减少题量，或再标几个知识点为已学。'
+        ? '选的这几课凑不出这么多不重复的题（只有 ' + result.questions.length +
+          ' 道）。可以减少题量，或在右边多勾几课。'
         : '当前参数下不重复的题目只有 ' + result.questions.length +
           ' 道（少于设定的 ' + settings.count +
           ' 道）。可以减少题量、提高难度档，或多勾选几种题型。'

@@ -590,3 +590,55 @@
     max-height: 260px;
   }
 }
+
+/* ---------- 综合复习：混哪几课（只在打开复习卷时出现） ---------- */
+
+.review-scope {
+  margin-top: 8px;
+}
+
+.scope-acts {
+  display: flex;
+  gap: 12px;
+}
+
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--blue);
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  color: var(--blue-deep);
+  text-decoration: underline;
+}
+
+/* 39 课排成一列太长，限高自己滚 */
+.scope-list {
+  max-height: 300px;
+  margin-top: 6px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.scope-stage {
+  margin: 8px 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.scope-stage:first-child {
+  margin-top: 0;
+}
+
+.scope-no {
+  display: inline-block;
+  min-width: 22px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}

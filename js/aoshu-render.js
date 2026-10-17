@@ -483,14 +483,14 @@
 
   /*
    * 主入口：（可选）讲解页 + （可选）题目页 + （可选）解析页，三样至少一样（aoshu-settings 的 sanitize 保证）。
-   * opts.review = 综合复习卷：题目来自多个知识点，讲解页无从谈起，标题另取。
+   * opts.review = 综合复习卷：题目来自勾选的多个知识点，讲解页无从谈起，标题另取。
    * 返回每部分各几页，顶栏摘要「讲解 1 页 + 练习 2 页 + 解析 1 页」用。
    */
   function render(container, s, questions, opts) {
     opts = opts || {}
     var topic = root.SumSum.aoshu.topics[s.topic]
     var title = s.title || (opts.review
-      ? '综合复习 · 已学 ' + (opts.topicCount || 0) + ' 个知识点'
+      ? '综合复习 · 混合 ' + (opts.topicCount || 0) + ' 个知识点'
       : topic.titleFor(s))
     var lesson = []
     var practice = []

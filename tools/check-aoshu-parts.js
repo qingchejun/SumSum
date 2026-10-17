@@ -4,10 +4,13 @@
  * 讲解页 / 练习题 / 解析页三样随意勾，但不能一样都不印 —— 那样点「打印」出来一张白纸。
  * 规则：三样全关时把练习题打开；综合复习卷没有讲解页，所以那时只看练习和解析。
  * 网址参数、localStorage 都可能带着「全关」进来（手改链接、老数据），sanitize 是唯一的收口。
+ * 顺带压住综合复习卷「混哪几课」（reviewTopics）的清洗规则。
  */
 'use strict'
 
 require('../js/aoshu-topics.js')
+require('../js/aoshu-topic-shuzimi.js')
+require('../js/aoshu-topic-xulie.js')
 require('../js/aoshu-settings.js')
 
 var A = globalThis.SumSum.aoshu.settings
@@ -40,9 +43,16 @@ check(review.practicePage === true, '综合复习只开讲解时应把练习题�
 var reviewAns = A.sanitize({ review: true, practicePage: false, answerPage: true })
 check(reviewAns.practicePage === false, '综合复习只印解析是合法的')
 
+/* 复习卷范围：和「已学」分开存，乱序、重复、不存在的 id 都要收口成大纲顺序的干净写法 */
+check(d.reviewTopics === '', '默认复习范围为空：' + JSON.stringify(d.reviewTopics))
+var scope = A.sanitize({ reviewTopics: 'xulie, shuzimi,xulie,no-such,__proto__,yiduobushao' })
+check(scope.reviewTopics === 'yiduobushao,shuzimi,xulie', '复习范围应按大纲排、去重、去掉不存在的：' + scope.reviewTopics)
+check(A.sanitize({ reviewTopics: 42 }).reviewTopics === '', '复习范围乱填应当作空')
+check(A.sanitize({ reviewTopics: null }).reviewTopics === '', '复习范围为 null 应当作空')
+
 if (problems.length) {
   console.log('✗ ' + problems.length + ' 处问题：')
   problems.forEach(function (p) { console.log('  - ' + p) })
   process.exit(1)
 }
-console.log('✓ 奥数打印哪几部分：默认 / 单印一样 / 全关收口 / 网址字符串 / 综合复习 全部通过')
+console.log('✓ 奥数打印哪几部分：默认 / 单印一样 / 全关收口 / 网址字符串 / 综合复习 / 复习范围 全部通过')

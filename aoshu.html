@@ -105,9 +105,19 @@
       <section class="group">
         <h2 class="group-title">综合复习</h2>
         <label class="check">
-          <input type="checkbox" id="f-review" /><span>出一张综合复习卷（从已学的课里混合出题）</span>
+          <input type="checkbox" id="f-review" /><span>出一张综合复习卷（从选的几课里混合出题）</span>
         </label>
-        <p class="hint" id="review-hint" hidden></p>
+        <!-- 混哪几课：只在打开复习卷时显示，和「已学」标记互不影响。清单由 aoshu-main.js 填 -->
+        <div class="review-scope" id="review-scope" hidden>
+          <div class="row-between">
+            <span class="lbl" id="scope-n"></span>
+            <span class="scope-acts">
+              <button type="button" class="link-btn" data-scope-act="learned">只选已学的</button>
+              <button type="button" class="link-btn" data-scope-act="none">清空</button>
+            </span>
+          </div>
+          <div class="scope-list" id="scope-list"></div>
+        </div>
       </section>
 
       <section class="group">
